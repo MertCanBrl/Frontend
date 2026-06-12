@@ -1,0 +1,42 @@
+# ---------- .NET / ASP.NET Core ----------
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+*.dll
+*.pdb
+project.lock.json
+artifacts/
+
+# ---------- Angular / Node ----------
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+.npm/
+
+# ---------- Ortam değişkenleri (gizli bilgiler) ----------
+.env
+.env.local
+*.env
+!.env.example
+
+# ---------- IDE / Editör ----------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# ---------- İşletim sistemi ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Docker ----------
+# (docker-compose.yml ve Dockerfile repoda kalır; sadece volume verileri hariç)
+postgres-data/
