@@ -37,9 +37,10 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.SetNull);
 
         // Seed: Kullanıcılar (1 yönetici + 1 öğretmen)
+        // Seed: Kullanıcılar (1 yönetici + 1 öğretmen)
         modelBuilder.Entity<User>().HasData(
-            new User { Id = 1, FullName = "Sistem Yöneticisi", Email = "admin@mudek.edu.tr", PasswordHash = "PLACEHOLDER", Role = "Admin" },
-            new User { Id = 2, FullName = "Dr. Ali Vural", Email = "ali.vural@mudek.edu.tr", PasswordHash = "PLACEHOLDER", Role = "Instructor" }
+            new User { Id = 1, FullName = "Sistem Yöneticisi", Email = "admin@mudek.edu.tr", PasswordHash = "$2a$11$nKSgs23VvGfIptin60wqB.z/b7RyNWK8ixzrKy6gd4fAPc2ON1bee", Role = "Admin" },
+            new User { Id = 2, FullName = "Dr. Ali Vural", Email = "ali.vural@mudek.edu.tr", PasswordHash = "$2a$11$McaBkQ1M1QZPn7fl3OzYS.PpxfDWLJgRx2x2ZBcfq6WzhtTsqHB1S", Role = "Instructor" }
         );
 
         // Seed: Öğrenciler

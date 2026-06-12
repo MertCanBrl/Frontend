@@ -1,0 +1,78 @@
+<div class="login-page">
+  <aside class="brand-panel">
+    <div class="brand-content">
+      <span class="brand-mark">MÜDEK</span>
+      <h1 class="brand-title">Ders Kalite<br />Kontrol Sistemi</h1>
+      <p class="brand-text">
+        Öğretim üyeleri ve bölüm yönetimi için ders değerlendirme,
+        not takibi ve akreditasyon süreçlerini bir araya getiren platform.
+      </p>
+    </div>
+
+    <div class="grid-motif" aria-hidden="true">
+      @for (cell of gridCells; track cell) {
+        <div
+          class="grid-cell"
+          [class.is-active]="activeCells.has(cell)"
+          [style.--delay.ms]="cell * 18"
+        ></div>
+      }
+    </div>
+  </aside>
+
+  <main class="form-panel">
+    <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-header">
+        <span class="form-eyebrow">Giriş</span>
+        <h2>Hesabınıza giriş yapın</h2>
+      </div>
+
+      <div class="field">
+        <label for="email">E-posta</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="ad.soyad@mudek.edu.tr"
+          autocomplete="email"
+        />
+        @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+          <span class="field-error">
+            @if (loginForm.get('email')?.hasError('required')) {
+              E-posta zorunludur.
+            } @else if (loginForm.get('email')?.hasError('email')) {
+              Geçerli bir e-posta adresi girin.
+            }
+          </span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="password">Şifre</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+        />
+        @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+          <span class="field-error">Şifre zorunludur.</span>
+        }
+      </div>
+
+      @if (errorMessage) {
+        <div class="server-error">{{ errorMessage }}</div>
+      }
+
+      <button type="submit" [disabled]="isLoading" class="submit-btn">
+        @if (isLoading) {
+          <span class="spinner"></span>
+          Giriş yapılıyor...
+        } @else {
+          Giriş Yap
+        }
+      </button>
+    </form>
+  </main>
+</div>
