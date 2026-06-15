@@ -3,16 +3,24 @@ namespace Backend.Models;
 public class Course
 {
     public int Id { get; set; }
-    public string Code { get; set; } = string.Empty;       // örn. "BIL101"
-    public string Name { get; set; } = string.Empty;       // örn. "Programlamaya Giriş"
-    public string Semester { get; set; } = string.Empty;   // örn. "2024-Güz"
-    public int Credit { get; set; }                        // kredi
-    public bool IsMandatory { get; set; }                  // zorunlu mu, seçmeli mi
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Semester { get; set; } = string.Empty;
+    public int Credit { get; set; }
+    public bool IsMandatory { get; set; }
 
-    // Dersi veren öğretmen (navigation property)
+    // Yeni alanlar
+    public int Akts { get; set; } = 0;
+    public int WeeklyHours { get; set; } = 3;
+    public string Department { get; set; } = string.Empty;
+    public int ClassYear { get; set; } = 1;
+    public string CourseType { get; set; } = "Teorik";
+    public bool IsLocked { get; set; } = false;
+
     public int? InstructorId { get; set; }
     public User? Instructor { get; set; }
 
-    // Bu derse kayıtlı öğrenciler (navigation property)
     public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+    public ICollection<CourseTopic> CourseTopics { get; set; } = new List<CourseTopic>();
+    public ICollection<LearningOutcome> LearningOutcomes { get; set; } = new List<LearningOutcome>();
 }

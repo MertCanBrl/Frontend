@@ -1,0 +1,143 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Backend.Data;
+using Backend.Models;
+using Backend.Models.DTOs;
+using Backend.Services;
+
+namespace Backend.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
+public class AdminController : ControllerBase
+{
+    private readonly AppDbContext _context;
+    private readonly IEmailService _emailService;
+
+    public AdminController(AppDbContext context, IEmailService emailService)
+    {
+        _context = context;
+        _emailService = emailService;
+    }
+
+    // GET: api/admin/users
+    [HttpGet("users")]
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
+    {
+        var users = await _context.Users
+            .OrderBy(u => u.FullName)
+            .Select(u => new UserDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                Role = u.Role
+            })
+            .ToListAsync();
+
+        return Ok(users);
+    }
+
+    // POST: api/admin/users
+    [HttpPost("users")]
+    public async Task<ActionResult<UserDto>> CreateUser(CreateUserRequest request)
+    {
+        var exists = await _context.Users.AnyAsync(u => u.Email == request.Email);
+        if (exists)
+            return Conflict("Bu e-posta adresi zaten kullanımda.");
+
+        var password = GeneratePassword();
+        var displayName = string.IsNullOrWhiteSpace(request.Title)
+            ? request.FullName
+            : $"{request.Title} {request.FullName}";
+
+        var user = new User
+        {
+            FullName = displayName,
+            Email = request.Email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+            Role = "Instructor"
+        };
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        await _emailService.SendCredentialsAsync(user.Email, user.FullName, password);
+
+        return Ok(new UserDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = user.Role
+        });
+    }
+
+    // GET: api/admin/courses
+    [HttpGet("courses")]
+    public async Task<ActionResult<IEnumerable<CourseDto>>> GetCourses()
+    {
+        var courses = await _context.Courses
+            .Include(c => c.Instructor)
+            .OrderBy(c => c.Code)
+            .Select(c => new CourseDto
+            {
+                Id = c.Id,
+                Code = c.Code,
+                Name = c.Name,
+                Semester = c.Semester,
+                Credit = c.Credit,
+                IsMandatory = c.IsMandatory,
+                InstructorId = c.InstructorId,
+                InstructorName = c.Instructor != null ? c.Instructor.FullName : null
+            })
+            .ToListAsync();
+
+        return Ok(courses);
+    }
+
+    // POST: api/admin/courses
+    [HttpPost("courses")]
+    public async Task<ActionResult<CourseDto>> CreateCourse(CreateCourseRequest request)
+    {
+        var codeExists = await _context.Courses.AnyAsync(c => c.Code == request.Code);
+        if (codeExists)
+            return Conflict("Bu ders kodu zaten kullanımda.");
+
+        var course = new Course
+        {
+            Code = request.Code,
+            Name = request.Name,
+            Semester = request.Semester,
+            Credit = request.Credit,
+            IsMandatory = request.IsMandatory,
+            InstructorId = request.InstructorId
+        };
+
+        _context.Courses.Add(course);
+        await _context.SaveChangesAsync();
+
+        await _context.Entry(course).Reference(c => c.Instructor).LoadAsync();
+
+        return Ok(new CourseDto
+        {
+            Id = course.Id,
+            Code = course.Code,
+            Name = course.Name,
+            Semester = course.Semester,
+            Credit = course.Credit,
+            IsMandatory = course.IsMandatory,
+            InstructorId = course.InstructorId,
+            InstructorName = course.Instructor?.FullName
+        });
+    }
+
+    private static string GeneratePassword()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#";
+        var rng = new Random();
+        return new string(Enumerable.Range(0, 12).Select(_ => chars[rng.Next(chars.Length)]).ToArray());
+    }
+}
