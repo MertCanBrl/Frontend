@@ -1,0 +1,322 @@
+<div class="page">
+  @if (loading()) {
+    <div class="loading-state">Yükleniyor…</div>
+  } @else if (!course()) {
+    <div class="loading-state">Ders bulunamadı.</div>
+  } @else {
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a routerLink="/instructor" class="bc-link">Derslerim</a>
+      <span class="bc-sep">›</span>
+      <span class="bc-current">{{ course()!.code }} – {{ course()!.name }}</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <span class="course-code-badge">{{ course()!.code }}</span>
+        <h1 class="page-title">{{ course()!.name }}</h1>
+        <p class="page-desc">{{ course()!.department }}</p>
+      </div>
+      @if (course()!.isLocked) {
+        <div class="locked-banner">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Bu ders kilitlenmiş — düzenleme yapılamaz
+        </div>
+      }
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn" [class.active]="activeTab()==='info'" (click)="setTab('info')">Genel Bilgiler</button>
+      <button class="tab-btn" [class.active]="activeTab()==='topics'" (click)="setTab('topics')">Ders Konuları</button>
+      <button class="tab-btn" [class.active]="activeTab()==='outcomes'" (click)="setTab('outcomes')">Öğrenme Çıktıları</button>
+      <button class="tab-btn" [class.active]="activeTab()==='mapping'" (click)="setTab('mapping')">ÖÇ-PÇ Eşleştirme</button>
+      <button class="tab-btn" [class.active]="activeTab()==='approval'" (click)="setTab('approval')">Akademik Kontrol</button>
+    </div>
+
+    <!-- ── TAB: Genel Bilgiler ─────────────────────────────── -->
+    @if (activeTab() === 'info') {
+      <div class="tab-panel">
+        <div class="info-grid">
+          <div class="info-card">
+            <h3 class="info-card-title">Ders Bilgileri</h3>
+            <div class="info-rows">
+              <div class="info-row"><span class="info-label">Dönem</span><span class="info-val">{{ course()!.semester }}</span></div>
+              <div class="info-row"><span class="info-label">Sınıf</span><span class="info-val">{{ course()!.classYear }}. Sınıf</span></div>
+              <div class="info-row"><span class="info-label">AKTS</span><span class="info-val">{{ course()!.akts ?? '—' }}</span></div>
+              <div class="info-row"><span class="info-label">Kredi</span><span class="info-val">{{ course()!.credit }}</span></div>
+              <div class="info-row"><span class="info-label">Haftalık Saat</span><span class="info-val">{{ course()!.weeklyHours ?? '—' }}</span></div>
+              <div class="info-row"><span class="info-label">Ders Türü</span><span class="info-val">{{ course()!.courseType ?? '—' }}</span></div>
+              <div class="info-row">
+                <span class="info-label">Zorunluluk</span>
+                <span class="info-val">
+                  <span class="badge" [class.badge-mandatory]="course()!.isMandatory">
+                    {{ course()!.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="info-card-title">İlerleme Durumu</h3>
+            <div class="stat-grid">
+              <div class="stat-item">
+                <span class="stat-num">{{ course()!.topicCount }}</span>
+                <span class="stat-lbl">Konu</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num">{{ course()!.learningOutcomeCount }}</span>
+                <span class="stat-lbl">Öğrenme Çıktısı</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB: Ders Konuları ─────────────────────────────── -->
+    @if (activeTab() === 'topics') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Ders Konuları</h2>
+          @if (!course()!.isLocked) {
+            <button class="btn-primary" (click)="openTopicForm()">+ Konu Ekle</button>
+          }
+        </div>
+
+        @if (topicFormVisible()) {
+          <div class="form-card">
+            <h3 class="form-title">{{ editingTopicId() ? 'Konuyu Düzenle' : 'Yeni Konu' }}</h3>
+            <form [formGroup]="topicForm" (ngSubmit)="saveTopicForm()" class="form-body">
+              <div class="field">
+                <label class="field-label">Konu Başlığı *</label>
+                <input class="field-input" formControlName="title" placeholder="örn. Fonksiyonlar ve Grafikler" />
+                @if (topicForm.controls.title.invalid && topicForm.controls.title.touched) {
+                  <span class="field-error">Başlık gereklidir.</span>
+                }
+              </div>
+              <div class="field">
+                <label class="field-label">Açıklama</label>
+                <textarea class="field-input" formControlName="description" rows="3" placeholder="İsteğe bağlı açıklama…"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-ghost" (click)="cancelTopicForm()">İptal</button>
+                <button type="submit" class="btn-primary" [disabled]="topicSaving()">
+                  {{ topicSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+
+        @if (topics().length === 0 && !topicFormVisible()) {
+          <div class="empty-panel">
+            <p>Henüz konu eklenmemiş.</p>
+          </div>
+        } @else {
+          <div class="list">
+            @for (topic of topics(); track topic.id; let i = $index) {
+              <div class="list-item">
+                <div class="list-item-main">
+                  <span class="list-num">{{ i + 1 }}</span>
+                  <div class="list-texts">
+                    <span class="list-title">{{ topic.title }}</span>
+                    @if (topic.description) {
+                      <span class="list-desc">{{ topic.description }}</span>
+                    }
+                  </div>
+                </div>
+                @if (!course()!.isLocked) {
+                  <div class="list-actions">
+                    <button class="icon-btn" title="Düzenle" (click)="openTopicForm(topic)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="icon-btn danger" title="Sil" (click)="deleteTopic(topic.id)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: Öğrenme Çıktıları ────────────────────────── -->
+    @if (activeTab() === 'outcomes') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Öğrenme Çıktıları</h2>
+          @if (!course()!.isLocked) {
+            <button class="btn-primary" (click)="openOutcomeForm()">+ Çıktı Ekle</button>
+          }
+        </div>
+
+        @if (outcomeFormVisible()) {
+          <div class="form-card">
+            <h3 class="form-title">{{ editingOutcomeId() ? 'Çıktıyı Düzenle' : 'Yeni Öğrenme Çıktısı' }}</h3>
+            <form [formGroup]="outcomeForm" (ngSubmit)="saveOutcomeForm()" class="form-body">
+              <div class="field">
+                <label class="field-label">Açıklama *</label>
+                <textarea class="field-input" formControlName="description" rows="3" placeholder="Bu dersi başarıyla tamamlayan öğrenci…"></textarea>
+                @if (outcomeForm.controls.description.invalid && outcomeForm.controls.description.touched) {
+                  <span class="field-error">Açıklama gereklidir.</span>
+                }
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">Bloom Seviyesi</label>
+                  <select class="field-input" formControlName="bloomLevel">
+                    <option value="">Seçiniz</option>
+                    @for (level of bloomLevels; track level) {
+                      <option [value]="level">{{ level }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">Bileşen</label>
+                  <input class="field-input" formControlName="component" placeholder="örn. Teori, Uygulama" />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-ghost" (click)="cancelOutcomeForm()">İptal</button>
+                <button type="submit" class="btn-primary" [disabled]="outcomeSaving()">
+                  {{ outcomeSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+
+        @if (outcomes().length === 0 && !outcomeFormVisible()) {
+          <div class="empty-panel">
+            <p>Henüz öğrenme çıktısı eklenmemiş.</p>
+          </div>
+        } @else {
+          <div class="list">
+            @for (outcome of outcomes(); track outcome.id) {
+              <div class="list-item">
+                <div class="list-item-main">
+                  <span class="lo-code">{{ outcome.code }}</span>
+                  <div class="list-texts">
+                    <span class="list-title">{{ outcome.description }}</span>
+                    <div class="lo-tags">
+                      @if (outcome.bloomLevel) { <span class="lo-tag">{{ outcome.bloomLevel }}</span> }
+                      @if (outcome.component) { <span class="lo-tag">{{ outcome.component }}</span> }
+                    </div>
+                  </div>
+                </div>
+                @if (!course()!.isLocked) {
+                  <div class="list-actions">
+                    <button class="icon-btn" title="Düzenle" (click)="openOutcomeForm(outcome)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="icon-btn danger" title="Sil" (click)="deleteOutcome(outcome.id)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: ÖÇ-PÇ Eşleştirme ──────────────────────────── -->
+    @if (activeTab() === 'mapping') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">ÖÇ-PÇ Eşleştirme Matrisi</h2>
+        </div>
+
+        @if (!matrix()) {
+          <div class="empty-panel"><p>Yükleniyor…</p></div>
+        } @else if (matrix()!.learningOutcomes.length === 0) {
+          <div class="empty-panel"><p>Eşleştirme için önce öğrenme çıktısı eklemelisiniz.</p></div>
+        } @else {
+          <div class="mapping-legend">
+            Hücreye tıklayarak katkı düzeyini (0–5) değiştirin.
+            @for (l of contributionLabels; track l; let i = $index) {
+              <span class="legend-item" [class]="contributionClass(i)">{{ l }}</span>
+            }
+          </div>
+          <div class="matrix-wrapper">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th class="matrix-corner">ÖÇ \ PÇ</th>
+                  @for (po of matrix()!.programOutcomes; track po.id) {
+                    <th class="matrix-po-header" [title]="po.description">{{ po.code }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (lo of matrix()!.learningOutcomes; track lo.id) {
+                  <tr>
+                    <td class="matrix-lo-cell" [title]="lo.description">{{ lo.code }}</td>
+                    @for (po of matrix()!.programOutcomes; track po.id) {
+                      <td class="matrix-cell" [class]="contributionClass(getContribution(lo.id, po.id))"
+                          [class.locked]="course()!.isLocked"
+                          (click)="cycleContribution(lo.id, po.id)"
+                          [title]="contributionLabels[getContribution(lo.id, po.id)]">
+                        {{ getContribution(lo.id, po.id) === 0 ? '' : getContribution(lo.id, po.id) }}
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: Akademik Kontrol ──────────────────────────── -->
+    @if (activeTab() === 'approval') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Akademik Kontrol ve Onay</h2>
+        </div>
+
+        <div class="approval-card">
+          <h3 class="approval-section-title">Tamamlanma Kontrol Listesi</h3>
+          <ul class="checklist">
+            @for (item of approvalStatus; track item.message) {
+              <li class="checklist-item" [class.ok]="item.ok">
+                <span class="checklist-icon">
+                  @if (item.ok) {
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  } @else {
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  }
+                </span>
+                {{ item.message }}
+              </li>
+            }
+          </ul>
+
+          @if (course()!.isLocked) {
+            <div class="approval-result locked">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Bu ders zaten onaylanmış ve kilitli durumda.
+            </div>
+          } @else if (canApprove) {
+            <div class="approval-result ready">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Ders onaylanmaya hazır. Onaylama işlemi derse erişimi kilitleyen yönetici tarafından gerçekleştirilir.
+            </div>
+          } @else {
+            <div class="approval-result not-ready">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Onay için yukarıdaki tüm adımların tamamlanması gerekmektedir.
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

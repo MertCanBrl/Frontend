@@ -1,0 +1,66 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Derslerim</h1>
+      <p class="page-desc">{{ courses().length }} ders atandı</p>
+    </div>
+    <input class="search-input" type="search" placeholder="Ders ara..." (input)="onSearch($event)" />
+  </div>
+
+  @if (loading()) {
+    <div class="empty-state">Yükleniyor…</div>
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">Ders bulunamadı.</div>
+  } @else {
+    <div class="course-grid">
+      @for (course of filtered(); track course.id) {
+        <div class="course-card" [class.locked]="course.isLocked">
+          <div class="card-top">
+            <div class="card-header">
+              <span class="course-code">{{ course.code }}</span>
+              @if (course.isLocked) {
+                <span class="lock-badge">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Kilitli
+                </span>
+              }
+            </div>
+            <h2 class="course-name">{{ course.name }}</h2>
+            <p class="course-dept">{{ course.department || 'Bölüm belirtilmemiş' }}</p>
+          </div>
+
+          <div class="card-meta">
+            <span class="meta-item">{{ course.semester }}</span>
+            <span class="meta-sep">·</span>
+            <span class="meta-item">{{ course.classYear }}. Sınıf</span>
+            <span class="meta-sep">·</span>
+            <span class="meta-item">{{ course.credit }} Kredi</span>
+            <span class="meta-sep">·</span>
+            <span class="meta-item badge-type" [class.mandatory]="course.isMandatory">
+              {{ course.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
+            </span>
+          </div>
+
+          <div class="progress-section">
+            <div class="progress-label">
+              <span>Tamamlanma</span>
+              <span>{{ completionPct(course) }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="completionPct(course)"></div>
+            </div>
+            <div class="progress-stats">
+              <span [class.done]="course.topicCount > 0">{{ course.topicCount }} konu</span>
+              <span [class.done]="course.learningOutcomeCount > 0">{{ course.learningOutcomeCount }} öğrenme çıktısı</span>
+            </div>
+          </div>
+
+          <a class="detail-btn" [routerLink]="['/instructor/course', course.id]">
+            Detayları Gör
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        </div>
+      }
+    </div>
+  }
+</div>
