@@ -3,11 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment.development';
 import {
-  InstructorCourseDto, CourseDetailDto, UpdateCourseRequest,
+  InstructorCourseDto, CourseDetailDto, UpdateCourseRequest, UpdateCourseContentRequest,
   CourseTopicDto, SaveCourseTopicRequest,
   LearningOutcomeDto, SaveLearningOutcomeRequest,
   ProgramOutcomeDto, SaveProgramOutcomeRequest,
-  MappingMatrixDto, MappingCellDto
+  MappingMatrixDto, MappingCellDto,
+  SurveyQuestionDto, SaveSurveyQuestionRequest,
+  ExamDto, SaveExamRequest,
+  AssessmentComponentDto, SaveAssessmentComponentRequest,
+  StudentCourseResultDto, RiskAnalysisDto
 } from '../models/course.models';
 
 @Injectable({ providedIn: 'root' })
@@ -15,7 +19,8 @@ export class InstructorService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
 
-  // Courses
+  // ── Mevcut endpointler ────────────────────────────────────────────────────
+
   getMyCourses(): Observable<InstructorCourseDto[]> {
     return this.http.get<InstructorCourseDto[]>(`${this.base}/instructor/my-courses`);
   }
@@ -82,5 +87,97 @@ export class InstructorService {
 
   deleteProgramOutcome(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/program-outcomes/${id}`);
+  }
+
+  // ── Ders İçerikleri ──────────────────────────────────────────────────────
+
+  getCourseContents(): Observable<InstructorCourseDto[]> {
+    return this.http.get<InstructorCourseDto[]>(`${this.base}/instructor/course-contents`);
+  }
+
+  getCourseContentDetail(courseId: number): Observable<CourseDetailDto> {
+    return this.http.get<CourseDetailDto>(`${this.base}/instructor/course-contents/${courseId}`);
+  }
+
+  updateCourseContentInfo(courseId: number, req: UpdateCourseContentRequest): Observable<void> {
+    return this.http.put<void>(`${this.base}/instructor/course-contents/${courseId}/general-info`, req);
+  }
+
+  // Survey Questions
+  getSurveyQuestions(courseId: number): Observable<SurveyQuestionDto[]> {
+    return this.http.get<SurveyQuestionDto[]>(`${this.base}/instructor/course-contents/${courseId}/survey-questions`);
+  }
+
+  addSurveyQuestion(courseId: number, req: SaveSurveyQuestionRequest): Observable<SurveyQuestionDto> {
+    return this.http.post<SurveyQuestionDto>(`${this.base}/instructor/course-contents/${courseId}/survey-questions`, req);
+  }
+
+  updateSurveyQuestion(courseId: number, id: number, req: SaveSurveyQuestionRequest): Observable<void> {
+    return this.http.put<void>(`${this.base}/instructor/course-contents/${courseId}/survey-questions/${id}`, req);
+  }
+
+  deleteSurveyQuestion(courseId: number, id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/instructor/course-contents/${courseId}/survey-questions/${id}`);
+  }
+
+  // ── Dönemdeki Dersler ────────────────────────────────────────────────────
+
+  getSemesters(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/instructor/semesters`);
+  }
+
+  getTermCourses(semester?: string): Observable<InstructorCourseDto[]> {
+    const url = semester
+      ? `${this.base}/instructor/term-courses?semester=${encodeURIComponent(semester)}`
+      : `${this.base}/instructor/term-courses`;
+    return this.http.get<InstructorCourseDto[]>(url);
+  }
+
+  getTermCourseDetail(courseId: number): Observable<CourseDetailDto> {
+    return this.http.get<CourseDetailDto>(`${this.base}/instructor/term-courses/${courseId}`);
+  }
+
+  // Students
+  getStudents(courseId: number): Observable<StudentCourseResultDto[]> {
+    return this.http.get<StudentCourseResultDto[]>(`${this.base}/instructor/term-courses/${courseId}/students`);
+  }
+
+  // Exams
+  getExams(courseId: number): Observable<ExamDto[]> {
+    return this.http.get<ExamDto[]>(`${this.base}/instructor/term-courses/${courseId}/exams`);
+  }
+
+  addExam(courseId: number, req: SaveExamRequest): Observable<ExamDto> {
+    return this.http.post<ExamDto>(`${this.base}/instructor/term-courses/${courseId}/exams`, req);
+  }
+
+  updateExam(courseId: number, id: number, req: SaveExamRequest): Observable<void> {
+    return this.http.put<void>(`${this.base}/instructor/term-courses/${courseId}/exams/${id}`, req);
+  }
+
+  deleteExam(courseId: number, id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/instructor/term-courses/${courseId}/exams/${id}`);
+  }
+
+  // Assessment Components
+  getAssessmentComponents(courseId: number): Observable<AssessmentComponentDto[]> {
+    return this.http.get<AssessmentComponentDto[]>(`${this.base}/instructor/term-courses/${courseId}/assessment-components`);
+  }
+
+  addAssessmentComponent(courseId: number, req: SaveAssessmentComponentRequest): Observable<AssessmentComponentDto> {
+    return this.http.post<AssessmentComponentDto>(`${this.base}/instructor/term-courses/${courseId}/assessment-components`, req);
+  }
+
+  updateAssessmentComponent(courseId: number, id: number, req: SaveAssessmentComponentRequest): Observable<void> {
+    return this.http.put<void>(`${this.base}/instructor/term-courses/${courseId}/assessment-components/${id}`, req);
+  }
+
+  deleteAssessmentComponent(courseId: number, id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/instructor/term-courses/${courseId}/assessment-components/${id}`);
+  }
+
+  // Risk Analysis
+  getRiskAnalysis(courseId: number): Observable<RiskAnalysisDto[]> {
+    return this.http.get<RiskAnalysisDto[]>(`${this.base}/instructor/term-courses/${courseId}/risk-analysis`);
   }
 }

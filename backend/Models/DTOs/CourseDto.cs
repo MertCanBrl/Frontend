@@ -8,6 +8,7 @@ public class CourseDto
     public string Semester { get; set; } = string.Empty;
     public int Credit { get; set; }
     public bool IsMandatory { get; set; }
+    public int ClassYear { get; set; }
     public int? InstructorId { get; set; }
     public string? InstructorName { get; set; }
 }

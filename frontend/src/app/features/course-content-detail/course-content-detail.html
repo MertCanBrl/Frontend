@@ -1,0 +1,421 @@
+<div class="page">
+  @if (loading()) {
+    <div class="loading-state">Yükleniyor…</div>
+  } @else if (!course()) {
+    <div class="loading-state">Ders bulunamadı.</div>
+  } @else {
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a routerLink="/instructor/course-contents" class="bc-link">Ders İçerikleri</a>
+      <span class="bc-sep">›</span>
+      <span class="bc-current">{{ course()!.code }} – {{ course()!.name }}</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <span class="course-code-badge">{{ course()!.code }}</span>
+        <h1 class="page-title">{{ course()!.name }}</h1>
+        <div class="header-badges">
+          <span class="badge badge-year">{{ course()!.classYear }}. Sınıf</span>
+          <span class="badge badge-credit">{{ course()!.credit }} Kredi</span>
+          <span class="badge badge-semester">{{ course()!.semester }}</span>
+          <span class="badge" [class.badge-mandatory]="course()!.isMandatory" [class.badge-elective]="!course()!.isMandatory">
+            {{ course()!.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn" [class.active]="activeTab()==='info'" (click)="setTab('info')">Genel Bilgiler</button>
+      <button class="tab-btn" [class.active]="activeTab()==='topics'" (click)="setTab('topics')">Ders Konuları</button>
+      <button class="tab-btn" [class.active]="activeTab()==='outcomes'" (click)="setTab('outcomes')">Öğrenme Çıktıları</button>
+      <button class="tab-btn" [class.active]="activeTab()==='mapping'" (click)="setTab('mapping')">ÖÇ-PÇ Eşleştirme</button>
+      <button class="tab-btn" [class.active]="activeTab()==='survey'" (click)="setTab('survey')">Anket Soruları</button>
+    </div>
+
+    <!-- ── TAB: Genel Bilgiler ────────────────────────────────────────────── -->
+    @if (activeTab() === 'info') {
+      <div class="tab-panel">
+        <div class="info-grid-3col">
+          <!-- Temel bilgiler -->
+          <div class="info-card">
+            <h3 class="info-card-title">Ders Bilgileri</h3>
+            <div class="info-rows">
+              <div class="info-row"><span class="info-label">Ders Kodu</span><span class="info-val mono">{{ course()!.code }}</span></div>
+              <div class="info-row"><span class="info-label">Ders Adı</span><span class="info-val">{{ course()!.name }}</span></div>
+              <div class="info-row"><span class="info-label">Ders Tipi</span><span class="info-val">{{ course()!.courseType || '—' }}</span></div>
+              <div class="info-row"><span class="info-label">Sınıf</span><span class="info-val">{{ course()!.classYear }}. Sınıf</span></div>
+              <div class="info-row"><span class="info-label">Dönem</span><span class="info-val">{{ course()!.semester }}</span></div>
+            </div>
+          </div>
+
+          <!-- Kredi / AKTS -->
+          <div class="info-card">
+            <h3 class="info-card-title">Kredi & Yük</h3>
+            <div class="info-rows">
+              <div class="info-row"><span class="info-label">Kredi</span><span class="info-val">{{ course()!.credit }}</span></div>
+              <div class="info-row"><span class="info-label">AKTS</span><span class="info-val">{{ course()!.akts || '—' }}</span></div>
+              <div class="info-row"><span class="info-label">Haftalık Saat</span><span class="info-val">{{ course()!.weeklyHours || '—' }}</span></div>
+              <div class="info-row">
+                <span class="info-label">Zorunluluk</span>
+                <span class="info-val">
+                  <span class="badge" [class.badge-mandatory]="course()!.isMandatory" [class.badge-elective]="!course()!.isMandatory">
+                    {{ course()!.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- İstatistikler -->
+          <div class="info-card">
+            <h3 class="info-card-title">İçerik Durumu</h3>
+            <div class="stat-grid">
+              <div class="stat-item">
+                <span class="stat-num">{{ course()!.topicCount }}</span>
+                <span class="stat-lbl">Konu</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num">{{ course()!.learningOutcomeCount }}</span>
+                <span class="stat-lbl">Öğrenme Çıktısı</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if (infoSuccess()) {
+          <div class="success-banner">Bilgiler başarıyla kaydedildi.</div>
+        }
+
+        <!-- Ders Tanımı -->
+        <div class="content-section">
+          <div class="section-header">
+            <h3 class="section-label">Ders Tanımı</h3>
+            <button class="btn-ai" disabled title="Yakında">✦ AI ile Doldur</button>
+          </div>
+          <form (ngSubmit)="saveDescription()">
+            <textarea class="content-textarea" [formControl]="descForm.controls.description" rows="5"
+              placeholder="Bu derste işlenecek konular ve kapsamı hakkında genel bilgi…"></textarea>
+            <div class="section-footer">
+              <button type="submit" class="btn-primary" [disabled]="infoSaving()">
+                {{ infoSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Ders Amacı -->
+        <div class="content-section">
+          <div class="section-header">
+            <h3 class="section-label">Ders Amacı</h3>
+          </div>
+          <form (ngSubmit)="saveObjective()">
+            <textarea class="content-textarea" [formControl]="objForm.controls.objective" rows="4"
+              placeholder="Bu dersin öğrencilere kazandırmayı hedeflediği bilgi ve beceriler…"></textarea>
+            <div class="section-footer">
+              <button type="submit" class="btn-primary" [disabled]="infoSaving()">
+                {{ infoSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB: Ders Konuları ─────────────────────────────────────────────── -->
+    @if (activeTab() === 'topics') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Ders Konuları</h2>
+          <button class="btn-primary" (click)="openTopicForm()">+ Konu Ekle</button>
+        </div>
+
+        @if (topicFormVisible()) {
+          <div class="form-card">
+            <h3 class="form-title">{{ editingTopicId() ? 'Konuyu Düzenle' : 'Yeni Konu' }}</h3>
+            <form [formGroup]="topicForm" (ngSubmit)="saveTopicForm()" class="form-body">
+              <div class="field">
+                <label class="field-label">Konu Başlığı *</label>
+                <input class="field-input" formControlName="title" placeholder="örn. Fonksiyonlar ve Grafikler" />
+                @if (topicForm.controls.title.invalid && topicForm.controls.title.touched) {
+                  <span class="field-error">Başlık gereklidir.</span>
+                }
+              </div>
+              <div class="field">
+                <label class="field-label">Açıklama</label>
+                <textarea class="field-input" formControlName="description" rows="3" placeholder="İsteğe bağlı açıklama…"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-ghost" (click)="cancelTopicForm()">İptal</button>
+                <button type="submit" class="btn-primary" [disabled]="topicSaving()">
+                  {{ topicSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+
+        @if (topics().length === 0 && !topicFormVisible()) {
+          <div class="empty-panel"><p>Henüz konu eklenmemiş.</p></div>
+        } @else {
+          <div class="list">
+            @for (topic of topics(); track topic.id; let i = $index) {
+              <div class="list-item">
+                <div class="list-item-main">
+                  <span class="list-num">{{ i + 1 }}</span>
+                  <div class="list-texts">
+                    <span class="list-title">{{ topic.title }}</span>
+                    @if (topic.description) {
+                      <span class="list-desc">{{ topic.description }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="list-actions">
+                  <button class="icon-btn" title="Düzenle" (click)="openTopicForm(topic)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="icon-btn danger" title="Sil" (click)="deleteTopic(topic.id)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: Öğrenme Çıktıları ────────────────────────────────────────── -->
+    @if (activeTab() === 'outcomes') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Öğrenme Çıktıları</h2>
+          <button class="btn-primary" (click)="openOutcomeForm()">+ Çıktı Ekle</button>
+        </div>
+
+        @if (outcomeFormVisible()) {
+          <div class="form-card">
+            <h3 class="form-title">{{ editingOutcomeId() ? 'Çıktıyı Düzenle' : 'Yeni Öğrenme Çıktısı' }}</h3>
+            <form [formGroup]="outcomeForm" (ngSubmit)="saveOutcomeForm()" class="form-body">
+              <div class="field">
+                <label class="field-label">Öğrenme Çıktısı *</label>
+                <textarea class="field-input" formControlName="description" rows="3" placeholder="Bu dersi başarıyla tamamlayan öğrenci…"></textarea>
+                @if (outcomeForm.controls.description.invalid && outcomeForm.controls.description.touched) {
+                  <span class="field-error">Açıklama gereklidir.</span>
+                }
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">Bileşen</label>
+                  <select class="field-input" formControlName="component">
+                    <option value="">Seçiniz</option>
+                    @for (c of components; track c) {
+                      <option [value]="c">{{ c }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">Bloom Düzeyi</label>
+                  <select class="field-input" formControlName="bloomLevel">
+                    <option value="">Seçiniz</option>
+                    @for (level of bloomLevels; track level) {
+                      <option [value]="level">{{ level }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-ghost" (click)="cancelOutcomeForm()">İptal</button>
+                <button type="submit" class="btn-primary" [disabled]="outcomeSaving()">
+                  {{ outcomeSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+
+        @if (outcomes().length === 0 && !outcomeFormVisible()) {
+          <div class="empty-panel"><p>Henüz öğrenme çıktısı eklenmemiş.</p></div>
+        } @else {
+          <div class="outcomes-table-wrapper">
+            <table class="outcomes-table">
+              <thead>
+                <tr>
+                  <th>Kod</th>
+                  <th>Öğrenme Çıktısı</th>
+                  <th>Bileşen</th>
+                  <th>Bloom Düzeyi</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (outcome of outcomes(); track outcome.id) {
+                  <tr>
+                    <td><span class="lo-code">{{ outcome.code }}</span></td>
+                    <td class="outcome-text">{{ outcome.description }}</td>
+                    <td>
+                      @if (outcome.component) {
+                        <span class="lo-tag">{{ outcome.component }}</span>
+                      } @else { — }
+                    </td>
+                    <td>
+                      @if (outcome.bloomLevel) {
+                        <span class="lo-tag bloom">{{ outcome.bloomLevel }}</span>
+                      } @else { — }
+                    </td>
+                    <td>
+                      <div class="list-actions">
+                        <button class="icon-btn" title="Düzenle" (click)="openOutcomeForm(outcome)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="icon-btn danger" title="Sil" (click)="deleteOutcome(outcome.id)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: ÖÇ-PÇ Eşleştirme ────────────────────────────────────────── -->
+    @if (activeTab() === 'mapping') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">ÖÇ-PÇ Eşleştirme Matrisi</h2>
+        </div>
+        <div class="mapping-info">
+          Katkı düzeyi skalası: <strong>1</strong> Çok Düşük &nbsp;·&nbsp; <strong>2</strong> Düşük &nbsp;·&nbsp; <strong>3</strong> Orta &nbsp;·&nbsp; <strong>4</strong> Yüksek &nbsp;·&nbsp; <strong>5</strong> Çok Yüksek
+        </div>
+
+        @if (!matrix()) {
+          <div class="empty-panel"><p>Yükleniyor…</p></div>
+        } @else if (matrix()!.learningOutcomes.length === 0) {
+          <div class="empty-panel"><p>Eşleştirme için önce öğrenme çıktısı eklemelisiniz.</p></div>
+        } @else {
+          <div class="mapping-legend">
+            @for (l of contributionLabels; track l; let i = $index) {
+              <span class="legend-item" [class]="contributionClass(i)">{{ l }}</span>
+            }
+          </div>
+          <div class="matrix-wrapper">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th class="matrix-corner">ÖÇ \ PÇ</th>
+                  @for (po of matrix()!.programOutcomes; track po.id) {
+                    <th class="matrix-po-header" [title]="po.description">{{ po.code }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (lo of matrix()!.learningOutcomes; track lo.id) {
+                  <tr>
+                    <td class="matrix-lo-cell" [title]="lo.description">{{ lo.code }}</td>
+                    @for (po of matrix()!.programOutcomes; track po.id) {
+                      <td class="matrix-cell" [class]="contributionClass(getContribution(lo.id, po.id))"
+                          (click)="cycleContribution(lo.id, po.id)"
+                          [title]="contributionLabels[getContribution(lo.id, po.id)]">
+                        {{ getContribution(lo.id, po.id) === 0 ? '' : getContribution(lo.id, po.id) }}
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: Anket Soruları ───────────────────────────────────────────── -->
+    @if (activeTab() === 'survey') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Anket Soruları</h2>
+          <button class="btn-primary" (click)="openSurveyForm()">+ Soru Ekle</button>
+        </div>
+
+        @if (surveyFormVisible()) {
+          <div class="form-card">
+            <h3 class="form-title">{{ editingSurveyId() ? 'Soruyu Düzenle' : 'Yeni Anket Sorusu' }}</h3>
+            <form [formGroup]="surveyForm" (ngSubmit)="saveSurveyForm()" class="form-body">
+              <div class="field">
+                <label class="field-label">Soru Metni *</label>
+                <textarea class="field-input" formControlName="questionText" rows="3"
+                  placeholder="örn. Bu ders, program çıktılarına katkı sağlamaktadır."></textarea>
+                @if (surveyForm.controls.questionText.invalid && surveyForm.controls.questionText.touched) {
+                  <span class="field-error">Soru metni gereklidir.</span>
+                }
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">İlgili Öğrenme Çıktısı</label>
+                  <select class="field-input" formControlName="learningOutcomeId">
+                    <option [ngValue]="null">Seçiniz (isteğe bağlı)</option>
+                    @for (o of outcomes(); track o.id) {
+                      <option [ngValue]="o.id">{{ o.code }} – {{ o.description | slice:0:60 }}…</option>
+                    }
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">Durum</label>
+                  <div class="checkbox-row">
+                    <input type="checkbox" id="isActive" formControlName="isActive" />
+                    <label for="isActive" style="font-size:0.875rem; color: var(--c-ink)">Aktif</label>
+                  </div>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-ghost" (click)="cancelSurveyForm()">İptal</button>
+                <button type="submit" class="btn-primary" [disabled]="surveySaving()">
+                  {{ surveySaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+
+        @if (surveyQuestions().length === 0 && !surveyFormVisible()) {
+          <div class="empty-panel"><p>Henüz anket sorusu eklenmemiş.</p></div>
+        } @else {
+          <div class="list">
+            @for (q of surveyQuestions(); track q.id; let i = $index) {
+              <div class="list-item">
+                <div class="list-item-main">
+                  <span class="list-num">{{ i + 1 }}</span>
+                  <div class="list-texts">
+                    <span class="list-title">{{ q.questionText }}</span>
+                    <div class="lo-tags">
+                      @if (q.learningOutcomeCode) {
+                        <span class="lo-tag">{{ q.learningOutcomeCode }}</span>
+                      }
+                      <span class="lo-tag" [class.active-tag]="q.isActive" [class.inactive-tag]="!q.isActive">
+                        {{ q.isActive ? 'Aktif' : 'Pasif' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-actions">
+                  <button class="icon-btn" title="Düzenle" (click)="openSurveyForm(q)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="icon-btn danger" title="Sil" (click)="deleteSurveyQuestion(q.id)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

@@ -17,10 +17,17 @@ public class Course
     public string CourseType { get; set; } = "Teorik";
     public bool IsLocked { get; set; } = false;
 
+    // İçerik alanları
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
+
     public int? InstructorId { get; set; }
     public User? Instructor { get; set; }
 
     public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
     public ICollection<CourseTopic> CourseTopics { get; set; } = new List<CourseTopic>();
     public ICollection<LearningOutcome> LearningOutcomes { get; set; } = new List<LearningOutcome>();
+    public ICollection<CourseSurveyQuestion> SurveyQuestions { get; set; } = new List<CourseSurveyQuestion>();
+    public ICollection<Exam> Exams { get; set; } = new List<Exam>();
+    public ICollection<AssessmentComponent> AssessmentComponents { get; set; } = new List<AssessmentComponent>();
 }

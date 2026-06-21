@@ -12,6 +12,7 @@ export interface CourseDto {
   semester: string;
   credit: number;
   isMandatory: boolean;
+  classYear: number;
   instructorId: number | null;
   instructorName: string | null;
 }
@@ -28,5 +29,6 @@ export interface CreateCourseRequest {
   semester: string;
   credit: number;
   isMandatory: boolean;
+  classYear: number;
   instructorId: number | null;
 }

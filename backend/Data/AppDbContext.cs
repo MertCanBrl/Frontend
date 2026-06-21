@@ -19,6 +19,9 @@ public class AppDbContext : DbContext
     public DbSet<CourseTopic> CourseTopics => Set<CourseTopic>();
     public DbSet<LearningOutcome> LearningOutcomes => Set<LearningOutcome>();
     public DbSet<LOPOMapping> LOPOMappings => Set<LOPOMapping>();
+    public DbSet<CourseSurveyQuestion> CourseSurveyQuestions => Set<CourseSurveyQuestion>();
+    public DbSet<Exam> Exams => Set<Exam>();
+    public DbSet<AssessmentComponent> AssessmentComponents => Set<AssessmentComponent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -23,7 +23,7 @@ export class AdminDashboard implements OnInit {
   activeTab = signal<'users' | 'courses' | 'outcomes'>('users');
 
   users = signal<UserDto[]>([]);
-  courses = signal<{ id: number; code: string; name: string; semester: string; credit: number; isMandatory: boolean; instructorId: number | null; instructorName: string | null }[]>([]);
+  courses = signal<{ id: number; code: string; name: string; semester: string; credit: number; isMandatory: boolean; classYear: number; instructorId: number | null; instructorName: string | null }[]>([]);
 
   usersLoading = signal(false);
   coursesLoading = signal(false);
@@ -62,6 +62,7 @@ export class AdminDashboard implements OnInit {
     name: ['', [Validators.required]],
     semester: ['', [Validators.required]],
     credit: [3, [Validators.required, Validators.min(1), Validators.max(10)]],
+    classYear: [null as number | null, [Validators.required, Validators.min(1), Validators.max(4)]],
     isMandatory: [true],
     instructorId: [null as number | null],
   });
@@ -138,7 +139,7 @@ export class AdminDashboard implements OnInit {
   }
 
   openCourseForm(): void {
-    this.courseForm.reset({ credit: 3, isMandatory: true, instructorId: null });
+    this.courseForm.reset({ credit: 3, isMandatory: true, classYear: null, instructorId: null });
     this.courseFormError.set('');
     this.courseFormSuccess.set('');
     this.courseFormVisible.set(true);
@@ -162,6 +163,7 @@ export class AdminDashboard implements OnInit {
       semester: raw.semester!,
       credit: raw.credit!,
       isMandatory: raw.isMandatory!,
+      classYear: Number(raw.classYear!),
       instructorId: raw.instructorId ? Number(raw.instructorId) : null,
     };
 

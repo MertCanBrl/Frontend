@@ -90,6 +90,7 @@ public class AdminController : ControllerBase
                 Semester = c.Semester,
                 Credit = c.Credit,
                 IsMandatory = c.IsMandatory,
+                ClassYear = c.ClassYear,
                 InstructorId = c.InstructorId,
                 InstructorName = c.Instructor != null ? c.Instructor.FullName : null
             })
@@ -106,6 +107,9 @@ public class AdminController : ControllerBase
         if (codeExists)
             return Conflict("Bu ders kodu zaten kullanımda.");
 
+        if (request.ClassYear < 1 || request.ClassYear > 4)
+            return BadRequest("Sınıf 1 ile 4 arasında olmalıdır.");
+
         var course = new Course
         {
             Code = request.Code,
@@ -113,6 +117,7 @@ public class AdminController : ControllerBase
             Semester = request.Semester,
             Credit = request.Credit,
             IsMandatory = request.IsMandatory,
+            ClassYear = request.ClassYear,
             InstructorId = request.InstructorId
         };
 
@@ -129,6 +134,7 @@ public class AdminController : ControllerBase
             Semester = course.Semester,
             Credit = course.Credit,
             IsMandatory = course.IsMandatory,
+            ClassYear = course.ClassYear,
             InstructorId = course.InstructorId,
             InstructorName = course.Instructor?.FullName
         });
