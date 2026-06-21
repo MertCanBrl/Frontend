@@ -17,6 +17,8 @@ export interface InstructorCourseDto {
 export interface CourseDetailDto extends InstructorCourseDto {
   weeklyHours: number;
   instructorName: string | null;
+  description: string | null;
+  objective: string | null;
 }
 
 export interface UpdateCourseRequest {
@@ -28,6 +30,11 @@ export interface UpdateCourseRequest {
   akts: number;
   weeklyHours: number;
   isMandatory: boolean;
+}
+
+export interface UpdateCourseContentRequest {
+  description: string | null;
+  objective: string | null;
 }
 
 export interface CourseTopicDto {
@@ -83,4 +90,77 @@ export interface MappingMatrixDto {
   learningOutcomes: LearningOutcomeDto[];
   programOutcomes: ProgramOutcomeDto[];
   mappings: MappingCellDto[];
+}
+
+// Survey Questions
+export interface SurveyQuestionDto {
+  id: number;
+  courseId: number;
+  learningOutcomeId: number | null;
+  learningOutcomeCode: string | null;
+  questionText: string;
+  isActive: boolean;
+}
+
+export interface SaveSurveyQuestionRequest {
+  learningOutcomeId: number | null;
+  questionText: string;
+  isActive: boolean;
+}
+
+// Exams
+export interface ExamDto {
+  id: number;
+  examType: string;
+  examMethod: string;
+  date: string | null;
+  questionCount: number | null;
+  description: string | null;
+}
+
+export interface SaveExamRequest {
+  examType: string;
+  examMethod: string;
+  date: string | null;
+  questionCount: number | null;
+  description: string | null;
+}
+
+// Assessment Components
+export interface AssessmentComponentDto {
+  id: number;
+  name: string;
+  type: string;
+  weight: number;
+  date: string | null;
+  description: string | null;
+}
+
+export interface SaveAssessmentComponentRequest {
+  name: string;
+  type: string;
+  weight: number;
+  date: string | null;
+  description: string | null;
+}
+
+// Students
+export interface StudentCourseResultDto {
+  studentId: number;
+  studentNo: string;
+  fullName: string;
+  email: string | null;
+  midterm: number | null;
+  final: number | null;
+  makeUp: number | null;
+}
+
+// Risk Analysis
+export interface RiskAnalysisDto {
+  studentId: number;
+  studentNo: string;
+  fullName: string;
+  gradeAverage: number | null;
+  riskLevel: string;
+  suggestion: string;
 }

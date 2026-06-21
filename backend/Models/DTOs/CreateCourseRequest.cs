@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Backend.Models.DTOs;
 
 public class CreateCourseRequest
@@ -7,5 +9,7 @@ public class CreateCourseRequest
     public string Semester { get; set; } = string.Empty;
     public int Credit { get; set; }
     public bool IsMandatory { get; set; }
+    [Range(1, 4)]
+    public int ClassYear { get; set; }
     public int? InstructorId { get; set; }
 }

@@ -4,13 +4,13 @@ import { InstructorService } from '../../core/services/instructor.service';
 import { InstructorCourseDto } from '../../core/models/course.models';
 
 @Component({
-  selector: 'app-my-courses',
+  selector: 'app-course-contents',
   standalone: true,
   imports: [RouterLink],
-  templateUrl: './my-courses.html',
-  styleUrl: './my-courses.css',
+  templateUrl: './course-contents.html',
+  styleUrl: './course-contents.css',
 })
-export class MyCourses implements OnInit {
+export class CourseContents implements OnInit {
   private svc = inject(InstructorService);
 
   courses = signal<InstructorCourseDto[]>([]);
@@ -19,7 +19,7 @@ export class MyCourses implements OnInit {
   search = signal('');
 
   ngOnInit(): void {
-    this.svc.getMyCourses().subscribe({
+    this.svc.getCourseContents().subscribe({
       next: (c) => { this.courses.set(c); this.loading.set(false); },
       error: () => { this.hasError.set(true); this.loading.set(false); },
     });
@@ -35,9 +35,5 @@ export class MyCourses implements OnInit {
 
   onSearch(e: Event): void {
     this.search.set((e.target as HTMLInputElement).value);
-  }
-
-  classYearLabel(year: number): string {
-    return `${year}. Sınıf`;
   }
 }

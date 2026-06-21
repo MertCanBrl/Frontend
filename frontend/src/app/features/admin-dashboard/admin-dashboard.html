@@ -210,6 +210,20 @@
             </div>
 
             <div class="field">
+              <label>Sınıf</label>
+              <select formControlName="classYear">
+                <option [ngValue]="null">Sınıf seçiniz</option>
+                <option [ngValue]="1">1. Sınıf</option>
+                <option [ngValue]="2">2. Sınıf</option>
+                <option [ngValue]="3">3. Sınıf</option>
+                <option [ngValue]="4">4. Sınıf</option>
+              </select>
+              @if (courseForm.get('classYear')?.invalid && courseForm.get('classYear')?.touched) {
+                <span class="field-error">Sınıf zorunludur.</span>
+              }
+            </div>
+
+            <div class="field">
               <label>Kredi</label>
               <input type="number" formControlName="credit" min="1" max="10" />
               @if (courseForm.get('credit')?.invalid && courseForm.get('credit')?.touched) {
@@ -256,6 +270,7 @@
                 <th>Kod</th>
                 <th>Ders Adı</th>
                 <th>Dönem</th>
+                <th>Sınıf</th>
                 <th>Kredi</th>
                 <th>Tür</th>
                 <th>Öğretim Üyesi</th>
@@ -267,6 +282,7 @@
                   <td><span class="code-tag">{{ course.code }}</span></td>
                   <td class="td-name">{{ course.name }}</td>
                   <td class="td-muted">{{ course.semester }}</td>
+                  <td class="td-muted">{{ course.classYear }}. Sınıf</td>
                   <td class="td-muted">{{ course.credit }}</td>
                   <td>
                     <span class="badge" [class.badge-mandatory]="course.isMandatory" [class.badge-elective]="!course.isMandatory">

@@ -1,89 +1,74 @@
 <div class="page">
-  <!-- Header -->
   <div class="page-header">
-    <div>
-      <h1 class="page-title">Derslerim</h1>
+    <div class="header-info">
+      <h1 class="page-title">Ders İçerikleri</h1>
       <p class="page-desc">
-        @if (loading()) {
-          Yükleniyor…
-        } @else if (hasError()) {
-          Dersler yüklenemedi
-        } @else {
-          {{ courses().length }} ders atandı
-        }
+        Yalnızca sorumlu olduğunuz derslerin bilgilerini görüntüleyebilir ve düzenleyebilirsiniz.
+        Bu bölümde ders genel bilgileri, ders konuları, öğrenme çıktıları, program çıktıları
+        eşleştirmeleri ve anket soruları yönetilebilir.
       </p>
     </div>
-    <input
-      class="search-input"
-      type="search"
-      placeholder="Ders ara..."
-      [value]="search()"
-      (input)="onSearch($event)"
-    />
+    <div class="header-controls">
+      <input
+        class="search-input"
+        type="search"
+        placeholder="Ders adı veya kodu ile ara..."
+        [value]="search()"
+        (input)="onSearch($event)"
+      />
+    </div>
   </div>
 
-  <!-- Loading -->
+  @if (!loading() && !hasError()) {
+    <p class="result-count">
+      @if (search()) {
+        {{ filtered().length }} ders bulundu
+      } @else {
+        {{ courses().length }} ders atandı
+      }
+    </p>
+  }
+
   @if (loading()) {
     <div class="state-box">
       <div class="spinner-ring"></div>
       <span>Dersler yükleniyor…</span>
     </div>
-  }
-
-  <!-- Error -->
-  @else if (hasError()) {
+  } @else if (hasError()) {
     <div class="state-box error-box">
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
       <p>Dersler yüklenemedi. Lütfen yeniden giriş yapın.</p>
     </div>
-  }
-
-  <!-- No results -->
-  @else if (filtered().length === 0) {
+  } @else if (filtered().length === 0) {
     <div class="state-box">
       <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="color: #c8c4bc">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
       </svg>
       @if (search()) {
-        <p>"<strong>{{ search() }}</strong>" için sonuç bulunamadı.</p>
+        <p>"<strong>{{ search() }}</strong>" için ders bulunamadı.</p>
       } @else {
         <p>Henüz size atanmış ders yok.</p>
       }
     </div>
-  }
-
-  <!-- Course grid -->
-  @else {
+  } @else {
     <div class="course-grid">
       @for (course of filtered(); track course.id) {
-        <div class="course-card" [class.locked]="course.isLocked">
-
-          <!-- Top row: code + year badge -->
+        <div class="course-card">
           <div class="card-top">
             <span class="course-code">{{ course.code }}</span>
-            <span class="year-badge">{{ classYearLabel(course.classYear) }}</span>
+            <span class="year-badge">{{ course.classYear }}. Sınıf</span>
           </div>
-
-          <!-- Course name -->
           <h2 class="course-name">{{ course.name }}</h2>
-
-          <!-- Info badges -->
           <div class="badge-row">
             <span class="badge badge-credit">{{ course.credit }} Kredi</span>
             <span class="badge badge-semester">{{ course.semester }}</span>
-            <span
-              class="badge"
-              [class.badge-mandatory]="course.isMandatory"
-              [class.badge-elective]="!course.isMandatory"
-            >
+            <span class="badge" [class.badge-mandatory]="course.isMandatory" [class.badge-elective]="!course.isMandatory">
               {{ course.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
             </span>
           </div>
-
-          <!-- Detail link -->
-          <a class="detail-link" [routerLink]="['/instructor/course', course.id]">
+          <a class="detail-link" [routerLink]="['/instructor/course-contents', course.id]">
             Detayları Gör
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="9 18 15 12 9 6"/>

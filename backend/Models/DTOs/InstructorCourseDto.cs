@@ -21,6 +21,8 @@ public class CourseDetailDto : InstructorCourseDto
 {
     public int WeeklyHours { get; set; }
     public string? InstructorName { get; set; }
+    public string? Description { get; set; }
+    public string? Objective { get; set; }
 }
 
 public class UpdateCourseRequest

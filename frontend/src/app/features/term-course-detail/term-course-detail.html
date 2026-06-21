@@ -1,0 +1,438 @@
+<div class="page">
+  @if (loading()) {
+    <div class="loading-state">Yükleniyor…</div>
+  } @else if (!course()) {
+    <div class="loading-state">Ders bulunamadı.</div>
+  } @else {
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a routerLink="/instructor/term-courses" class="bc-link">Dönemdeki Dersler</a>
+      <span class="bc-sep">›</span>
+      <span class="bc-current">{{ course()!.code }} – {{ course()!.name }}</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <span class="course-code-badge">{{ course()!.code }}</span>
+        <h1 class="page-title">{{ course()!.name }}</h1>
+        <div class="header-badges">
+          <span class="badge badge-year">{{ course()!.classYear }}. Sınıf</span>
+          <span class="badge badge-credit">{{ course()!.credit }} Kredi</span>
+          <span class="badge badge-semester">{{ course()!.semester }}</span>
+          <span class="badge" [class.badge-mandatory]="course()!.isMandatory" [class.badge-elective]="!course()!.isMandatory">
+            {{ course()!.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn" [class.active]="activeTab()==='info'" (click)="setTab('info')">Genel Bilgiler</button>
+      <button class="tab-btn" [class.active]="activeTab()==='students'" (click)="setTab('students')">Öğrenciler</button>
+      <button class="tab-btn" [class.active]="activeTab()==='exams'" (click)="setTab('exams')">Sınavlar</button>
+      <button class="tab-btn" [class.active]="activeTab()==='components'" (click)="setTab('components')">Diğer Ölçme Bileşenleri</button>
+      <button class="tab-btn" [class.active]="activeTab()==='attendance'" (click)="setTab('attendance')">Devam</button>
+      <button class="tab-btn" [class.active]="activeTab()==='risk'" (click)="setTab('risk')">Risk Analizi</button>
+      <button class="tab-btn" [class.active]="activeTab()==='outcomes'" (click)="setTab('outcomes')">ÖÇ Durum Tablosu</button>
+      <button class="tab-btn" [class.active]="activeTab()==='reports'" (click)="setTab('reports')">Dönem Sonu Raporları</button>
+    </div>
+
+    <!-- ── TAB: Genel Bilgiler ────────────────────────────────────────────── -->
+    @if (activeTab() === 'info') {
+      <div class="tab-panel">
+        <div class="info-grid">
+          <div class="info-card">
+            <h3 class="info-card-title">Ders Bilgileri</h3>
+            <div class="info-rows">
+              <div class="info-row"><span class="info-label">Ders Kodu</span><span class="info-val mono">{{ course()!.code }}</span></div>
+              <div class="info-row"><span class="info-label">Ders Adı</span><span class="info-val">{{ course()!.name }}</span></div>
+              <div class="info-row"><span class="info-label">Bölüm</span><span class="info-val">{{ course()!.department || '—' }}</span></div>
+              <div class="info-row"><span class="info-label">Sınıf</span><span class="info-val">{{ course()!.classYear }}. Sınıf</span></div>
+            </div>
+          </div>
+          <div class="info-card">
+            <h3 class="info-card-title">Dönem Bilgileri</h3>
+            <div class="info-rows">
+              <div class="info-row"><span class="info-label">Dönem</span><span class="info-val">{{ course()!.semester }}</span></div>
+              <div class="info-row"><span class="info-label">Ders Tipi</span><span class="info-val">{{ course()!.courseType || '—' }}</span></div>
+              <div class="info-row">
+                <span class="info-label">Zorunluluk</span>
+                <span class="info-val">
+                  <span class="badge" [class.badge-mandatory]="course()!.isMandatory" [class.badge-elective]="!course()!.isMandatory">
+                    {{ course()!.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="info-card">
+            <h3 class="info-card-title">Kredi & AKTS</h3>
+            <div class="info-rows">
+              <div class="info-row"><span class="info-label">Kredi</span><span class="info-val">{{ course()!.credit }}</span></div>
+              <div class="info-row"><span class="info-label">AKTS</span><span class="info-val">{{ course()!.akts || '—' }}</span></div>
+              <div class="info-row"><span class="info-label">Haftalık Saat</span><span class="info-val">{{ course()!.weeklyHours || '—' }}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB: Öğrenciler ───────────────────────────────────────────────── -->
+    @if (activeTab() === 'students') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Öğrenciler</h2>
+          <button class="btn-secondary" (click)="loadStudents()">Yenile</button>
+        </div>
+
+        @if (studentsLoading()) {
+          <div class="loading-small">Öğrenciler yükleniyor…</div>
+        } @else if (students().length === 0) {
+          <div class="empty-panel"><p>Bu derse kayıtlı öğrenci bulunamadı.</p></div>
+        } @else {
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Öğrenci No</th>
+                  <th>Ad Soyad</th>
+                  <th>E-posta</th>
+                  <th class="num-col">Vize</th>
+                  <th class="num-col">Final</th>
+                  <th class="num-col">Bütünleme</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of students(); track s.studentId) {
+                  <tr>
+                    <td><span class="student-no">{{ s.studentNo }}</span></td>
+                    <td class="student-name">{{ s.fullName }}</td>
+                    <td class="student-email">{{ s.email || '—' }}</td>
+                    <td class="num-col">
+                      <span [class]="s.midterm !== null ? gradeClass(s.midterm!) : 'grade-empty'">
+                        {{ s.midterm !== null ? s.midterm : '—' }}
+                      </span>
+                    </td>
+                    <td class="num-col">
+                      <span [class]="s.final !== null ? gradeClass(s.final!) : 'grade-empty'">
+                        {{ s.final !== null ? s.final : '—' }}
+                      </span>
+                    </td>
+                    <td class="num-col">
+                      <span [class]="s.makeUp !== null ? gradeClass(s.makeUp!) : 'grade-empty'">
+                        {{ s.makeUp !== null ? s.makeUp : '—' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="table-footer">Toplam {{ students().length }} öğrenci</p>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: Sınavlar ─────────────────────────────────────────────────── -->
+    @if (activeTab() === 'exams') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Sınavlar</h2>
+          <button class="btn-primary" (click)="openExamForm()">+ Yeni Sınav</button>
+        </div>
+
+        @if (examFormVisible()) {
+          <div class="form-card">
+            <h3 class="form-title">{{ editingExamId() ? 'Sınavı Düzenle' : 'Yeni Sınav Ekle' }}</h3>
+            <form [formGroup]="examForm" (ngSubmit)="saveExamForm()" class="form-body">
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">Sınav Türü *</label>
+                  <select class="field-input" formControlName="examType">
+                    <option value="">Seçiniz</option>
+                    @for (t of examTypes; track t) { <option [value]="t">{{ t }}</option> }
+                  </select>
+                  @if (examForm.controls.examType.invalid && examForm.controls.examType.touched) {
+                    <span class="field-error">Sınav türü gereklidir.</span>
+                  }
+                </div>
+                <div class="field">
+                  <label class="field-label">Sınav Tipi *</label>
+                  <select class="field-input" formControlName="examMethod">
+                    <option value="">Seçiniz</option>
+                    @for (m of examMethods; track m) { <option [value]="m">{{ m }}</option> }
+                  </select>
+                  @if (examForm.controls.examMethod.invalid && examForm.controls.examMethod.touched) {
+                    <span class="field-error">Sınav tipi gereklidir.</span>
+                  }
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">Sınav Tarihi</label>
+                  <input type="date" class="field-input" formControlName="date" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Soru Sayısı</label>
+                  <input type="number" class="field-input" formControlName="questionCount" placeholder="örn. 20" min="1" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">Açıklama</label>
+                <textarea class="field-input" formControlName="description" rows="2" placeholder="İsteğe bağlı not…"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-ghost" (click)="cancelExamForm()">İptal</button>
+                <button type="submit" class="btn-primary" [disabled]="examSaving()">
+                  {{ examSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+
+        @if (exams().length === 0 && !examFormVisible()) {
+          <div class="empty-panel"><p>Henüz sınav tanımlanmamış.</p></div>
+        } @else {
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tür</th>
+                  <th>Tip</th>
+                  <th>Tarih</th>
+                  <th>Soru Sayısı</th>
+                  <th>Açıklama</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (exam of exams(); track exam.id) {
+                  <tr>
+                    <td><span class="type-badge">{{ exam.examType }}</span></td>
+                    <td>{{ exam.examMethod }}</td>
+                    <td>{{ exam.date ? (exam.date | slice:0:10) : '—' }}</td>
+                    <td class="num-col">{{ exam.questionCount ?? '—' }}</td>
+                    <td class="desc-cell">{{ exam.description || '—' }}</td>
+                    <td>
+                      <div class="list-actions">
+                        <button class="icon-btn" title="Düzenle" (click)="openExamForm(exam)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="icon-btn danger" title="Sil" (click)="deleteExam(exam.id)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: Diğer Ölçme Bileşenleri ────────────────────────────────── -->
+    @if (activeTab() === 'components') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Diğer Ölçme Bileşenleri</h2>
+          <button class="btn-primary" (click)="openComponentForm()">+ Bileşen Ekle</button>
+        </div>
+
+        @if (totalWeight > 100) {
+          <div class="warning-banner">Toplam ağırlık %{{ totalWeight }} — 100%'ü aşmamalıdır.</div>
+        }
+
+        @if (componentFormVisible()) {
+          <div class="form-card">
+            <h3 class="form-title">{{ editingComponentId() ? 'Bileşeni Düzenle' : 'Yeni Bileşen Ekle' }}</h3>
+            <form [formGroup]="componentForm" (ngSubmit)="saveComponentForm()" class="form-body">
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">Bileşen Adı *</label>
+                  <input class="field-input" formControlName="name" placeholder="örn. Dönem Ödevi" />
+                  @if (componentForm.controls.name.invalid && componentForm.controls.name.touched) {
+                    <span class="field-error">Ad gereklidir.</span>
+                  }
+                </div>
+                <div class="field">
+                  <label class="field-label">Tür *</label>
+                  <select class="field-input" formControlName="type">
+                    <option value="">Seçiniz</option>
+                    @for (t of componentTypes; track t) { <option [value]="t">{{ t }}</option> }
+                  </select>
+                  @if (componentForm.controls.type.invalid && componentForm.controls.type.touched) {
+                    <span class="field-error">Tür gereklidir.</span>
+                  }
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">Ağırlık (%) *</label>
+                  <input type="number" class="field-input" formControlName="weight" placeholder="örn. 20" min="0" max="100" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Tarih</label>
+                  <input type="date" class="field-input" formControlName="date" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">Açıklama</label>
+                <textarea class="field-input" formControlName="description" rows="2" placeholder="İsteğe bağlı…"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-ghost" (click)="cancelComponentForm()">İptal</button>
+                <button type="submit" class="btn-primary" [disabled]="componentSaving()">
+                  {{ componentSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+
+        @if (components().length === 0 && !componentFormVisible()) {
+          <div class="empty-panel"><p>Henüz ölçme bileşeni eklenmemiş.</p></div>
+        } @else {
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Bileşen Adı</th>
+                  <th>Tür</th>
+                  <th class="num-col">Ağırlık %</th>
+                  <th>Tarih</th>
+                  <th>Açıklama</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of components(); track c.id) {
+                  <tr>
+                    <td class="component-name">{{ c.name }}</td>
+                    <td><span class="type-badge">{{ c.type }}</span></td>
+                    <td class="num-col"><strong>%{{ c.weight }}</strong></td>
+                    <td>{{ c.date ? (c.date | slice:0:10) : '—' }}</td>
+                    <td class="desc-cell">{{ c.description || '—' }}</td>
+                    <td>
+                      <div class="list-actions">
+                        <button class="icon-btn" title="Düzenle" (click)="openComponentForm(c)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="icon-btn danger" title="Sil" (click)="deleteComponent(c.id)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2"><strong>Toplam</strong></td>
+                  <td class="num-col" [class.over-weight]="totalWeight > 100"><strong>%{{ totalWeight }}</strong></td>
+                  <td colspan="3"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: Devam ────────────────────────────────────────────────────── -->
+    @if (activeTab() === 'attendance') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Devam Takibi</h2>
+        </div>
+        <div class="dev-notice">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Bu bölüm geliştirme aşamasındadır. Yakında devamsızlık kayıtları girilebilecek ve takip edilebilecektir.
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB: Risk Analizi ─────────────────────────────────────────────── -->
+    @if (activeTab() === 'risk') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Risk Analizi</h2>
+          <button class="btn-secondary" (click)="loadRisk()">Yenile</button>
+        </div>
+
+        @if (riskLoading()) {
+          <div class="loading-small">Analiz yükleniyor…</div>
+        } @else if (riskData().length === 0) {
+          <div class="empty-panel"><p>Risk verisi hesaplanamadı. Öğrenci notlarını kontrol edin.</p></div>
+        } @else {
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Öğrenci No</th>
+                  <th>Ad Soyad</th>
+                  <th class="num-col">Not Ort.</th>
+                  <th>Risk Seviyesi</th>
+                  <th>Öneri</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of riskData(); track r.studentId) {
+                  <tr>
+                    <td><span class="student-no">{{ r.studentNo }}</span></td>
+                    <td>{{ r.fullName }}</td>
+                    <td class="num-col">{{ r.gradeAverage !== null ? (r.gradeAverage | number:'1.1-1') : '—' }}</td>
+                    <td><span class="risk-badge" [class]="riskClass(r.riskLevel)">{{ r.riskLevel }}</span></td>
+                    <td class="desc-cell">{{ r.suggestion }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB: ÖÇ Durum Tablosu ────────────────────────────────────────── -->
+    @if (activeTab() === 'outcomes') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">ÖÇ Durum Tablosu</h2>
+        </div>
+        <div class="dev-notice">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Bu bölüm geliştirme aşamasındadır. Öğrenme çıktılarının başarı durumu ve ölçme araçlarıyla ilişkilendirme yakında eklenecektir.
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB: Dönem Sonu Raporları ─────────────────────────────────────── -->
+    @if (activeTab() === 'reports') {
+      <div class="tab-panel">
+        <div class="section-toolbar">
+          <h2 class="section-title">Dönem Sonu Raporları</h2>
+        </div>
+        <div class="reports-grid">
+          @for (report of reportCards; track report.title) {
+            <div class="report-card">
+              <div class="report-icon">{{ report.icon }}</div>
+              <div class="report-info">
+                <h3 class="report-title">{{ report.title }}</h3>
+                <p class="report-desc">{{ report.desc }}</p>
+              </div>
+              <button class="btn-ghost report-btn" disabled>PDF İndir</button>
+            </div>
+          }
+        </div>
+        <div class="dev-notice">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Rapor oluşturma özelliği geliştirme aşamasındadır.
+        </div>
+      </div>
+    }
+  }
+</div>

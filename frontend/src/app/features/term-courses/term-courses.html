@@ -1,0 +1,74 @@
+<div class="page">
+  <div class="page-header">
+    <div class="header-info">
+      <h1 class="page-title">Dönemdeki Dersler</h1>
+      <p class="page-desc">
+        İlgili dönemlerde yürüttüğünüz dersleri görüntüleyebilirsiniz. Bu bölümde devamsızlık girişi,
+        sınav ve diğer ölçme bileşenlerinin tanımlanması, öğrencilerin ölçme sonuçlarının güncellenmesi
+        ve dönem sonu raporlarının oluşturulması işlemleri yapılabilir.
+      </p>
+    </div>
+    <div class="header-controls">
+      @if (semesters().length > 0) {
+        <div class="semester-select-wrapper">
+          <label class="select-label">Dönem Seçin</label>
+          <select class="semester-select" [value]="selectedSemester()" (change)="onSemesterChange($event)">
+            @for (sem of semesters(); track sem) {
+              <option [value]="sem">{{ sem }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="state-box">
+      <div class="spinner-ring"></div>
+      <span>Dersler yükleniyor…</span>
+    </div>
+  } @else if (hasError()) {
+    <div class="state-box error-box">
+      <p>Dersler yüklenemedi. Lütfen yeniden giriş yapın.</p>
+    </div>
+  } @else if (semesters().length === 0) {
+    <div class="state-box">
+      <p>Henüz atanmış döneminiz bulunmuyor.</p>
+    </div>
+  } @else if (courses().length === 0) {
+    <div class="state-box">
+      <p>{{ selectedSemester() }} döneminde ders bulunmuyor.</p>
+    </div>
+  } @else {
+    <div class="semester-label-row">
+      <span class="semester-badge">{{ selectedSemester() }}</span>
+      <span class="course-count">{{ courses().length }} ders</span>
+    </div>
+    <div class="course-grid">
+      @for (course of courses(); track course.id) {
+        <div class="course-card">
+          <div class="card-top">
+            <span class="course-code">{{ course.code }}</span>
+            <span class="year-badge">{{ course.classYear }}. Sınıf</span>
+          </div>
+          <h2 class="course-name">{{ course.name }}</h2>
+          @if (course.department) {
+            <p class="course-dept">{{ course.department }}</p>
+          }
+          <div class="badge-row">
+            <span class="badge badge-credit">{{ course.credit }} Kredi</span>
+            <span class="badge" [class.badge-mandatory]="course.isMandatory" [class.badge-elective]="!course.isMandatory">
+              {{ course.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
+            </span>
+          </div>
+          <a class="detail-link" [routerLink]="['/instructor/term-courses', course.id]">
+            Detayları Gör
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+      }
+    </div>
+  }
+</div>

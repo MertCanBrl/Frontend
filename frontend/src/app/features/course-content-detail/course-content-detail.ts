@@ -1,0 +1,300 @@
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { SlicePipe } from '@angular/common';
+import { InstructorService } from '../../core/services/instructor.service';
+import {
+  CourseDetailDto, CourseTopicDto, LearningOutcomeDto,
+  MappingMatrixDto, MappingCellDto,
+  SurveyQuestionDto
+} from '../../core/models/course.models';
+
+type Tab = 'info' | 'topics' | 'outcomes' | 'mapping' | 'survey';
+
+@Component({
+  selector: 'app-course-content-detail',
+  standalone: true,
+  imports: [RouterLink, ReactiveFormsModule, SlicePipe],
+  templateUrl: './course-content-detail.html',
+  styleUrl: './course-content-detail.css',
+})
+export class CourseContentDetail implements OnInit {
+  private route = inject(ActivatedRoute);
+  private svc = inject(InstructorService);
+  private fb = inject(FormBuilder);
+
+  courseId = signal(0);
+  course = signal<CourseDetailDto | null>(null);
+  loading = signal(true);
+  activeTab = signal<Tab>('info');
+
+  // General info forms
+  infoSaving = signal(false);
+  infoSuccess = signal(false);
+  descForm = this.fb.group({ description: [''] });
+  objForm = this.fb.group({ objective: [''] });
+
+  // Topics
+  topics = signal<CourseTopicDto[]>([]);
+  topicFormVisible = signal(false);
+  editingTopicId = signal<number | null>(null);
+  topicSaving = signal(false);
+  topicForm = this.fb.group({
+    title: ['', Validators.required],
+    description: [''],
+  });
+
+  // Learning Outcomes
+  outcomes = signal<LearningOutcomeDto[]>([]);
+  outcomeFormVisible = signal(false);
+  editingOutcomeId = signal<number | null>(null);
+  outcomeSaving = signal(false);
+  bloomLevels = ['Hatırlama', 'Anlama', 'Uygulama', 'Analiz', 'Değerlendirme', 'Yaratma'];
+  components = ['Bilgi', 'Beceri', 'Yetkinlik'];
+  outcomeForm = this.fb.group({
+    description: ['', Validators.required],
+    bloomLevel: [''],
+    component: [''],
+  });
+
+  // LO-PO Mapping
+  matrix = signal<MappingMatrixDto | null>(null);
+  mappingMap = computed(() => {
+    const m = new Map<string, number>();
+    this.matrix()?.mappings.forEach(c => m.set(`${c.learningOutcomeId}-${c.programOutcomeId}`, c.contributionLevel));
+    return m;
+  });
+  readonly contributionLabels = ['—', '1 Çok Düşük', '2 Düşük', '3 Orta', '4 Yüksek', '5 Çok Yüksek'];
+
+  // Survey Questions
+  surveyQuestions = signal<SurveyQuestionDto[]>([]);
+  surveyFormVisible = signal(false);
+  editingSurveyId = signal<number | null>(null);
+  surveySaving = signal(false);
+  surveyForm = this.fb.group({
+    questionText: ['', Validators.required],
+    learningOutcomeId: [null as number | null],
+    isActive: [true],
+  });
+
+  ngOnInit(): void {
+    const id = Number(this.route.snapshot.paramMap.get('courseId'));
+    this.courseId.set(id);
+    this.loadCourse();
+  }
+
+  loadCourse(): void {
+    this.loading.set(true);
+    this.svc.getCourseContentDetail(this.courseId()).subscribe({
+      next: (c) => {
+        this.course.set(c);
+        this.loading.set(false);
+        this.descForm.patchValue({ description: c.description ?? '' });
+        this.objForm.patchValue({ objective: c.objective ?? '' });
+      },
+      error: () => this.loading.set(false),
+    });
+  }
+
+  setTab(tab: Tab): void {
+    this.activeTab.set(tab);
+    if (tab === 'topics' && this.topics().length === 0) this.loadTopics();
+    if (tab === 'outcomes' && this.outcomes().length === 0) this.loadOutcomes();
+    if (tab === 'mapping') this.loadMatrix();
+    if (tab === 'survey' && this.surveyQuestions().length === 0) this.loadSurveyQuestions();
+  }
+
+  // ── General Info ──────────────────────────────────────────────────────────
+
+  saveDescription(): void {
+    this.infoSaving.set(true);
+    const desc = this.descForm.getRawValue().description ?? null;
+    const obj = this.course()?.objective ?? null;
+    this.svc.updateCourseContentInfo(this.courseId(), { description: desc, objective: obj }).subscribe({
+      next: () => {
+        this.course.update(c => c ? { ...c, description: desc } : c);
+        this.infoSaving.set(false);
+        this.flashSuccess();
+      },
+      error: () => this.infoSaving.set(false),
+    });
+  }
+
+  saveObjective(): void {
+    this.infoSaving.set(true);
+    const obj = this.objForm.getRawValue().objective ?? null;
+    const desc = this.course()?.description ?? null;
+    this.svc.updateCourseContentInfo(this.courseId(), { description: desc, objective: obj }).subscribe({
+      next: () => {
+        this.course.update(c => c ? { ...c, objective: obj } : c);
+        this.infoSaving.set(false);
+        this.flashSuccess();
+      },
+      error: () => this.infoSaving.set(false),
+    });
+  }
+
+  private flashSuccess(): void {
+    this.infoSuccess.set(true);
+    setTimeout(() => this.infoSuccess.set(false), 2500);
+  }
+
+  // ── Topics ────────────────────────────────────────────────────────────────
+
+  loadTopics(): void {
+    this.svc.getTopics(this.courseId()).subscribe(t => this.topics.set(t));
+  }
+
+  openTopicForm(topic?: CourseTopicDto): void {
+    this.editingTopicId.set(topic?.id ?? null);
+    this.topicForm.reset({ title: topic?.title ?? '', description: topic?.description ?? '' });
+    this.topicFormVisible.set(true);
+  }
+
+  cancelTopicForm(): void { this.topicFormVisible.set(false); this.editingTopicId.set(null); }
+
+  saveTopicForm(): void {
+    if (this.topicForm.invalid) { this.topicForm.markAllAsTouched(); return; }
+    this.topicSaving.set(true);
+    const raw = this.topicForm.getRawValue();
+    const id = this.editingTopicId();
+    if (id) {
+      const existing = this.topics().find(t => t.id === id)!;
+      this.svc.updateTopic(this.courseId(), id, { title: raw.title!, description: raw.description || null, orderNumber: existing.orderNumber }).subscribe({
+        next: () => { this.topics.update(ts => ts.map(t => t.id === id ? { ...t, title: raw.title!, description: raw.description || null } : t)); this.cancelTopicForm(); this.topicSaving.set(false); },
+        error: () => this.topicSaving.set(false),
+      });
+    } else {
+      const nextOrder = this.topics().length + 1;
+      this.svc.addTopic(this.courseId(), { title: raw.title!, description: raw.description || null, orderNumber: nextOrder }).subscribe({
+        next: (t) => { this.topics.update(ts => [...ts, t]); this.cancelTopicForm(); this.topicSaving.set(false); },
+        error: () => this.topicSaving.set(false),
+      });
+    }
+  }
+
+  deleteTopic(id: number): void {
+    if (!confirm('Bu konuyu silmek istiyor musunuz?')) return;
+    this.svc.deleteTopic(this.courseId(), id).subscribe(() =>
+      this.topics.update(ts => ts.filter(t => t.id !== id)));
+  }
+
+  // ── Learning Outcomes ─────────────────────────────────────────────────────
+
+  loadOutcomes(): void {
+    this.svc.getLearningOutcomes(this.courseId()).subscribe(o => this.outcomes.set(o));
+  }
+
+  openOutcomeForm(outcome?: LearningOutcomeDto): void {
+    this.editingOutcomeId.set(outcome?.id ?? null);
+    this.outcomeForm.reset({ description: outcome?.description ?? '', bloomLevel: outcome?.bloomLevel ?? '', component: outcome?.component ?? '' });
+    this.outcomeFormVisible.set(true);
+  }
+
+  cancelOutcomeForm(): void { this.outcomeFormVisible.set(false); this.editingOutcomeId.set(null); }
+
+  saveOutcomeForm(): void {
+    if (this.outcomeForm.invalid) { this.outcomeForm.markAllAsTouched(); return; }
+    this.outcomeSaving.set(true);
+    const raw = this.outcomeForm.getRawValue();
+    const req = { description: raw.description!, bloomLevel: raw.bloomLevel || null, component: raw.component || null };
+    const id = this.editingOutcomeId();
+    if (id) {
+      this.svc.updateLearningOutcome(this.courseId(), id, req).subscribe({
+        next: () => { this.outcomes.update(os => os.map(o => o.id === id ? { ...o, ...req } : o)); this.cancelOutcomeForm(); this.outcomeSaving.set(false); },
+        error: () => this.outcomeSaving.set(false),
+      });
+    } else {
+      this.svc.addLearningOutcome(this.courseId(), req).subscribe({
+        next: (o) => { this.outcomes.update(os => [...os, o]); this.cancelOutcomeForm(); this.outcomeSaving.set(false); },
+        error: () => this.outcomeSaving.set(false),
+      });
+    }
+  }
+
+  deleteOutcome(id: number): void {
+    if (!confirm('Bu öğrenme çıktısını silmek istiyor musunuz?')) return;
+    this.svc.deleteLearningOutcome(this.courseId(), id).subscribe(() =>
+      this.outcomes.update(os => os.filter(o => o.id !== id)));
+  }
+
+  // ── LO-PO Mapping ─────────────────────────────────────────────────────────
+
+  loadMatrix(): void {
+    this.svc.getMatrix(this.courseId()).subscribe(m => this.matrix.set(m));
+  }
+
+  getContribution(loId: number, poId: number): number {
+    return this.mappingMap().get(`${loId}-${poId}`) ?? 0;
+  }
+
+  cycleContribution(loId: number, poId: number): void {
+    const current = this.getContribution(loId, poId);
+    const next = (current + 1) % 6;
+    const cell: MappingCellDto = { learningOutcomeId: loId, programOutcomeId: poId, contributionLevel: next };
+    this.svc.updateMappingCell(this.courseId(), cell).subscribe(() => {
+      this.matrix.update(m => {
+        if (!m) return m;
+        const existing = m.mappings.find(c => c.learningOutcomeId === loId && c.programOutcomeId === poId);
+        if (existing) { existing.contributionLevel = next; return { ...m, mappings: [...m.mappings] }; }
+        return { ...m, mappings: [...m.mappings, cell] };
+      });
+    });
+  }
+
+  contributionClass(level: number): string {
+    return ['level-0', 'level-1', 'level-2', 'level-3', 'level-4', 'level-5'][level] ?? 'level-0';
+  }
+
+  // ── Survey Questions ──────────────────────────────────────────────────────
+
+  loadSurveyQuestions(): void {
+    this.svc.getSurveyQuestions(this.courseId()).subscribe(q => this.surveyQuestions.set(q));
+  }
+
+  openSurveyForm(question?: SurveyQuestionDto): void {
+    this.editingSurveyId.set(question?.id ?? null);
+    this.surveyForm.reset({
+      questionText: question?.questionText ?? '',
+      learningOutcomeId: question?.learningOutcomeId ?? null,
+      isActive: question?.isActive ?? true,
+    });
+    this.surveyFormVisible.set(true);
+  }
+
+  cancelSurveyForm(): void { this.surveyFormVisible.set(false); this.editingSurveyId.set(null); }
+
+  saveSurveyForm(): void {
+    if (this.surveyForm.invalid) { this.surveyForm.markAllAsTouched(); return; }
+    this.surveySaving.set(true);
+    const raw = this.surveyForm.getRawValue();
+    const req = {
+      questionText: raw.questionText!,
+      learningOutcomeId: raw.learningOutcomeId ?? null,
+      isActive: raw.isActive ?? true,
+    };
+    const id = this.editingSurveyId();
+    if (id) {
+      this.svc.updateSurveyQuestion(this.courseId(), id, req).subscribe({
+        next: () => {
+          const lo = this.outcomes().find(o => o.id === req.learningOutcomeId);
+          this.surveyQuestions.update(qs => qs.map(q => q.id === id ? { ...q, ...req, learningOutcomeCode: lo?.code ?? null } : q));
+          this.cancelSurveyForm();
+          this.surveySaving.set(false);
+        },
+        error: () => this.surveySaving.set(false),
+      });
+    } else {
+      this.svc.addSurveyQuestion(this.courseId(), req).subscribe({
+        next: (q) => { this.surveyQuestions.update(qs => [...qs, q]); this.cancelSurveyForm(); this.surveySaving.set(false); },
+        error: () => this.surveySaving.set(false),
+      });
+    }
+  }
+
+  deleteSurveyQuestion(id: number): void {
+    if (!confirm('Bu soruyu silmek istiyor musunuz?')) return;
+    this.svc.deleteSurveyQuestion(this.courseId(), id).subscribe(() =>
+      this.surveyQuestions.update(qs => qs.filter(q => q.id !== id)));
+  }
+}
