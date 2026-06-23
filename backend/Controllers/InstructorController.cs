@@ -504,10 +504,67 @@ public class InstructorController : ControllerBase
         return Ok(result);
     }
 
+    // Statistics (Dönem Sonu Raporları)
+
+    [HttpGet("term-courses/{courseId:int}/statistics")]
+    public async Task<ActionResult<CourseStatisticsDto>> GetStatistics(int courseId)
+    {
+        if (!await OwnsCourse(courseId)) return Forbid();
+
+        var enrollments = await _context.Enrollments
+            .Where(e => e.CourseId == courseId)
+            .ToListAsync();
+
+        // Her öğrenci için başarı notunu hesapla (Vize yoksa "not girilmemiş")
+        var successScores = new List<decimal>();
+        foreach (var e in enrollments)
+        {
+            var score = ComputeSuccessScore(e);
+            if (score.HasValue) successScores.Add(score.Value);
+        }
+
+        // Kova tanımları (alt sınır dahil, üst sınır dahil)
+        var buckets = new (string Label, decimal Min, decimal Max)[]
+        {
+            ("0-49",   0,  49.999m),
+            ("50-59",  50, 59.999m),
+            ("60-69",  60, 69.999m),
+            ("70-84",  70, 84.999m),
+            ("85-100", 85, 100m),
+        };
+
+        var distribution = buckets.Select(b => new GradeBucketDto
+        {
+            Label = b.Label,
+            Count = successScores.Count(s => s >= b.Min && s <= b.Max)
+        }).ToList();
+
+        var dto = new CourseStatisticsDto
+        {
+            TotalStudents = enrollments.Count,
+            GradedStudents = successScores.Count,
+            ClassAverage = successScores.Any() ? Math.Round(successScores.Average(), 2) : null,
+            PassCount = successScores.Count(s => s >= 50),
+            FailCount = successScores.Count(s => s < 50),
+            Distribution = distribution
+        };
+
+        return Ok(dto);
+    }
     // ── Yardımcı metotlar ────────────────────────────────────────────────────
 
-     private static bool IsValidGrade(decimal? grade) =>     // ← YENİ, buraya ekle
+    private static bool IsValidGrade(decimal? grade) =>     // ← YENİ, buraya ekle
         grade == null || (grade >= 0 && grade <= 100);
+
+    // Başarı notu: %40 Vize + %60 (Bütünleme varsa Bütünleme, yoksa Final).
+    // Vize yoksa not girilmemiş sayılır (null döner, dağılıma katılmaz).
+    private static decimal? ComputeSuccessScore(Enrollment e)
+    {
+        if (e.Midterm == null) return null;
+        var second = e.MakeUp ?? e.Final;
+        if (second == null) return null;
+        return Math.Round(e.Midterm.Value * 0.4m + second.Value * 0.6m, 2);
+    }
 
     private static CourseDetailDto MapToCourseDetailDto(Course course) => new()
     {
