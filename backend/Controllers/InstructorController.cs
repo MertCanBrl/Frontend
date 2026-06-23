@@ -269,6 +269,8 @@ public class InstructorController : ControllerBase
 
     // Students
 
+    // Students
+
     [HttpGet("term-courses/{courseId:int}/students")]
     public async Task<ActionResult<IEnumerable<StudentCourseResultDto>>> GetStudents(int courseId)
     {
@@ -292,6 +294,30 @@ public class InstructorController : ControllerBase
         return Ok(students);
     }
 
+    [HttpPut("term-courses/{courseId:int}/students/{studentId:int}/grades")]
+    public async Task<IActionResult> SaveStudentGrades(int courseId, int studentId, SaveGradesRequest request)
+    {
+        if (!await OwnsCourse(courseId)) return Forbid();
+
+        if (!IsValidGrade(request.Midterm) ||
+            !IsValidGrade(request.Final) ||
+            !IsValidGrade(request.MakeUp))
+        {
+            return BadRequest("Notlar 0 ile 100 arasında olmalıdır.");
+        }
+
+        var enrollment = await _context.Enrollments
+            .FirstOrDefaultAsync(e => e.CourseId == courseId && e.StudentId == studentId);
+        if (enrollment == null) return NotFound();
+
+        enrollment.Midterm = request.Midterm;
+        enrollment.Final = request.Final;
+        enrollment.MakeUp = request.MakeUp;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+    
     // Exams
 
     [HttpGet("term-courses/{courseId:int}/exams")]
@@ -479,6 +505,9 @@ public class InstructorController : ControllerBase
     }
 
     // ── Yardımcı metotlar ────────────────────────────────────────────────────
+
+     private static bool IsValidGrade(decimal? grade) =>     // ← YENİ, buraya ekle
+        grade == null || (grade >= 0 && grade <= 100);
 
     private static CourseDetailDto MapToCourseDetailDto(Course course) => new()
     {
