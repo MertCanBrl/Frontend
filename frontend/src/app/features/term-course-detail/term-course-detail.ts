@@ -7,7 +7,7 @@ import {
   CourseDetailDto, StudentCourseResultDto,
   ExamDto, SaveExamRequest,
   AssessmentComponentDto, SaveAssessmentComponentRequest,
-  RiskAnalysisDto
+  RiskAnalysisDto, CourseStatisticsDto
 } from '../../core/models/course.models';
 
 type Tab = 'info' | 'students' | 'exams' | 'components' | 'attendance' | 'risk' | 'outcomes' | 'reports';
@@ -66,6 +66,10 @@ export class TermCourseDetail implements OnInit {
   riskData = signal<RiskAnalysisDto[]>([]);
   riskLoading = signal(false);
 
+  // Statistics (Dönem Sonu Raporları)
+  stats = signal<CourseStatisticsDto | null>(null);
+  statsLoading = signal(false);
+
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('courseId'));
     this.courseId.set(id);
@@ -86,6 +90,7 @@ export class TermCourseDetail implements OnInit {
     if (tab === 'exams' && this.exams().length === 0) this.loadExams();
     if (tab === 'components' && this.components().length === 0) this.loadComponents();
     if (tab === 'risk' && this.riskData().length === 0) this.loadRisk();
+    if (tab === 'reports' && this.stats() === null) this.loadStatistics();
   }
 
   // ── Students ──────────────────────────────────────────────────────────────
@@ -223,6 +228,22 @@ export class TermCourseDetail implements OnInit {
     if (grade >= 70) return 'grade-pass';
     if (grade >= 50) return 'grade-mid';
     return 'grade-fail';
+  }
+
+  // ── Statistics (Dönem Sonu Raporları) ─────────────────────────────────────
+
+  loadStatistics(): void {
+    this.statsLoading.set(true);
+    this.svc.getStatistics(this.courseId()).subscribe({
+      next: (s) => { this.stats.set(s); this.statsLoading.set(false); },
+      error: () => this.statsLoading.set(false),
+    });
+  }
+
+  // Çubuk grafik için: en yüksek kova değerine göre yüzde (CSS bar yüksekliği)
+  bucketPercent(count: number): number {
+    const max = Math.max(...this.stats()!.distribution.map(d => d.count), 1);
+    return Math.round((count / max) * 100);
   }
 
   readonly reportCards = [

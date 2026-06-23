@@ -164,3 +164,24 @@ export interface RiskAnalysisDto {
   riskLevel: string;
   suggestion: string;
 }
+
+// Statistics (Dönem Sonu Raporları)
+export interface GradeBucketDto {
+  label: string;
+  count: number;
+}
+export interface CourseStatisticsDto {
+  totalStudents: number;
+  gradedStudents: number;
+  classAverage: number | null;
+  passCount: number;
+  failCount: number;
+  distribution: GradeBucketDto[];
+}
+
+// Grades
+export interface SaveGradesRequest {
+  midterm: number | null;
+  final: number | null;
+  makeUp: number | null;
+}

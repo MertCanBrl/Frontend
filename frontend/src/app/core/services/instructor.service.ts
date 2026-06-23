@@ -11,7 +11,8 @@ import {
   SurveyQuestionDto, SaveSurveyQuestionRequest,
   ExamDto, SaveExamRequest,
   AssessmentComponentDto, SaveAssessmentComponentRequest,
-  StudentCourseResultDto, RiskAnalysisDto
+  StudentCourseResultDto, RiskAnalysisDto,
+  CourseStatisticsDto, SaveGradesRequest
 } from '../models/course.models';
 
 @Injectable({ providedIn: 'root' })
@@ -142,6 +143,11 @@ export class InstructorService {
     return this.http.get<StudentCourseResultDto[]>(`${this.base}/instructor/term-courses/${courseId}/students`);
   }
 
+  // Grades
+  saveStudentGrades(courseId: number, studentId: number, req: SaveGradesRequest): Observable<void> {
+    return this.http.put<void>(`${this.base}/instructor/term-courses/${courseId}/students/${studentId}/grades`, req);
+  }
+
   // Exams
   getExams(courseId: number): Observable<ExamDto[]> {
     return this.http.get<ExamDto[]>(`${this.base}/instructor/term-courses/${courseId}/exams`);
@@ -179,5 +185,10 @@ export class InstructorService {
   // Risk Analysis
   getRiskAnalysis(courseId: number): Observable<RiskAnalysisDto[]> {
     return this.http.get<RiskAnalysisDto[]>(`${this.base}/instructor/term-courses/${courseId}/risk-analysis`);
+  }
+
+  // Statistics
+  getStatistics(courseId: number): Observable<CourseStatisticsDto> {
+    return this.http.get<CourseStatisticsDto>(`${this.base}/instructor/term-courses/${courseId}/statistics`);
   }
 }

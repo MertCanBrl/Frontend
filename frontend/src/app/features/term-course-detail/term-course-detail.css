@@ -175,3 +175,36 @@
   .info-grid { grid-template-columns: 1fr; }
   .field-row { grid-template-columns: 1fr; }
 }
+
+/* Dönem Sonu Raporları */
+.report-section { margin-bottom: 2rem; }
+.report-section-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+.stat-box {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 1.25rem 1rem; border: 1px solid #e2e8f0; border-radius: 12px;
+  background: #f8fafc;
+}
+.stat-value { font-size: 1.75rem; font-weight: 700; line-height: 1; }
+.stat-label { margin-top: 0.4rem; font-size: 0.8rem; color: #64748b; text-align: center; }
+.stat-pass .stat-value { color: #16a34a; }
+.stat-fail .stat-value { color: #dc2626; }
+
+.bar-chart {
+  display: flex; align-items: flex-end; gap: 1rem;
+  height: 200px; padding: 1rem 0; margin-bottom: 1.5rem;
+}
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.bar-fill {
+  width: 100%; min-height: 2px; background: #6366f1; border-radius: 6px 6px 0 0;
+  display: flex; align-items: flex-start; justify-content: center;
+  transition: height 0.3s ease;
+}
+.bar-count { color: #fff; font-size: 0.75rem; font-weight: 600; padding-top: 4px; }
+.bar-label { margin-top: 0.5rem; font-size: 0.75rem; color: #64748b; }
