@@ -23,9 +23,41 @@
           <span class="badge" [class.badge-mandatory]="course()!.isMandatory" [class.badge-elective]="!course()!.isMandatory">
             {{ course()!.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
           </span>
+          @if (statusLabel()) {
+            <span [class]="statusClass()">{{ statusLabel() }}</span>
+          }
         </div>
       </div>
+      <div class="header-right">
+        @if (course()!.contentStatus === 'Draft' || course()!.contentStatus === 'RevisionRequested') {
+          <button class="btn-submit-review" [disabled]="submitLoading()" (click)="submitForReview()">
+            {{ submitLoading() ? 'Gönderiliyor…' : (course()!.contentStatus === 'RevisionRequested' ? 'Tekrar Onaya Gönder' : 'Onaya Gönder') }}
+          </button>
+        } @else if (course()!.contentStatus === 'PendingApproval') {
+          <span class="approval-status-msg pending">⏳ Onay Bekleniyor</span>
+        } @else if (course()!.contentStatus === 'Approved') {
+          <span class="approval-status-msg approved">✓ Onaylandı</span>
+        }
+      </div>
     </div>
+
+    <!-- Bildirim bantları -->
+    @if (submitSuccess()) {
+      <div class="submit-success-banner">İçerik onaya gönderildi. Yönetici inceleme sonucunda bilgilendirileceksiniz.</div>
+    }
+    @if (submitError()) {
+      <div class="submit-error-banner">{{ submitError() }}</div>
+    }
+    @if (course()!.contentStatus === 'RevisionRequested' && course()!.reviewNote) {
+      <div class="revision-note-banner">
+        <strong>Revize İstendi:</strong> {{ course()!.reviewNote }}
+      </div>
+    }
+    @if (course()!.contentStatus === 'PendingApproval' || course()!.contentStatus === 'Approved') {
+      <div class="lock-banner">
+        🔒 İçerik {{ course()!.contentStatus === 'Approved' ? 'onaylandı' : 'onay sürecinde' }}, düzenleme kapalıdır.
+      </div>
+    }
 
     <!-- Tabs -->
     <div class="tabs">
@@ -100,7 +132,7 @@
             <textarea class="content-textarea" [formControl]="descForm.controls.description" rows="5"
               placeholder="Bu derste işlenecek konular ve kapsamı hakkında genel bilgi…"></textarea>
             <div class="section-footer">
-              <button type="submit" class="btn-primary" [disabled]="infoSaving()">
+              <button type="submit" class="btn-primary" [disabled]="infoSaving() || !isEditable()">
                 {{ infoSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
               </button>
             </div>
@@ -116,7 +148,7 @@
             <textarea class="content-textarea" [formControl]="objForm.controls.objective" rows="4"
               placeholder="Bu dersin öğrencilere kazandırmayı hedeflediği bilgi ve beceriler…"></textarea>
             <div class="section-footer">
-              <button type="submit" class="btn-primary" [disabled]="infoSaving()">
+              <button type="submit" class="btn-primary" [disabled]="infoSaving() || !isEditable()">
                 {{ infoSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
               </button>
             </div>
@@ -130,7 +162,7 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Ders Konuları</h2>
-          <button class="btn-primary" (click)="openTopicForm()">+ Konu Ekle</button>
+          <button class="btn-primary" [disabled]="!isEditable()" (click)="openTopicForm()">+ Konu Ekle</button>
         </div>
 
         @if (topicFormVisible()) {
@@ -174,10 +206,10 @@
                   </div>
                 </div>
                 <div class="list-actions">
-                  <button class="icon-btn" title="Düzenle" (click)="openTopicForm(topic)">
+                  <button class="icon-btn" title="Düzenle" [disabled]="!isEditable()" (click)="openTopicForm(topic)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
-                  <button class="icon-btn danger" title="Sil" (click)="deleteTopic(topic.id)">
+                  <button class="icon-btn danger" title="Sil" [disabled]="!isEditable()" (click)="deleteTopic(topic.id)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                   </button>
                 </div>
@@ -193,7 +225,7 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Öğrenme Çıktıları</h2>
-          <button class="btn-primary" (click)="openOutcomeForm()">+ Çıktı Ekle</button>
+          <button class="btn-primary" [disabled]="!isEditable()" (click)="openOutcomeForm()">+ Çıktı Ekle</button>
         </div>
 
         @if (outcomeFormVisible()) {
@@ -268,10 +300,10 @@
                     </td>
                     <td>
                       <div class="list-actions">
-                        <button class="icon-btn" title="Düzenle" (click)="openOutcomeForm(outcome)">
+                        <button class="icon-btn" title="Düzenle" [disabled]="!isEditable()" (click)="openOutcomeForm(outcome)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="icon-btn danger" title="Sil" (click)="deleteOutcome(outcome.id)">
+                        <button class="icon-btn danger" title="Sil" [disabled]="!isEditable()" (click)="deleteOutcome(outcome.id)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                         </button>
                       </div>
@@ -293,6 +325,9 @@
         </div>
         <div class="mapping-info">
           Katkı düzeyi skalası: <strong>1</strong> Çok Düşük &nbsp;·&nbsp; <strong>2</strong> Düşük &nbsp;·&nbsp; <strong>3</strong> Orta &nbsp;·&nbsp; <strong>4</strong> Yüksek &nbsp;·&nbsp; <strong>5</strong> Çok Yüksek
+          @if (!isEditable()) {
+            &nbsp;·&nbsp; <span class="mapping-locked-note">🔒 Salt okunur</span>
+          }
         </div>
 
         @if (!matrix()) {
@@ -320,7 +355,9 @@
                   <tr>
                     <td class="matrix-lo-cell" [title]="lo.description">{{ lo.code }}</td>
                     @for (po of matrix()!.programOutcomes; track po.id) {
-                      <td class="matrix-cell" [class]="contributionClass(getContribution(lo.id, po.id))"
+                      <td class="matrix-cell"
+                          [class]="contributionClass(getContribution(lo.id, po.id))"
+                          [class.matrix-cell-locked]="!isEditable()"
                           (click)="cycleContribution(lo.id, po.id)"
                           [title]="contributionLabels[getContribution(lo.id, po.id)]">
                         {{ getContribution(lo.id, po.id) === 0 ? '' : getContribution(lo.id, po.id) }}
@@ -340,7 +377,7 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Anket Soruları</h2>
-          <button class="btn-primary" (click)="openSurveyForm()">+ Soru Ekle</button>
+          <button class="btn-primary" [disabled]="!isEditable()" (click)="openSurveyForm()">+ Soru Ekle</button>
         </div>
 
         @if (surveyFormVisible()) {
@@ -404,10 +441,10 @@
                   </div>
                 </div>
                 <div class="list-actions">
-                  <button class="icon-btn" title="Düzenle" (click)="openSurveyForm(q)">
+                  <button class="icon-btn" title="Düzenle" [disabled]="!isEditable()" (click)="openSurveyForm(q)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
-                  <button class="icon-btn danger" title="Sil" (click)="deleteSurveyQuestion(q.id)">
+                  <button class="icon-btn danger" title="Sil" [disabled]="!isEditable()" (click)="deleteSurveyQuestion(q.id)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                   </button>
                 </div>

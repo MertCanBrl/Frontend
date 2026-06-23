@@ -104,6 +104,10 @@ export class InstructorService {
     return this.http.put<void>(`${this.base}/instructor/course-contents/${courseId}/general-info`, req);
   }
 
+  submitCourseContentForReview(courseId: number): Observable<void> {
+    return this.http.post<void>(`${this.base}/instructor/course-contents/${courseId}/submit-for-review`, {});
+  }
+
   // Survey Questions
   getSurveyQuestions(courseId: number): Observable<SurveyQuestionDto[]> {
     return this.http.get<SurveyQuestionDto[]>(`${this.base}/instructor/course-contents/${courseId}/survey-questions`);
