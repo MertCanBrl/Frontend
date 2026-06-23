@@ -135,6 +135,24 @@ public class InstructorController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("course-contents/{courseId:int}/submit-for-review")]
+    public async Task<IActionResult> SubmitForReview(int courseId)
+    {
+        if (!await OwnsCourse(courseId)) return Forbid();
+
+        var course = await _context.Courses.FindAsync(courseId);
+        if (course == null) return NotFound();
+
+        if (course.ContentStatus != "Draft" && course.ContentStatus != "RevisionRequested")
+            return Conflict("Ders zaten onay sürecinde veya onaylanmış.");
+
+        course.ContentStatus = "PendingApproval";
+        course.IsLocked = true;
+        course.SubmittedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     // Survey Questions
 
     [HttpGet("course-contents/{courseId:int}/survey-questions")]
@@ -344,6 +362,13 @@ public class InstructorController : ControllerBase
     public async Task<ActionResult<ExamDto>> AddExam(int courseId, SaveExamRequest request)
     {
         if (!await OwnsCourse(courseId)) return Forbid();
+
+        var contentStatus = await _context.Courses
+            .Where(c => c.Id == courseId)
+            .Select(c => c.ContentStatus)
+            .FirstAsync();
+        if (contentStatus != "Approved")
+            return StatusCode(403, "Sınav oluşturmak için ders içeriğinin onaylanmış olması gerekir.");
 
         var exam = new Exam
         {
