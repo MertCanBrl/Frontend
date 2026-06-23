@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -138,6 +140,77 @@ public class AdminController : ControllerBase
             InstructorId = course.InstructorId,
             InstructorName = course.Instructor?.FullName
         });
+    }
+
+    // ── Onay Yönetimi ────────────────────────────────────────────────────────
+
+    // GET: api/admin/approvals
+    [HttpGet("approvals")]
+    public async Task<ActionResult<IEnumerable<ApprovalListItemDto>>> GetApprovals()
+    {
+        var items = await _context.Courses
+            .Include(c => c.Instructor)
+            .Where(c => c.ContentStatus == "PendingApproval")
+            .OrderBy(c => c.SubmittedAt)
+            .Select(c => new ApprovalListItemDto
+            {
+                CourseId = c.Id,
+                CourseCode = c.Code,
+                CourseName = c.Name,
+                InstructorName = c.Instructor != null ? c.Instructor.FullName : null,
+                SubmittedAt = c.SubmittedAt,
+                ContentStatus = c.ContentStatus
+            })
+            .ToListAsync();
+
+        return Ok(items);
+    }
+
+    // POST: api/admin/approvals/{courseId}/approve
+    [HttpPost("approvals/{courseId:int}/approve")]
+    public async Task<IActionResult> ApproveCourse(int courseId)
+    {
+        var course = await _context.Courses.FindAsync(courseId);
+        if (course == null) return NotFound();
+
+        if (course.ContentStatus != "PendingApproval")
+            return Conflict("Bu ders onay bekliyor durumunda değil.");
+
+        course.ContentStatus = "Approved";
+        course.IsLocked = true;
+        course.ApprovedAt = DateTime.UtcNow;
+        course.ReviewedByUserId = GetUserId();
+        course.ReviewNote = null;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // POST: api/admin/approvals/{courseId}/request-revision
+    [HttpPost("approvals/{courseId:int}/request-revision")]
+    public async Task<IActionResult> RequestRevision(int courseId, RequestRevisionRequest request)
+    {
+        var course = await _context.Courses.FindAsync(courseId);
+        if (course == null) return NotFound();
+
+        if (course.ContentStatus != "PendingApproval")
+            return Conflict("Bu ders onay bekliyor durumunda değil.");
+
+        course.ContentStatus = "RevisionRequested";
+        course.IsLocked = false;
+        course.ReviewNote = request.Note;
+        course.ReviewedByUserId = GetUserId();
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // ── Yardımcı metotlar ────────────────────────────────────────────────────
+
+    private int GetUserId()
+    {
+        var claim = User.FindFirst(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirst(ClaimTypes.NameIdentifier);
+        if (claim == null) throw new InvalidOperationException("UserId claim bulunamadı.");
+        return int.Parse(claim.Value);
     }
 
     private static string GeneratePassword()
