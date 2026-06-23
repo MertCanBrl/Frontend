@@ -8,14 +8,22 @@ import { CourseContents } from './features/course-contents/course-contents';
 import { CourseContentDetail } from './features/course-content-detail/course-content-detail';
 import { TermCourses } from './features/term-courses/term-courses';
 import { TermCourseDetail } from './features/term-course-detail/term-course-detail';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: Login },
-  { path: 'admin', component: AdminDashboard },
+  {
+    path: 'admin',
+    component: AdminDashboard,
+    canActivate: [roleGuard],
+    data: { role: 'Admin' }
+  },
   {
     path: 'instructor',
     component: InstructorShell,
+    canActivate: [roleGuard],
+    data: { role: 'Instructor' },
     children: [
       { path: '', redirectTo: 'course-contents', pathMatch: 'full' },
       { path: 'course-contents', component: CourseContents },

@@ -269,6 +269,8 @@ public class InstructorController : ControllerBase
 
     // Students
 
+    // Students
+
     [HttpGet("term-courses/{courseId:int}/students")]
     public async Task<ActionResult<IEnumerable<StudentCourseResultDto>>> GetStudents(int courseId)
     {
@@ -292,6 +294,30 @@ public class InstructorController : ControllerBase
         return Ok(students);
     }
 
+    [HttpPut("term-courses/{courseId:int}/students/{studentId:int}/grades")]
+    public async Task<IActionResult> SaveStudentGrades(int courseId, int studentId, SaveGradesRequest request)
+    {
+        if (!await OwnsCourse(courseId)) return Forbid();
+
+        if (!IsValidGrade(request.Midterm) ||
+            !IsValidGrade(request.Final) ||
+            !IsValidGrade(request.MakeUp))
+        {
+            return BadRequest("Notlar 0 ile 100 arasında olmalıdır.");
+        }
+
+        var enrollment = await _context.Enrollments
+            .FirstOrDefaultAsync(e => e.CourseId == courseId && e.StudentId == studentId);
+        if (enrollment == null) return NotFound();
+
+        enrollment.Midterm = request.Midterm;
+        enrollment.Final = request.Final;
+        enrollment.MakeUp = request.MakeUp;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+    
     // Exams
 
     [HttpGet("term-courses/{courseId:int}/exams")]
@@ -478,7 +504,67 @@ public class InstructorController : ControllerBase
         return Ok(result);
     }
 
+    // Statistics (Dönem Sonu Raporları)
+
+    [HttpGet("term-courses/{courseId:int}/statistics")]
+    public async Task<ActionResult<CourseStatisticsDto>> GetStatistics(int courseId)
+    {
+        if (!await OwnsCourse(courseId)) return Forbid();
+
+        var enrollments = await _context.Enrollments
+            .Where(e => e.CourseId == courseId)
+            .ToListAsync();
+
+        // Her öğrenci için başarı notunu hesapla (Vize yoksa "not girilmemiş")
+        var successScores = new List<decimal>();
+        foreach (var e in enrollments)
+        {
+            var score = ComputeSuccessScore(e);
+            if (score.HasValue) successScores.Add(score.Value);
+        }
+
+        // Kova tanımları (alt sınır dahil, üst sınır dahil)
+        var buckets = new (string Label, decimal Min, decimal Max)[]
+        {
+            ("0-49",   0,  49.999m),
+            ("50-59",  50, 59.999m),
+            ("60-69",  60, 69.999m),
+            ("70-84",  70, 84.999m),
+            ("85-100", 85, 100m),
+        };
+
+        var distribution = buckets.Select(b => new GradeBucketDto
+        {
+            Label = b.Label,
+            Count = successScores.Count(s => s >= b.Min && s <= b.Max)
+        }).ToList();
+
+        var dto = new CourseStatisticsDto
+        {
+            TotalStudents = enrollments.Count,
+            GradedStudents = successScores.Count,
+            ClassAverage = successScores.Any() ? Math.Round(successScores.Average(), 2) : null,
+            PassCount = successScores.Count(s => s >= 50),
+            FailCount = successScores.Count(s => s < 50),
+            Distribution = distribution
+        };
+
+        return Ok(dto);
+    }
     // ── Yardımcı metotlar ────────────────────────────────────────────────────
+
+    private static bool IsValidGrade(decimal? grade) =>     // ← YENİ, buraya ekle
+        grade == null || (grade >= 0 && grade <= 100);
+
+    // Başarı notu: %40 Vize + %60 (Bütünleme varsa Bütünleme, yoksa Final).
+    // Vize yoksa not girilmemiş sayılır (null döner, dağılıma katılmaz).
+    private static decimal? ComputeSuccessScore(Enrollment e)
+    {
+        if (e.Midterm == null) return null;
+        var second = e.MakeUp ?? e.Final;
+        if (second == null) return null;
+        return Math.Round(e.Midterm.Value * 0.4m + second.Value * 0.6m, 2);
+    }
 
     private static CourseDetailDto MapToCourseDetailDto(Course course) => new()
     {

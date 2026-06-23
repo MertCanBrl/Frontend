@@ -415,23 +415,97 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Dönem Sonu Raporları</h2>
+          <button class="btn-secondary" (click)="loadStatistics()">Yenile</button>
         </div>
-        <div class="reports-grid">
-          @for (report of reportCards; track report.title) {
-            <div class="report-card">
-              <div class="report-icon">{{ report.icon }}</div>
-              <div class="report-info">
-                <h3 class="report-title">{{ report.title }}</h3>
-                <p class="report-desc">{{ report.desc }}</p>
+
+        @if (statsLoading()) {
+          <div class="loading-small">İstatistikler hesaplanıyor…</div>
+        } @else if (!stats()) {
+          <div class="empty-panel"><p>İstatistik verisi hesaplanamadı.</p></div>
+        } @else {
+          <!-- Kart 1 — Ders Genel Raporu -->
+          <div class="report-section">
+            <h3 class="report-section-title">📋 Ders Genel Raporu</h3>
+            <div class="stat-grid">
+              <div class="stat-box">
+                <span class="stat-value">{{ stats()!.totalStudents }}</span>
+                <span class="stat-label">Toplam Öğrenci</span>
               </div>
-              <button class="btn-ghost report-btn" disabled>PDF İndir</button>
+              <div class="stat-box">
+                <span class="stat-value">{{ stats()!.gradedStudents }}</span>
+                <span class="stat-label">Notu Girilen</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-value">
+                  {{ stats()!.classAverage !== null ? (stats()!.classAverage | number:'1.1-1') : '—' }}
+                </span>
+                <span class="stat-label">Sınıf Ortalaması</span>
+              </div>
+              <div class="stat-box stat-pass">
+                <span class="stat-value">{{ stats()!.passCount }}</span>
+                <span class="stat-label">Geçen (≥50)</span>
+              </div>
+              <div class="stat-box stat-fail">
+                <span class="stat-value">{{ stats()!.failCount }}</span>
+                <span class="stat-label">Kalan (&lt;50)</span>
+              </div>
             </div>
-          }
-        </div>
-        <div class="dev-notice">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Rapor oluşturma özelliği geliştirme aşamasındadır.
-        </div>
+          </div>
+
+          <!-- Kart 4 — Başarı Dağılımı Raporu -->
+          <div class="report-section">
+            <h3 class="report-section-title">📊 Başarı Dağılımı Raporu</h3>
+
+            @if (stats()!.gradedStudents === 0) {
+              <div class="empty-panel"><p>Dağılım için yeterli not girişi yok.</p></div>
+            } @else {
+              <!-- CSS çubuk grafik -->
+              <div class="bar-chart">
+                @for (b of stats()!.distribution; track b.label) {
+                  <div class="bar-col">
+                    <div class="bar-track">
+                      <div class="bar-fill" [style.height.%]="bucketPercent(b.count)">
+                        <span class="bar-count">{{ b.count }}</span>
+                      </div>
+                    </div>
+                    <span class="bar-label">{{ b.label }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Tablo -->
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Not Aralığı</th>
+                      <th class="num-col">Öğrenci Sayısı</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (b of stats()!.distribution; track b.label) {
+                      <tr>
+                        <td>{{ b.label }}</td>
+                        <td class="num-col">{{ b.count }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td><strong>Toplam (notu girilen)</strong></td>
+                      <td class="num-col"><strong>{{ stats()!.gradedStudents }}</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            }
+          </div>
+
+          <div class="dev-notice">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Öğrenme Çıktıları ve Program Çıktıları katkı raporları ile PDF dışa aktarma sonraki aşamada eklenecektir.
+          </div>
+        }
       </div>
     }
   }
