@@ -41,6 +41,12 @@ public class AppDbContext : DbContext
             .HasForeignKey(c => c.InstructorId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        modelBuilder.Entity<Course>()
+            .HasOne(c => c.ReviewedBy)
+            .WithMany()
+            .HasForeignKey(c => c.ReviewedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<LOPOMapping>()
             .HasIndex(m => new { m.LearningOutcomeId, m.ProgramOutcomeId })
             .IsUnique();

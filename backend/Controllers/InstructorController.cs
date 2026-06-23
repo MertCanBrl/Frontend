@@ -45,6 +45,7 @@ public class InstructorController : ControllerBase
                 Credit = c.Credit, Akts = c.Akts, IsMandatory = c.IsMandatory,
                 Department = c.Department, ClassYear = c.ClassYear,
                 CourseType = c.CourseType, IsLocked = c.IsLocked,
+                ContentStatus = c.ContentStatus,
                 TopicCount = c.CourseTopics.Count,
                 LearningOutcomeCount = c.LearningOutcomes.Count
             })
@@ -100,6 +101,7 @@ public class InstructorController : ControllerBase
                 Credit = c.Credit, Akts = c.Akts, IsMandatory = c.IsMandatory,
                 Department = c.Department, ClassYear = c.ClassYear,
                 CourseType = c.CourseType, IsLocked = c.IsLocked,
+                ContentStatus = c.ContentStatus,
                 TopicCount = c.CourseTopics.Count,
                 LearningOutcomeCount = c.LearningOutcomes.Count
             })
@@ -234,6 +236,7 @@ public class InstructorController : ControllerBase
                 Credit = c.Credit, Akts = c.Akts, IsMandatory = c.IsMandatory,
                 Department = c.Department, ClassYear = c.ClassYear,
                 CourseType = c.CourseType, IsLocked = c.IsLocked,
+                ContentStatus = c.ContentStatus,
                 TopicCount = c.CourseTopics.Count,
                 LearningOutcomeCount = c.LearningOutcomes.Count
             })
@@ -580,10 +583,14 @@ public class InstructorController : ControllerBase
         ClassYear = course.ClassYear,
         CourseType = course.CourseType,
         IsLocked = course.IsLocked,
+        ContentStatus = course.ContentStatus,
         TopicCount = course.CourseTopics.Count,
         LearningOutcomeCount = course.LearningOutcomes.Count,
         InstructorName = course.Instructor?.FullName,
         Description = course.Description,
-        Objective = course.Objective
+        Objective = course.Objective,
+        SubmittedAt = course.SubmittedAt,
+        ApprovedAt = course.ApprovedAt,
+        ReviewNote = course.ReviewNote
     };
 }

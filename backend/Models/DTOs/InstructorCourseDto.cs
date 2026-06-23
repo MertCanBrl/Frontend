@@ -13,6 +13,7 @@ public class InstructorCourseDto
     public int ClassYear { get; set; }
     public string CourseType { get; set; } = string.Empty;
     public bool IsLocked { get; set; }
+    public string ContentStatus { get; set; } = "Draft";
     public int TopicCount { get; set; }
     public int LearningOutcomeCount { get; set; }
 }
@@ -23,6 +24,9 @@ public class CourseDetailDto : InstructorCourseDto
     public string? InstructorName { get; set; }
     public string? Description { get; set; }
     public string? Objective { get; set; }
+    public DateTime? SubmittedAt { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? ReviewNote { get; set; }
 }
 
 public class UpdateCourseRequest

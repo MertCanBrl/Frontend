@@ -21,6 +21,14 @@ public class Course
     public string? Description { get; set; }
     public string? Objective { get; set; }
 
+    // Onay durumu: Draft | PendingApproval | Approved | RevisionRequested
+    public string ContentStatus { get; set; } = "Draft";
+    public DateTime? SubmittedAt { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? ReviewNote { get; set; }
+    public int? ReviewedByUserId { get; set; }
+    public User? ReviewedBy { get; set; }
+
     public int? InstructorId { get; set; }
     public User? Instructor { get; set; }
 
