@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
@@ -28,7 +28,40 @@ export class CourseContentDetail implements OnInit {
   loading = signal(true);
   activeTab = signal<Tab>('info');
 
-  // General info forms
+  // ── Onay durumu ───────────────────────────────────────────────────────────
+
+  submitLoading = signal(false);
+  submitError = signal<string | null>(null);
+  submitSuccess = signal(false);
+
+  isEditable = computed(() => {
+    const c = this.course();
+    if (!c) return true;
+    return c.contentStatus === 'Draft' || c.contentStatus === 'RevisionRequested';
+  });
+
+  statusLabel = computed(() => {
+    const labels: Record<string, string> = {
+      Draft: 'Taslak',
+      PendingApproval: 'Onay Bekliyor',
+      Approved: 'Onaylandı',
+      RevisionRequested: 'Revize İstendi',
+    };
+    return labels[this.course()?.contentStatus ?? ''] ?? '';
+  });
+
+  statusClass = computed(() => {
+    const classes: Record<string, string> = {
+      Draft: 'badge status-draft',
+      PendingApproval: 'badge status-pending',
+      Approved: 'badge status-approved',
+      RevisionRequested: 'badge status-revision',
+    };
+    return classes[this.course()?.contentStatus ?? ''] ?? 'badge status-draft';
+  });
+
+  // ── General info forms ────────────────────────────────────────────────────
+
   infoSaving = signal(false);
   infoSuccess = signal(false);
   descForm = this.fb.group({ description: [''] });
@@ -77,6 +110,19 @@ export class CourseContentDetail implements OnInit {
     isActive: [true],
   });
 
+  constructor() {
+    // Ders kilitliyse (PendingApproval / Approved) genel bilgi formlarını devre dışı bırak
+    effect(() => {
+      if (this.isEditable()) {
+        this.descForm.enable();
+        this.objForm.enable();
+      } else {
+        this.descForm.disable();
+        this.objForm.disable();
+      }
+    });
+  }
+
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('courseId'));
     this.courseId.set(id);
@@ -104,9 +150,29 @@ export class CourseContentDetail implements OnInit {
     if (tab === 'survey' && this.surveyQuestions().length === 0) this.loadSurveyQuestions();
   }
 
+  // ── Onay akışı ────────────────────────────────────────────────────────────
+
+  submitForReview(): void {
+    this.submitLoading.set(true);
+    this.submitError.set(null);
+    this.svc.submitCourseContentForReview(this.courseId()).subscribe({
+      next: () => {
+        this.submitLoading.set(false);
+        this.submitSuccess.set(true);
+        this.course.update(c => c ? { ...c, contentStatus: 'PendingApproval', isLocked: true } : c);
+        setTimeout(() => this.submitSuccess.set(false), 3000);
+      },
+      error: (err) => {
+        this.submitLoading.set(false);
+        this.submitError.set(typeof err?.error === 'string' ? err.error : 'Bir hata oluştu. Lütfen tekrar deneyin.');
+      },
+    });
+  }
+
   // ── General Info ──────────────────────────────────────────────────────────
 
   saveDescription(): void {
+    if (!this.isEditable()) return;
     this.infoSaving.set(true);
     const desc = this.descForm.getRawValue().description ?? null;
     const obj = this.course()?.objective ?? null;
@@ -121,6 +187,7 @@ export class CourseContentDetail implements OnInit {
   }
 
   saveObjective(): void {
+    if (!this.isEditable()) return;
     this.infoSaving.set(true);
     const obj = this.objForm.getRawValue().objective ?? null;
     const desc = this.course()?.description ?? null;
@@ -146,6 +213,7 @@ export class CourseContentDetail implements OnInit {
   }
 
   openTopicForm(topic?: CourseTopicDto): void {
+    if (!this.isEditable()) return;
     this.editingTopicId.set(topic?.id ?? null);
     this.topicForm.reset({ title: topic?.title ?? '', description: topic?.description ?? '' });
     this.topicFormVisible.set(true);
@@ -174,6 +242,7 @@ export class CourseContentDetail implements OnInit {
   }
 
   deleteTopic(id: number): void {
+    if (!this.isEditable()) return;
     if (!confirm('Bu konuyu silmek istiyor musunuz?')) return;
     this.svc.deleteTopic(this.courseId(), id).subscribe(() =>
       this.topics.update(ts => ts.filter(t => t.id !== id)));
@@ -186,6 +255,7 @@ export class CourseContentDetail implements OnInit {
   }
 
   openOutcomeForm(outcome?: LearningOutcomeDto): void {
+    if (!this.isEditable()) return;
     this.editingOutcomeId.set(outcome?.id ?? null);
     this.outcomeForm.reset({ description: outcome?.description ?? '', bloomLevel: outcome?.bloomLevel ?? '', component: outcome?.component ?? '' });
     this.outcomeFormVisible.set(true);
@@ -213,6 +283,7 @@ export class CourseContentDetail implements OnInit {
   }
 
   deleteOutcome(id: number): void {
+    if (!this.isEditable()) return;
     if (!confirm('Bu öğrenme çıktısını silmek istiyor musunuz?')) return;
     this.svc.deleteLearningOutcome(this.courseId(), id).subscribe(() =>
       this.outcomes.update(os => os.filter(o => o.id !== id)));
@@ -229,6 +300,7 @@ export class CourseContentDetail implements OnInit {
   }
 
   cycleContribution(loId: number, poId: number): void {
+    if (!this.isEditable()) return;
     const current = this.getContribution(loId, poId);
     const next = (current + 1) % 6;
     const cell: MappingCellDto = { learningOutcomeId: loId, programOutcomeId: poId, contributionLevel: next };
@@ -253,6 +325,7 @@ export class CourseContentDetail implements OnInit {
   }
 
   openSurveyForm(question?: SurveyQuestionDto): void {
+    if (!this.isEditable()) return;
     this.editingSurveyId.set(question?.id ?? null);
     this.surveyForm.reset({
       questionText: question?.questionText ?? '',
@@ -293,6 +366,7 @@ export class CourseContentDetail implements OnInit {
   }
 
   deleteSurveyQuestion(id: number): void {
+    if (!this.isEditable()) return;
     if (!confirm('Bu soruyu silmek istiyor musunuz?')) return;
     this.svc.deleteSurveyQuestion(this.courseId(), id).subscribe(() =>
       this.surveyQuestions.update(qs => qs.filter(q => q.id !== id)));

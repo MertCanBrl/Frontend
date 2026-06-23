@@ -10,6 +10,7 @@ export interface InstructorCourseDto {
   classYear: number;
   courseType: string;
   isLocked: boolean;
+  contentStatus: string;
   topicCount: number;
   learningOutcomeCount: number;
 }
@@ -19,6 +20,9 @@ export interface CourseDetailDto extends InstructorCourseDto {
   instructorName: string | null;
   description: string | null;
   objective: string | null;
+  submittedAt: string | null;
+  approvedAt: string | null;
+  reviewNote: string | null;
 }
 
 export interface UpdateCourseRequest {
