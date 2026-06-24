@@ -340,13 +340,36 @@
               <span class="legend-item" [class]="contributionClass(i)">{{ l }}</span>
             }
           </div>
+
+          <div class="po-legend-panel">
+            <button class="po-legend-toggle" (click)="togglePoLegend()" type="button">
+              Program Çıktısı Açıklamaları
+              <span class="po-legend-chevron">{{ poLegendOpen() ? '▲' : '▼' }}</span>
+            </button>
+            @if (poLegendOpen()) {
+              <div class="po-legend-body">
+                @for (po of matrix()!.programOutcomes; track po.id) {
+                  <div class="po-legend-row">
+                    <span class="po-legend-code">{{ po.code }}</span>
+                    <span class="po-legend-desc">{{ po.description }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
           <div class="matrix-wrapper">
             <table class="matrix-table">
               <thead>
                 <tr>
                   <th class="matrix-corner">ÖÇ \ PÇ</th>
                   @for (po of matrix()!.programOutcomes; track po.id) {
-                    <th class="matrix-po-header" [title]="po.description">{{ po.code }}</th>
+                    <th class="matrix-po-header">
+                      <span class="po-tip-host">
+                        {{ po.code }}
+                        <span class="po-tip-body">{{ po.description }}</span>
+                      </span>
+                    </th>
                   }
                 </tr>
               </thead>

@@ -232,3 +232,91 @@
 .matrix-cell-locked { cursor: default !important; }
 .matrix-cell-locked:hover { filter: none !important; }
 .mapping-locked-note { color: #b45309; font-weight: 500; font-size: 0.8rem; }
+
+/* ── PÇ kolon başlığı tooltip ────────────────────────────────────────────── */
+.po-tip-host {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+.po-tip-body {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  background: var(--c-ink);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.45;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  white-space: normal;
+  text-align: left;
+  z-index: 200;
+  pointer-events: none;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+}
+.po-tip-body::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--c-ink);
+}
+.po-tip-host:hover .po-tip-body { display: block; }
+
+/* ── PÇ açıklama legend'i ────────────────────────────────────────────────── */
+.po-legend-panel {
+  background: #fff;
+  border: 1px solid var(--c-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.po-legend-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background: #f5f4f0;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--c-ink);
+  text-align: left;
+  transition: background 0.12s;
+}
+.po-legend-toggle:hover { background: #eeece8; }
+.po-legend-chevron { color: var(--c-slate); font-size: 0.7rem; margin-left: 0.5rem; }
+.po-legend-body {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.po-legend-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.po-legend-code {
+  flex-shrink: 0;
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--c-navy);
+  background: #eef0f8;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+}
+.po-legend-desc { color: var(--c-ink); }

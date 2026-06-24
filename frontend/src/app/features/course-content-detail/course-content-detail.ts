@@ -92,6 +92,8 @@ export class CourseContentDetail implements OnInit {
 
   // LO-PO Mapping
   matrix = signal<MappingMatrixDto | null>(null);
+  poLegendOpen = signal(false);
+  togglePoLegend(): void { this.poLegendOpen.update(v => !v); }
   mappingMap = computed(() => {
     const m = new Map<string, number>();
     this.matrix()?.mappings.forEach(c => m.set(`${c.learningOutcomeId}-${c.programOutcomeId}`, c.contributionLevel));
