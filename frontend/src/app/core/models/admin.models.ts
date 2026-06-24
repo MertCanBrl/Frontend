@@ -32,3 +32,16 @@ export interface CreateCourseRequest {
   classYear: number;
   instructorId: number | null;
 }
+
+export interface ApprovalListItemDto {
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  instructorName: string | null;
+  submittedAt: string | null;
+  contentStatus: string;
+}
+
+export interface RequestRevisionRequest {
+  note: string;
+}
