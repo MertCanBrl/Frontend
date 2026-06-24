@@ -8,6 +8,7 @@ using Backend.Data;
 using Backend.Models;
 using Backend.Models.DTOs;
 using Backend.Services;
+using Backend.Utils;
 
 namespace Backend.Controllers;
 
@@ -204,6 +205,91 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    // ── Onay — Ders İçeriği Önizleme ─────────────────────────────────────────
+
+    // GET: api/admin/courses/{courseId}/content
+    [HttpGet("courses/{courseId:int}/content")]
+    public async Task<ActionResult<AdminCourseContentDto>> GetCourseContent(int courseId)
+    {
+        var course = await _context.Courses
+            .Include(c => c.Instructor)
+            .Include(c => c.CourseTopics)
+            .Include(c => c.LearningOutcomes)
+            .FirstOrDefaultAsync(c => c.Id == courseId);
+
+        if (course == null) return NotFound();
+
+        var loIds = course.LearningOutcomes.Select(lo => lo.Id).ToList();
+
+        var mappings = await _context.LOPOMappings
+            .Where(m => loIds.Contains(m.LearningOutcomeId))
+            .Select(m => new MappingCellDto
+            {
+                LearningOutcomeId = m.LearningOutcomeId,
+                ProgramOutcomeId = m.ProgramOutcomeId,
+                ContributionLevel = m.ContributionLevel
+            })
+            .ToListAsync();
+
+        var programOutcomes = NaturalSortHelper.ByCode(
+            await _context.ProgramOutcomes
+                .Select(po => new ProgramOutcomeDto { Id = po.Id, Code = po.Code, Description = po.Description })
+                .ToListAsync(),
+            po => po.Code).ToList();
+
+        var surveyQuestions = await _context.CourseSurveyQuestions
+            .Include(q => q.LearningOutcome)
+            .Where(q => q.CourseId == courseId)
+            .Select(q => new SurveyQuestionDto
+            {
+                Id = q.Id,
+                CourseId = q.CourseId,
+                LearningOutcomeId = q.LearningOutcomeId,
+                LearningOutcomeCode = q.LearningOutcome != null ? q.LearningOutcome.Code : null,
+                QuestionText = q.QuestionText,
+                IsActive = q.IsActive
+            })
+            .ToListAsync();
+
+        var learningOutcomes = NaturalSortHelper.ByCode(
+            course.LearningOutcomes
+                .Select(lo => new LearningOutcomeDto
+                {
+                    Id = lo.Id,
+                    Code = lo.Code,
+                    Description = lo.Description,
+                    BloomLevel = lo.BloomLevel,
+                    Component = lo.Component
+                })
+                .ToList(),
+            lo => lo.Code).ToList();
+
+        var topics = course.CourseTopics
+            .OrderBy(t => t.OrderNumber)
+            .Select(t => new CourseTopicDto
+            {
+                Id = t.Id,
+                OrderNumber = t.OrderNumber,
+                Title = t.Title,
+                Description = t.Description
+            })
+            .ToList();
+
+        return Ok(new AdminCourseContentDto
+        {
+            CourseDetail = MapToCourseDetailDto(course),
+            Topics = topics,
+            LearningOutcomes = learningOutcomes,
+            Matrix = new MappingMatrixDto
+            {
+                LearningOutcomes = learningOutcomes,
+                ProgramOutcomes = programOutcomes,
+                Mappings = mappings
+            },
+            SurveyQuestions = surveyQuestions
+        });
+    }
+
     // ── Yardımcı metotlar ────────────────────────────────────────────────────
 
     private int GetUserId()
@@ -213,6 +299,31 @@ public class AdminController : ControllerBase
         if (claim == null) throw new InvalidOperationException("UserId claim bulunamadı.");
         return int.Parse(claim.Value);
     }
+
+    private static CourseDetailDto MapToCourseDetailDto(Course course) => new()
+    {
+        Id = course.Id,
+        Code = course.Code,
+        Name = course.Name,
+        Semester = course.Semester,
+        Credit = course.Credit,
+        Akts = course.Akts,
+        WeeklyHours = course.WeeklyHours,
+        IsMandatory = course.IsMandatory,
+        Department = course.Department,
+        ClassYear = course.ClassYear,
+        CourseType = course.CourseType,
+        IsLocked = course.IsLocked,
+        ContentStatus = course.ContentStatus,
+        TopicCount = course.CourseTopics.Count,
+        LearningOutcomeCount = course.LearningOutcomes.Count,
+        InstructorName = course.Instructor?.FullName,
+        Description = course.Description,
+        Objective = course.Objective,
+        SubmittedAt = course.SubmittedAt,
+        ApprovedAt = course.ApprovedAt,
+        ReviewNote = course.ReviewNote
+    };
 
     private static string GeneratePassword()
     {
