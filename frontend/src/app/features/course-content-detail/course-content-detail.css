@@ -168,7 +168,8 @@
 .matrix-table th, .matrix-table td { border: 1px solid var(--c-line); }
 .matrix-corner { padding: 0.6rem 0.8rem; background: #f5f4f0; font-weight: 700; color: var(--c-slate); white-space: nowrap; }
 .matrix-po-header { padding: 0.5rem 0.4rem; background: var(--c-navy); color: var(--c-gold); font-weight: 700; text-align: center; font-size: 0.75rem; white-space: nowrap; }
-.matrix-lo-cell { padding: 0.5rem 0.8rem; background: #f5f4f0; font-family: monospace; font-weight: 700; color: var(--c-navy); font-size: 0.78rem; white-space: nowrap; }
+.matrix-lo-cell { padding: 0.5rem 0.8rem; background: #f5f4f0; font-family: monospace; font-weight: 700; color: var(--c-navy); font-size: 0.78rem; }
+.lo-cell-text { display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .matrix-cell { width: 44px; height: 36px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 0.85rem; cursor: pointer; user-select: none; transition: filter 0.1s; }
 .matrix-cell:hover { filter: brightness(0.9); }
 .level-0 { background: #f5f4f0; color: transparent; }

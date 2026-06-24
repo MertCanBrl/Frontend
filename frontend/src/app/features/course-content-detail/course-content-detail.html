@@ -394,7 +394,9 @@
               <tbody>
                 @for (lo of matrix()!.learningOutcomes; track lo.id) {
                   <tr>
-                    <td class="matrix-lo-cell" [title]="lo.description">{{ lo.code }}</td>
+                    <td class="matrix-lo-cell" [title]="lo.code + ' – ' + lo.description">
+                      <span class="lo-cell-text">{{ lo.code }} – {{ lo.description }}</span>
+                    </td>
                     @for (po of matrix()!.programOutcomes; track po.id) {
                       <td class="matrix-cell"
                           [class]="contributionClass(getContribution(lo.id, po.id))"
