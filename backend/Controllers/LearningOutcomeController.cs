@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models;
 using Backend.Models.DTOs;
+using Backend.Utils;
 
 namespace Backend.Controllers;
 
@@ -31,11 +32,12 @@ public class LearningOutcomeController : ControllerBase
     {
         if (!await CanRead(courseId)) return Forbid();
 
-        var outcomes = await _context.LearningOutcomes
-            .Where(lo => lo.CourseId == courseId)
-            .OrderBy(lo => lo.Code)
-            .Select(lo => new LearningOutcomeDto { Id = lo.Id, Code = lo.Code, Description = lo.Description, BloomLevel = lo.BloomLevel, Component = lo.Component })
-            .ToListAsync();
+        var outcomes = NaturalSortHelper.ByCode(
+            await _context.LearningOutcomes
+                .Where(lo => lo.CourseId == courseId)
+                .Select(lo => new LearningOutcomeDto { Id = lo.Id, Code = lo.Code, Description = lo.Description, BloomLevel = lo.BloomLevel, Component = lo.Component })
+                .ToListAsync(),
+            lo => lo.Code).ToList();
         return Ok(outcomes);
     }
 

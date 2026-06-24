@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models;
 using Backend.Models.DTOs;
+using Backend.Utils;
 
 namespace Backend.Controllers;
 
@@ -19,19 +20,20 @@ public class ProgramOutcomeController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProgramOutcomeDto>>> GetAll()
     {
-        var outcomes = await _context.ProgramOutcomes
-            .Include(po => po.Group)
-            .OrderBy(po => po.Code)
-            .Select(po => new ProgramOutcomeDto
-            {
-                Id = po.Id,
-                Code = po.Code,
-                Description = po.Description,
-                Details = po.Details,
-                GroupId = po.GroupId,
-                GroupName = po.Group != null ? po.Group.Name : null
-            })
-            .ToListAsync();
+        var outcomes = NaturalSortHelper.ByCode(
+            await _context.ProgramOutcomes
+                .Include(po => po.Group)
+                .Select(po => new ProgramOutcomeDto
+                {
+                    Id = po.Id,
+                    Code = po.Code,
+                    Description = po.Description,
+                    Details = po.Details,
+                    GroupId = po.GroupId,
+                    GroupName = po.Group != null ? po.Group.Name : null
+                })
+                .ToListAsync(),
+            po => po.Code).ToList();
         return Ok(outcomes);
     }
 
@@ -40,20 +42,21 @@ public class ProgramOutcomeController : ControllerBase
     public async Task<ActionResult<IEnumerable<ProgramOutcomeGroupDto>>> GetGroups()
     {
         var groups = await _context.ProgramOutcomeGroups
-            .Include(g => g.ProgramOutcomes)
-            .OrderBy(g => g.Code)
             .Select(g => new ProgramOutcomeGroupDto
             {
                 Id = g.Id,
                 Code = g.Code,
                 Name = g.Name,
                 ProgramOutcomes = g.ProgramOutcomes
-                    .OrderBy(po => po.Code)
                     .Select(po => new ProgramOutcomeDto { Id = po.Id, Code = po.Code, Description = po.Description })
                     .ToList()
             })
             .ToListAsync();
-        return Ok(groups);
+
+        foreach (var g in groups)
+            g.ProgramOutcomes = NaturalSortHelper.ByCode(g.ProgramOutcomes, po => po.Code).ToList();
+
+        return Ok(NaturalSortHelper.ByCode(groups, g => g.Code).ToList());
     }
 
     // POST: api/program-outcomes  (sadece Admin)

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models;
 using Backend.Models.DTOs;
+using Backend.Utils;
 
 namespace Backend.Controllers;
 
@@ -28,16 +29,18 @@ public class LOPOMappingController : ControllerBase
     public async Task<ActionResult<MappingMatrixDto>> GetMatrix(int courseId)
     {
         if (!await CanRead(courseId)) return Forbid();
-        var learningOutcomes = await _context.LearningOutcomes
-            .Where(lo => lo.CourseId == courseId)
-            .OrderBy(lo => lo.Code)
-            .Select(lo => new LearningOutcomeDto { Id = lo.Id, Code = lo.Code, Description = lo.Description })
-            .ToListAsync();
+        var learningOutcomes = NaturalSortHelper.ByCode(
+            await _context.LearningOutcomes
+                .Where(lo => lo.CourseId == courseId)
+                .Select(lo => new LearningOutcomeDto { Id = lo.Id, Code = lo.Code, Description = lo.Description })
+                .ToListAsync(),
+            lo => lo.Code).ToList();
 
-        var programOutcomes = await _context.ProgramOutcomes
-            .OrderBy(po => po.Code)
-            .Select(po => new ProgramOutcomeDto { Id = po.Id, Code = po.Code, Description = po.Description })
-            .ToListAsync();
+        var programOutcomes = NaturalSortHelper.ByCode(
+            await _context.ProgramOutcomes
+                .Select(po => new ProgramOutcomeDto { Id = po.Id, Code = po.Code, Description = po.Description })
+                .ToListAsync(),
+            po => po.Code).ToList();
 
         var loIds = learningOutcomes.Select(lo => lo.Id).ToList();
         var mappings = await _context.LOPOMappings
