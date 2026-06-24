@@ -3,7 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminService } from '../../core/services/admin.service';
 import { InstructorService } from '../../core/services/instructor.service';
-import { UserDto, CreateUserRequest, CreateCourseRequest } from '../../core/models/admin.models';
+import { UserDto, CreateUserRequest, CreateCourseRequest, ApprovalListItemDto } from '../../core/models/admin.models';
 import { ProgramOutcomeDto, SaveProgramOutcomeRequest } from '../../core/models/course.models';
 
 @Component({
@@ -20,7 +20,7 @@ export class AdminDashboard implements OnInit {
   private fb = inject(FormBuilder);
 
   fullName = this.authService.getFullName();
-  activeTab = signal<'users' | 'courses' | 'outcomes'>('users');
+  activeTab = signal<'users' | 'courses' | 'outcomes' | 'approvals'>('users');
 
   users = signal<UserDto[]>([]);
   courses = signal<{ id: number; code: string; name: string; semester: string; credit: number; isMandatory: boolean; classYear: number; instructorId: number | null; instructorName: string | null }[]>([]);
@@ -81,10 +81,27 @@ export class AdminDashboard implements OnInit {
     details: [''],
   });
 
+  // ── Onay Yönetimi ─────────────────────────────────────────────────────────
+
+  approvals = signal<ApprovalListItemDto[]>([]);
+  approvalsLoading = signal(false);
+  approvalsSuccess = signal('');
+  approvalsError = signal('');
+
+  revisionModalVisible = signal(false);
+  revisionTargetId = signal<number | null>(null);
+  revisionTargetName = signal('');
+  revisionLoading = signal(false);
+
+  revisionForm = this.fb.group({
+    note: ['', [Validators.required, Validators.minLength(1)]],
+  });
+
   ngOnInit(): void {
     this.loadUsers();
     this.loadCourses();
     this.loadProgramOutcomes();
+    this.loadApprovals();
   }
 
   loadUsers(): void {
@@ -228,6 +245,72 @@ export class AdminDashboard implements OnInit {
         this.programOutcomes.update(list => list.filter(p => p.id !== id));
         this.outcomeFormSuccess.set(`"${code}" silindi.`);
       },
+    });
+  }
+
+  // ── Onay Yönetimi metotları ───────────────────────────────────────────────
+
+  loadApprovals(): void {
+    this.approvalsLoading.set(true);
+    this.approvalsError.set('');
+    this.adminService.getApprovals().subscribe({
+      next: (list) => { this.approvals.set(list); this.approvalsLoading.set(false); },
+      error: () => { this.approvalsLoading.set(false); this.approvalsError.set('Liste yüklenirken bir hata oluştu.'); },
+    });
+  }
+
+  approveCourse(courseId: number, courseName: string): void {
+    if (!confirm(`"${courseName}" dersini onaylamak istiyor musunuz?`)) return;
+    this.adminService.approveCourseContent(courseId).subscribe({
+      next: () => {
+        this.approvals.update(list => list.filter(a => a.courseId !== courseId));
+        this.approvalsSuccess.set(`"${courseName}" başarıyla onaylandı.`);
+        setTimeout(() => this.approvalsSuccess.set(''), 3500);
+      },
+      error: () => this.approvalsError.set('Onaylama işlemi başarısız. Lütfen tekrar deneyin.'),
+    });
+  }
+
+  openRevisionModal(item: ApprovalListItemDto): void {
+    this.revisionTargetId.set(item.courseId);
+    this.revisionTargetName.set(`${item.courseCode} – ${item.courseName}`);
+    this.revisionForm.reset();
+    this.revisionModalVisible.set(true);
+  }
+
+  submitRevisionRequest(): void {
+    if (this.revisionForm.invalid) { this.revisionForm.markAllAsTouched(); return; }
+    const id = this.revisionTargetId();
+    if (!id) return;
+    this.revisionLoading.set(true);
+    const note = this.revisionForm.getRawValue().note!;
+    this.adminService.requestCourseRevision(id, note).subscribe({
+      next: () => {
+        this.revisionLoading.set(false);
+        this.approvals.update(list => list.filter(a => a.courseId !== id));
+        this.closeRevisionModal();
+        this.approvalsSuccess.set('Revizyon isteği öğretim üyesine iletildi.');
+        setTimeout(() => this.approvalsSuccess.set(''), 3500);
+      },
+      error: () => {
+        this.revisionLoading.set(false);
+        this.approvalsError.set('Revizyon isteği gönderilemedi. Lütfen tekrar deneyin.');
+      },
+    });
+  }
+
+  closeRevisionModal(): void {
+    this.revisionModalVisible.set(false);
+    this.revisionTargetId.set(null);
+    this.revisionTargetName.set('');
+    this.revisionForm.reset();
+  }
+
+  formatDate(dateStr: string | null): string {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleString('tr-TR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
   }
 

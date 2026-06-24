@@ -28,6 +28,16 @@
         </svg>
         Program Çıktıları
       </button>
+
+      <button class="nav-item" [class.active]="activeTab() === 'approvals'" (click)="activeTab.set('approvals')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        Onay Yönetimi
+        @if (approvals().length > 0) {
+          <span class="nav-badge">{{ approvals().length }}</span>
+        }
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -397,5 +407,102 @@
       </div>
     }
 
+    <!-- ===== APPROVALS TAB ===== -->
+    @if (activeTab() === 'approvals') {
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Onay Yönetimi</h1>
+          <p class="page-desc">Öğretim üyelerinin onaya gönderdiği ders içeriklerini inceleyin</p>
+        </div>
+        <button class="btn-ghost" (click)="loadApprovals()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Yenile
+        </button>
+      </div>
+
+      @if (approvalsSuccess()) {
+        <div class="alert alert-success">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {{ approvalsSuccess() }}
+        </div>
+      }
+      @if (approvalsError()) {
+        <div class="alert alert-error">{{ approvalsError() }}</div>
+      }
+
+      <div class="card">
+        @if (approvalsLoading()) {
+          <div class="loading-state">Yükleniyor…</div>
+        } @else if (approvals().length === 0) {
+          <div class="empty-state">Onay bekleyen ders içeriği bulunmuyor.</div>
+        } @else {
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Ders Kodu</th>
+                <th>Ders Adı</th>
+                <th>Öğretim Görevlisi</th>
+                <th>Gönderim Tarihi</th>
+                <th>Durum</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of approvals(); track item.courseId) {
+                <tr>
+                  <td><span class="code-tag">{{ item.courseCode }}</span></td>
+                  <td class="td-name">{{ item.courseName }}</td>
+                  <td class="td-muted">{{ item.instructorName ?? '—' }}</td>
+                  <td class="td-muted">{{ formatDate(item.submittedAt) }}</td>
+                  <td><span class="badge badge-pending">Onay Bekliyor</span></td>
+                  <td>
+                    <div class="approval-actions">
+                      <button class="btn-approve-sm" (click)="approveCourse(item.courseId, item.courseName)">
+                        Onayla
+                      </button>
+                      <button class="btn-revise-sm" (click)="openRevisionModal(item)">
+                        Revize İste
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
+
   </main>
 </div>
+
+<!-- Revizyon İste Modal -->
+@if (revisionModalVisible()) {
+  <div class="modal-overlay" (click)="closeRevisionModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Revizyon İste</h2>
+        <button class="modal-close" (click)="closeRevisionModal()">✕</button>
+      </div>
+      <p class="modal-course-name">{{ revisionTargetName() }}</p>
+      <form [formGroup]="revisionForm" (ngSubmit)="submitRevisionRequest()" class="modal-form">
+        <div class="field">
+          <label>Revizyon Notu <span class="required-mark">*</span></label>
+          <textarea formControlName="note" rows="4"
+            placeholder="Yapılması gereken revizyonu açıklayın… (örn. Konu listesi eksik, 14 haftalık plan ekleyin.)">
+          </textarea>
+          @if (revisionForm.get('note')?.invalid && revisionForm.get('note')?.touched) {
+            <span class="field-error">Revizyon notu zorunludur.</span>
+          }
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" (click)="closeRevisionModal()">İptal</button>
+          <button type="submit" class="btn-primary" [disabled]="revisionLoading()">
+            @if (revisionLoading()) { <span class="spinner"></span> Gönderiliyor... }
+            @else { Revizyon İste }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
