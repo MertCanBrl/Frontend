@@ -182,6 +182,7 @@
   .page { padding: 1.25rem 1rem; }
   .info-grid-3col { grid-template-columns: 1fr; }
   .field-row { grid-template-columns: 1fr; }
+  .legends-row { flex-direction: column; }
 }
 
 /* ── Onay Durumu Rozetleri ───────────────────────────────────────────────── */
@@ -271,14 +272,19 @@
 }
 .po-tip-host:hover .po-tip-body { display: block; }
 
-/* ── PÇ açıklama legend'i ────────────────────────────────────────────────── */
-.po-legend-panel {
+/* ── PÇ / ÖÇ açıklama legend'leri ──────────────────────────────────────────── */
+.legends-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.legends-row .outcome-legend-panel { flex: 1; min-width: 0; }
+.outcome-legend-panel {
   background: #fff;
   border: 1px solid var(--c-line);
   border-radius: 8px;
   overflow: hidden;
 }
-.po-legend-toggle {
+.outcome-legend-toggle {
   width: 100%;
   display: flex;
   align-items: center;
@@ -294,22 +300,22 @@
   text-align: left;
   transition: background 0.12s;
 }
-.po-legend-toggle:hover { background: #eeece8; }
-.po-legend-chevron { color: var(--c-slate); font-size: 0.7rem; margin-left: 0.5rem; }
-.po-legend-body {
+.outcome-legend-toggle:hover { background: #eeece8; }
+.outcome-legend-chevron { color: var(--c-slate); font-size: 0.7rem; margin-left: 0.5rem; }
+.outcome-legend-body {
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
-.po-legend-row {
+.outcome-legend-row {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   font-size: 0.82rem;
   line-height: 1.45;
 }
-.po-legend-code {
+.outcome-legend-code {
   flex-shrink: 0;
   font-family: monospace;
   font-weight: 700;
@@ -319,4 +325,4 @@
   border-radius: 4px;
   font-size: 0.78rem;
 }
-.po-legend-desc { color: var(--c-ink); }
+.outcome-legend-desc { color: var(--c-ink); }
