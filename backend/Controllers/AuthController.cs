@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models.DTOs;
@@ -19,28 +20,16 @@ public class AuthController : ControllerBase
         _tokenService = tokenService;
     }
 
-    // POST: api/auth/login
     [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
     {
-        // Email ile kullanıcıyı bul
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-        if (user == null)
-        {
+        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized("Email veya şifre hatalı.");
-        }
 
-        // Şifreyi doğrula (girilen şifre ile kayıttaki hash'i karşılaştır)
-        bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-
-        if (!passwordValid)
-        {
-            return Unauthorized("Email veya şifre hatalı.");
-        }
-
-        // Token üret ve dön
         var token = _tokenService.CreateToken(user);
 
         return new LoginResponse

@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -216,7 +217,8 @@ public class AdminController : ControllerBase
     private static string GeneratePassword()
     {
         const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#";
-        var rng = new Random();
-        return new string(Enumerable.Range(0, 12).Select(_ => chars[rng.Next(chars.Length)]).ToArray());
+        return new string(Enumerable.Range(0, 12)
+            .Select(_ => chars[RandomNumberGenerator.GetInt32(chars.Length)])
+            .ToArray());
     }
 }

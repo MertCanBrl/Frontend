@@ -1,37 +1,45 @@
 import { Routes } from '@angular/router';
-import { Login } from './features/login/login';
-import { AdminDashboard } from './features/admin-dashboard/admin-dashboard';
-import { InstructorShell } from './features/instructor-shell/instructor-shell';
-import { MyCourses } from './features/my-courses/my-courses';
-import { CourseDetail } from './features/course-detail/course-detail';
-import { CourseContents } from './features/course-contents/course-contents';
-import { CourseContentDetail } from './features/course-content-detail/course-content-detail';
-import { TermCourses } from './features/term-courses/term-courses';
-import { TermCourseDetail } from './features/term-course-detail/term-course-detail';
 import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: Login },
+  {
+    path: 'login',
+    loadComponent: () => import('./features/login/login').then(m => m.Login)
+  },
   {
     path: 'admin',
-    component: AdminDashboard,
+    loadComponent: () => import('./features/admin-dashboard/admin-dashboard').then(m => m.AdminDashboard),
     canActivate: [roleGuard],
     data: { role: 'Admin' }
   },
   {
     path: 'instructor',
-    component: InstructorShell,
+    loadComponent: () => import('./features/instructor-shell/instructor-shell').then(m => m.InstructorShell),
     canActivate: [roleGuard],
     data: { role: 'Instructor' },
     children: [
       { path: '', redirectTo: 'course-contents', pathMatch: 'full' },
-      { path: 'course-contents', component: CourseContents },
-      { path: 'course-contents/:courseId', component: CourseContentDetail },
-      { path: 'term-courses', component: TermCourses },
-      { path: 'term-courses/:courseId', component: TermCourseDetail },
-      // Geriye dönük uyumluluk
-      { path: 'course/:id', component: CourseDetail },
+      {
+        path: 'course-contents',
+        loadComponent: () => import('./features/course-contents/course-contents').then(m => m.CourseContents)
+      },
+      {
+        path: 'course-contents/:courseId',
+        loadComponent: () => import('./features/course-content-detail/course-content-detail').then(m => m.CourseContentDetail)
+      },
+      {
+        path: 'term-courses',
+        loadComponent: () => import('./features/term-courses/term-courses').then(m => m.TermCourses)
+      },
+      {
+        path: 'term-courses/:courseId',
+        loadComponent: () => import('./features/term-course-detail/term-course-detail').then(m => m.TermCourseDetail)
+      },
+      {
+        path: 'course/:id',
+        loadComponent: () => import('./features/course-detail/course-detail').then(m => m.CourseDetail)
+      },
     ]
   },
   { path: '**', redirectTo: 'login' }

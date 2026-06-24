@@ -19,12 +19,20 @@ public class CourseTopicController : ControllerBase
     private int GetUserId() =>
         int.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
 
+    // Okuma: kendi dersi veya Admin
+    private async Task<bool> CanRead(int courseId) =>
+        User.IsInRole("Admin") ||
+        await _context.Courses.AnyAsync(c => c.Id == courseId && c.InstructorId == GetUserId());
+
+    // Yazma: kendi kilitsiz dersi (Admin bu controller'ı kullanmaz)
     private async Task<bool> IsOwner(int courseId) =>
         await _context.Courses.AnyAsync(c => c.Id == courseId && c.InstructorId == GetUserId() && !c.IsLocked);
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CourseTopicDto>>> GetTopics(int courseId)
     {
+        if (!await CanRead(courseId)) return Forbid();
+
         var topics = await _context.CourseTopics
             .Where(t => t.CourseId == courseId)
             .OrderBy(t => t.OrderNumber)

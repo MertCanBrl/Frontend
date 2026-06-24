@@ -1,4 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:5042/api' // prod'da gerçek domain ile değişecek
+  // TODO: Production deploy'da gerçek API domain'i buraya girilmeli
+  // Örnek: https://api.mudek.yourdomain.com/api
+  apiUrl: 'https://REPLACE_WITH_PRODUCTION_API_URL/api'
 };
