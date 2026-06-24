@@ -559,3 +559,173 @@
 }
 
 .required-mark { color: var(--c-error); }
+
+/* ── Görüntüle butonu ────────────────────────────────────────────────────── */
+.btn-view-sm {
+  padding: 0.35rem 0.75rem; border-radius: 6px;
+  border: 1px solid #c4d4f0; background: #eef2fb; color: #2b5fad;
+  font-size: 0.82rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: background 0.12s;
+  white-space: nowrap;
+}
+.btn-view-sm:hover { background: #dce7f8; }
+
+/* ── Ders İçeriği Önizleme Modalı ───────────────────────────────────────── */
+.preview-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+}
+
+.preview-modal {
+  background: #fff; border-radius: 14px;
+  width: min(1100px, 100%); height: min(90vh, 100%);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+}
+
+.preview-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--c-line); flex-shrink: 0;
+}
+
+.preview-header-left { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+
+.preview-course-name {
+  font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 500;
+  color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.preview-loading {
+  padding: 4rem; text-align: center; color: var(--c-slate); font-size: 0.9rem;
+}
+
+.preview-tabs {
+  display: flex; border-bottom: 2px solid var(--c-line);
+  padding: 0 1.5rem; overflow-x: auto; flex-shrink: 0;
+}
+
+.preview-tab-btn {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.7rem 1rem; border: none; background: transparent;
+  font-family: inherit; font-size: 0.85rem; font-weight: 500; color: var(--c-slate);
+  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+}
+.preview-tab-btn:hover { color: var(--c-ink); }
+.preview-tab-btn.active { color: var(--c-navy); border-bottom-color: var(--c-gold); font-weight: 600; }
+
+.preview-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  background: #eef0f8; color: var(--c-navy); border-radius: 100px;
+  font-size: 0.72rem; font-weight: 700;
+}
+
+.preview-body {
+  flex: 1; overflow-y: auto; padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
+/* Info Grid */
+.preview-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.preview-info-card {
+  background: var(--c-paper); border: 1px solid var(--c-line);
+  border-radius: 10px; padding: 1.25rem;
+}
+
+.preview-info-title {
+  font-family: 'Fraunces', serif; font-size: 0.9rem; font-weight: 600;
+  color: var(--c-ink); margin: 0 0 0.75rem;
+}
+
+.preview-info-rows { display: flex; flex-direction: column; }
+
+.preview-info-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.45rem 0; border-bottom: 1px solid var(--c-line); font-size: 0.875rem;
+}
+.preview-info-row:last-child { border-bottom: none; }
+
+.preview-info-label { color: var(--c-slate); }
+.preview-info-val { color: var(--c-ink); font-weight: 500; }
+.preview-info-val.mono { font-family: monospace; }
+
+/* Text Blocks */
+.preview-text-block {
+  background: var(--c-paper); border: 1px solid var(--c-line);
+  border-radius: 10px; padding: 1.25rem;
+}
+.preview-text-label {
+  font-family: 'Fraunces', serif; font-size: 0.9rem; font-weight: 600;
+  color: var(--c-ink); margin: 0 0 0.6rem;
+}
+.preview-text-content {
+  margin: 0; font-size: 0.875rem; color: var(--c-ink); line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Empty */
+.preview-empty {
+  padding: 3rem; text-align: center; color: var(--c-slate);
+  background: var(--c-paper); border: 1px solid var(--c-line); border-radius: 10px;
+}
+
+/* List (Konular / Anket Soruları) */
+.preview-list {
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.preview-list-item {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  background: var(--c-paper); border: 1px solid var(--c-line);
+  border-radius: 8px; padding: 0.85rem 1rem;
+}
+.preview-list-num {
+  flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+  background: #eef0f8; color: var(--c-navy); font-size: 0.78rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.preview-list-texts { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+.preview-list-title { font-size: 0.875rem; font-weight: 500; color: var(--c-ink); }
+.preview-list-desc { font-size: 0.82rem; color: var(--c-slate); }
+
+/* Survey Tags */
+.preview-survey-tags { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.15rem; }
+.preview-survey-tag {
+  display: inline-block; padding: 0.15rem 0.55rem; border-radius: 100px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.preview-survey-tag.lo-tag { background: #eef0f8; color: var(--c-navy); }
+.preview-survey-tag.active-tag { background: #edf7f1; color: var(--c-success); }
+.preview-survey-tag.inactive-tag { background: #f5f4f0; color: var(--c-slate); }
+
+/* Outcomes Table */
+.preview-table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid var(--c-line); }
+.preview-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.preview-table thead tr { background: #faf8f5; border-bottom: 1px solid var(--c-line); }
+.preview-table th { padding: 0.65rem 0.9rem; text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-slate); white-space: nowrap; }
+.preview-table tbody tr { border-bottom: 1px solid var(--c-line); }
+.preview-table tbody tr:last-child { border-bottom: none; }
+.preview-table td { padding: 0.75rem 0.9rem; vertical-align: top; color: var(--c-ink); }
+.preview-outcome-desc { max-width: 400px; }
+
+/* Matrix */
+.preview-matrix-info {
+  font-size: 0.82rem; color: var(--c-slate); padding: 0.5rem 0;
+}
+.preview-matrix-wrapper { overflow-x: auto; }
+.preview-matrix-table { border-collapse: collapse; font-size: 0.82rem; }
+.pm-corner { background: #faf8f5; border: 1px solid var(--c-line); padding: 0.5rem 0.85rem; min-width: 80px; font-weight: 600; color: var(--c-slate); font-size: 0.75rem; }
+.pm-po-head { background: #faf8f5; border: 1px solid var(--c-line); padding: 0.4rem 0.3rem; min-width: 44px; max-width: 52px; text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--c-navy); cursor: default; }
+.pm-lo-head { border: 1px solid var(--c-line); padding: 0.4rem 0.85rem; font-size: 0.8rem; font-weight: 600; color: var(--c-navy); white-space: nowrap; background: #faf8f5; cursor: default; }
+.pm-cell { border: 1px solid var(--c-line); width: 44px; height: 34px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 0.85rem; }
+
+/* Contribution level colors (matrix) */
+.level-0 { background: #f5f4f0; color: transparent; }
+.level-1 { background: #e8f5ee; color: #1a7a4a; }
+.level-2 { background: #d1ecd8; color: #155d38; }
+.level-3 { background: #fef9e7; color: #b45309; }
+.level-4 { background: #fde68a; color: #92400e; }
+.level-5 { background: #d4a843; color: #3d1e00; }

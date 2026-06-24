@@ -457,6 +457,9 @@
                   <td><span class="badge badge-pending">Onay Bekliyor</span></td>
                   <td>
                     <div class="approval-actions">
+                      <button class="btn-view-sm" (click)="openPreview(item.courseId)">
+                        Görüntüle
+                      </button>
                       <button class="btn-approve-sm" (click)="approveCourse(item.courseId, item.courseName)">
                         Onayla
                       </button>
@@ -475,6 +478,203 @@
 
   </main>
 </div>
+
+<!-- Ders İçeriği Önizleme Modalı -->
+@if (previewVisible()) {
+  <div class="preview-overlay" (click)="closePreview()">
+    <div class="preview-modal" (click)="$event.stopPropagation()">
+
+      <div class="preview-header">
+        <div class="preview-header-left">
+          @if (previewData()) {
+            <span class="code-tag">{{ previewData()!.courseDetail.code }}</span>
+            <span class="preview-course-name">{{ previewData()!.courseDetail.name }}</span>
+          } @else {
+            <span class="preview-course-name">Ders İçeriği</span>
+          }
+        </div>
+        <button class="modal-close" (click)="closePreview()">✕</button>
+      </div>
+
+      @if (previewLoading()) {
+        <div class="preview-loading">Yükleniyor…</div>
+      } @else if (previewError()) {
+        <div class="alert alert-error" style="margin: 1rem 1.5rem;">{{ previewError() }}</div>
+      } @else if (previewData()) {
+
+        <div class="preview-tabs">
+          <button class="preview-tab-btn" [class.active]="previewTab() === 'info'" (click)="previewTab.set('info')">Genel Bilgiler</button>
+          <button class="preview-tab-btn" [class.active]="previewTab() === 'topics'" (click)="previewTab.set('topics')">
+            Ders Konuları <span class="preview-tab-count">{{ previewData()!.topics.length }}</span>
+          </button>
+          <button class="preview-tab-btn" [class.active]="previewTab() === 'outcomes'" (click)="previewTab.set('outcomes')">
+            Öğrenme Çıktıları <span class="preview-tab-count">{{ previewData()!.learningOutcomes.length }}</span>
+          </button>
+          <button class="preview-tab-btn" [class.active]="previewTab() === 'mapping'" (click)="previewTab.set('mapping')">ÖÇ-PÇ Matrisi</button>
+          <button class="preview-tab-btn" [class.active]="previewTab() === 'survey'" (click)="previewTab.set('survey')">
+            Anket Soruları <span class="preview-tab-count">{{ previewData()!.surveyQuestions.length }}</span>
+          </button>
+        </div>
+
+        <div class="preview-body">
+
+          <!-- Genel Bilgiler -->
+          @if (previewTab() === 'info') {
+            <div class="preview-info-grid">
+              <div class="preview-info-card">
+                <h3 class="preview-info-title">Ders Bilgileri</h3>
+                <div class="preview-info-rows">
+                  <div class="preview-info-row"><span class="preview-info-label">Ders Kodu</span><span class="preview-info-val mono">{{ previewData()!.courseDetail.code }}</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">Ders Adı</span><span class="preview-info-val">{{ previewData()!.courseDetail.name }}</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">Ders Tipi</span><span class="preview-info-val">{{ previewData()!.courseDetail.courseType || '—' }}</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">Sınıf</span><span class="preview-info-val">{{ previewData()!.courseDetail.classYear }}. Sınıf</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">Dönem</span><span class="preview-info-val">{{ previewData()!.courseDetail.semester }}</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">Bölüm</span><span class="preview-info-val">{{ previewData()!.courseDetail.department || '—' }}</span></div>
+                </div>
+              </div>
+              <div class="preview-info-card">
+                <h3 class="preview-info-title">Kredi & Yük</h3>
+                <div class="preview-info-rows">
+                  <div class="preview-info-row"><span class="preview-info-label">Kredi</span><span class="preview-info-val">{{ previewData()!.courseDetail.credit }}</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">AKTS</span><span class="preview-info-val">{{ previewData()!.courseDetail.akts || '—' }}</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">Haftalık Saat</span><span class="preview-info-val">{{ previewData()!.courseDetail.weeklyHours || '—' }}</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">Zorunluluk</span><span class="preview-info-val">{{ previewData()!.courseDetail.isMandatory ? 'Zorunlu' : 'Seçmeli' }}</span></div>
+                  <div class="preview-info-row"><span class="preview-info-label">Öğretim Üyesi</span><span class="preview-info-val">{{ previewData()!.courseDetail.instructorName || '—' }}</span></div>
+                </div>
+              </div>
+            </div>
+
+            @if (previewData()!.courseDetail.description) {
+              <div class="preview-text-block">
+                <h4 class="preview-text-label">Ders Tanımı</h4>
+                <p class="preview-text-content">{{ previewData()!.courseDetail.description }}</p>
+              </div>
+            }
+            @if (previewData()!.courseDetail.objective) {
+              <div class="preview-text-block">
+                <h4 class="preview-text-label">Ders Amacı</h4>
+                <p class="preview-text-content">{{ previewData()!.courseDetail.objective }}</p>
+              </div>
+            }
+          }
+
+          <!-- Ders Konuları -->
+          @if (previewTab() === 'topics') {
+            @if (previewData()!.topics.length === 0) {
+              <div class="preview-empty">Henüz konu eklenmemiş.</div>
+            } @else {
+              <div class="preview-list">
+                @for (topic of previewData()!.topics; track topic.id; let i = $index) {
+                  <div class="preview-list-item">
+                    <span class="preview-list-num">{{ i + 1 }}</span>
+                    <div class="preview-list-texts">
+                      <span class="preview-list-title">{{ topic.title }}</span>
+                      @if (topic.description) {
+                        <span class="preview-list-desc">{{ topic.description }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <!-- Öğrenme Çıktıları -->
+          @if (previewTab() === 'outcomes') {
+            @if (previewData()!.learningOutcomes.length === 0) {
+              <div class="preview-empty">Henüz öğrenme çıktısı eklenmemiş.</div>
+            } @else {
+              <div class="preview-table-wrapper">
+                <table class="preview-table">
+                  <thead>
+                    <tr>
+                      <th>Kod</th>
+                      <th>Öğrenme Çıktısı</th>
+                      <th>Bileşen</th>
+                      <th>Bloom Düzeyi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (lo of previewData()!.learningOutcomes; track lo.id) {
+                      <tr>
+                        <td><span class="code-tag">{{ lo.code }}</span></td>
+                        <td class="preview-outcome-desc">{{ lo.description }}</td>
+                        <td>{{ lo.component || '—' }}</td>
+                        <td>{{ lo.bloomLevel || '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          <!-- ÖÇ-PÇ Matrisi -->
+          @if (previewTab() === 'mapping') {
+            @if (previewData()!.matrix.learningOutcomes.length === 0) {
+              <div class="preview-empty">Öğrenme çıktısı bulunmuyor.</div>
+            } @else {
+              <div class="preview-matrix-info">
+                Katkı düzeyi: <strong>1</strong> Çok Düşük &nbsp;·&nbsp; <strong>2</strong> Düşük &nbsp;·&nbsp; <strong>3</strong> Orta &nbsp;·&nbsp; <strong>4</strong> Yüksek &nbsp;·&nbsp; <strong>5</strong> Çok Yüksek
+              </div>
+              <div class="preview-matrix-wrapper">
+                <table class="preview-matrix-table">
+                  <thead>
+                    <tr>
+                      <th class="pm-corner">ÖÇ \ PÇ</th>
+                      @for (po of previewData()!.matrix.programOutcomes; track po.id) {
+                        <th class="pm-po-head" [title]="po.code + ': ' + po.description">{{ po.code }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (lo of previewData()!.matrix.learningOutcomes; track lo.id) {
+                      <tr>
+                        <td class="pm-lo-head" [title]="lo.code + ' – ' + lo.description">{{ lo.code }}</td>
+                        @for (po of previewData()!.matrix.programOutcomes; track po.id) {
+                          <td class="pm-cell" [class]="previewContributionClass(getPreviewContribution(lo.id, po.id))">
+                            {{ getPreviewContribution(lo.id, po.id) === 0 ? '' : getPreviewContribution(lo.id, po.id) }}
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          <!-- Anket Soruları -->
+          @if (previewTab() === 'survey') {
+            @if (previewData()!.surveyQuestions.length === 0) {
+              <div class="preview-empty">Henüz anket sorusu eklenmemiş.</div>
+            } @else {
+              <div class="preview-list">
+                @for (q of previewData()!.surveyQuestions; track q.id; let i = $index) {
+                  <div class="preview-list-item">
+                    <span class="preview-list-num">{{ i + 1 }}</span>
+                    <div class="preview-list-texts">
+                      <span class="preview-list-title">{{ q.questionText }}</span>
+                      <div class="preview-survey-tags">
+                        @if (q.learningOutcomeCode) {
+                          <span class="preview-survey-tag lo-tag">{{ q.learningOutcomeCode }}</span>
+                        }
+                        <span class="preview-survey-tag" [class.active-tag]="q.isActive" [class.inactive-tag]="!q.isActive">
+                          {{ q.isActive ? 'Aktif' : 'Pasif' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+        </div>
+      }
+    </div>
+  </div>
+}
 
 <!-- Revizyon İste Modal -->
 @if (revisionModalVisible()) {

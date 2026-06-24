@@ -3,7 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminService } from '../../core/services/admin.service';
 import { InstructorService } from '../../core/services/instructor.service';
-import { UserDto, CreateUserRequest, CreateCourseRequest, ApprovalListItemDto } from '../../core/models/admin.models';
+import { UserDto, CreateUserRequest, CreateCourseRequest, ApprovalListItemDto, AdminCourseContentDto } from '../../core/models/admin.models';
 import { ProgramOutcomeDto, SaveProgramOutcomeRequest } from '../../core/models/course.models';
 
 @Component({
@@ -80,6 +80,43 @@ export class AdminDashboard implements OnInit {
     description: ['', [Validators.required]],
     details: [''],
   });
+
+  // ── Ders İçeriği Önizleme ─────────────────────────────────────────────────
+
+  previewVisible = signal(false);
+  previewLoading = signal(false);
+  previewError = signal('');
+  previewData = signal<AdminCourseContentDto | null>(null);
+  previewTab = signal<'info' | 'topics' | 'outcomes' | 'mapping' | 'survey'>('info');
+
+  readonly contributionLabels = ['—', 'Çok Düşük', 'Düşük', 'Orta', 'Yüksek', 'Çok Yüksek'];
+
+  openPreview(courseId: number): void {
+    this.previewData.set(null);
+    this.previewError.set('');
+    this.previewTab.set('info');
+    this.previewVisible.set(true);
+    this.previewLoading.set(true);
+    this.adminService.getCourseContent(courseId).subscribe({
+      next: (data) => { this.previewData.set(data); this.previewLoading.set(false); },
+      error: () => { this.previewLoading.set(false); this.previewError.set('İçerik yüklenirken bir hata oluştu.'); },
+    });
+  }
+
+  closePreview(): void {
+    this.previewVisible.set(false);
+    this.previewData.set(null);
+  }
+
+  getPreviewContribution(loId: number, poId: number): number {
+    const matrix = this.previewData()?.matrix;
+    if (!matrix) return 0;
+    return matrix.mappings.find(m => m.learningOutcomeId === loId && m.programOutcomeId === poId)?.contributionLevel ?? 0;
+  }
+
+  previewContributionClass(level: number): string {
+    return ['level-0', 'level-1', 'level-2', 'level-3', 'level-4', 'level-5'][level] ?? 'level-0';
+  }
 
   // ── Onay Yönetimi ─────────────────────────────────────────────────────────
 

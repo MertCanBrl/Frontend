@@ -8,6 +8,7 @@ import {
   CreateUserRequest,
   CreateCourseRequest,
   ApprovalListItemDto,
+  AdminCourseContentDto,
 } from '../models/admin.models';
 
 @Injectable({ providedIn: 'root' })
@@ -43,5 +44,9 @@ export class AdminService {
 
   requestCourseRevision(courseId: number, note: string): Observable<void> {
     return this.http.post<void>(`${this.base}/approvals/${courseId}/request-revision`, { note });
+  }
+
+  getCourseContent(courseId: number): Observable<AdminCourseContentDto> {
+    return this.http.get<AdminCourseContentDto>(`${this.base}/courses/${courseId}/content`);
   }
 }
