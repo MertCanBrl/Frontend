@@ -50,7 +50,11 @@ export class Login {
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = 'E-posta veya şifre hatalı.';
+        if (err?.status === 429) {
+          this.errorMessage = 'Çok fazla giriş denemesi yapıldı. Lütfen 1 dakika bekleyin.';
+        } else {
+          this.errorMessage = 'E-posta veya şifre hatalı.';
+        }
         console.error('Login error:', err);
       }
     });

@@ -101,3 +101,12 @@ Email__From=noreply@yourdomain.com
 |-----|--------|
 | Admin | Kullanıcı yönetimi, ders yönetimi, onay akışı |
 | Instructor | Kendi derslerinin içerik girişi, öğrenme çıktıları, ÖÇ-PÇ eşleştirme |
+
+## Seed Kullanıcı Giriş Bilgileri
+
+| E-posta | Şifre | Rol |
+|---------|-------|-----|
+| admin@mudek.edu.tr | admin123 | Admin |
+| ali.vural@mudek.edu.tr | hoca123 | Instructor |
+
+> Production deploy sonrası bu şifreleri mutlaka değiştirin.
