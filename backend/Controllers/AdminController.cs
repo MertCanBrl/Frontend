@@ -211,13 +211,32 @@ public class AdminController : ControllerBase
     [HttpGet("courses/{courseId:int}/content")]
     public async Task<ActionResult<AdminCourseContentDto>> GetCourseContent(int courseId)
     {
+        var data = await LoadCourseContentAsync(courseId);
+        if (data == null) return NotFound();
+        return Ok(data);
+    }
+
+    // GET: api/admin/courses/{courseId}/pdf
+    [HttpGet("courses/{courseId:int}/pdf")]
+    public async Task<IActionResult> GetCoursePdf(int courseId)
+    {
+        var data = await LoadCourseContentAsync(courseId);
+        if (data == null) return NotFound();
+
+        var pdfBytes = CoursePdfService.Generate(data);
+        var fileName = $"ders-icerigi-{data.CourseDetail.Code.Replace("/", "-")}.pdf";
+        return File(pdfBytes, "application/pdf", fileName);
+    }
+
+    private async Task<AdminCourseContentDto?> LoadCourseContentAsync(int courseId)
+    {
         var course = await _context.Courses
             .Include(c => c.Instructor)
             .Include(c => c.CourseTopics)
             .Include(c => c.LearningOutcomes)
             .FirstOrDefaultAsync(c => c.Id == courseId);
 
-        if (course == null) return NotFound();
+        if (course == null) return null;
 
         var loIds = course.LearningOutcomes.Select(lo => lo.Id).ToList();
 
@@ -275,7 +294,7 @@ public class AdminController : ControllerBase
             })
             .ToList();
 
-        return Ok(new AdminCourseContentDto
+        return new AdminCourseContentDto
         {
             CourseDetail = MapToCourseDetailDto(course),
             Topics = topics,
@@ -287,7 +306,7 @@ public class AdminController : ControllerBase
                 Mappings = mappings
             },
             SurveyQuestions = surveyQuestions
-        });
+        };
     }
 
     // ── Yardımcı metotlar ────────────────────────────────────────────────────
