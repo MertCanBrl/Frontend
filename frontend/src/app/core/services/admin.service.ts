@@ -49,4 +49,8 @@ export class AdminService {
   getCourseContent(courseId: number): Observable<AdminCourseContentDto> {
     return this.http.get<AdminCourseContentDto>(`${this.base}/courses/${courseId}/content`);
   }
+
+  downloadCoursePdf(courseId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/courses/${courseId}/pdf`, { responseType: 'blob' });
+  }
 }

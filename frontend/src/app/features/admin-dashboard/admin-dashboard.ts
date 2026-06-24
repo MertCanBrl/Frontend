@@ -91,6 +91,27 @@ export class AdminDashboard implements OnInit {
 
   readonly contributionLabels = ['—', 'Çok Düşük', 'Düşük', 'Orta', 'Yüksek', 'Çok Yüksek'];
 
+  pdfDownloading = signal<number | null>(null);
+
+  downloadPdf(courseId: number, courseCode: string): void {
+    this.pdfDownloading.set(courseId);
+    this.adminService.downloadCoursePdf(courseId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ders-icerigi-${courseCode.replace('/', '-')}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.pdfDownloading.set(null);
+      },
+      error: () => {
+        this.pdfDownloading.set(null);
+        this.approvalsError.set('PDF oluşturulamadı. Lütfen tekrar deneyin.');
+      },
+    });
+  }
+
   openPreview(courseId: number): void {
     this.previewData.set(null);
     this.previewError.set('');

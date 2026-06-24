@@ -460,6 +460,11 @@
                       <button class="btn-view-sm" (click)="openPreview(item.courseId)">
                         Görüntüle
                       </button>
+                      <button class="btn-pdf-sm" [disabled]="pdfDownloading() === item.courseId"
+                              (click)="downloadPdf(item.courseId, item.courseCode)">
+                        @if (pdfDownloading() === item.courseId) { <span class="spinner spinner-dark"></span> }
+                        PDF İndir
+                      </button>
                       <button class="btn-approve-sm" (click)="approveCourse(item.courseId, item.courseName)">
                         Onayla
                       </button>

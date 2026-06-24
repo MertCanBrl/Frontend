@@ -560,6 +560,12 @@
 
 .required-mark { color: var(--c-error); }
 
+/* ── Spinner (koyu, dark background olmayan butonlar için) ──────────────── */
+.spinner-dark {
+  border-color: rgba(0, 0, 0, 0.2);
+  border-top-color: currentColor;
+}
+
 /* ── Görüntüle butonu ────────────────────────────────────────────────────── */
 .btn-view-sm {
   padding: 0.35rem 0.75rem; border-radius: 6px;
@@ -569,6 +575,17 @@
   white-space: nowrap;
 }
 .btn-view-sm:hover { background: #dce7f8; }
+
+.btn-pdf-sm {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.35rem 0.75rem; border-radius: 6px;
+  border: 1px solid #d6c4f0; background: #f3eeff; color: #6b3fcf;
+  font-size: 0.82rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: background 0.12s;
+  white-space: nowrap;
+}
+.btn-pdf-sm:hover:not(:disabled) { background: #e8dafb; }
+.btn-pdf-sm:disabled { opacity: 0.65; cursor: default; }
 
 /* ── Ders İçeriği Önizleme Modalı ───────────────────────────────────────── */
 .preview-overlay {
