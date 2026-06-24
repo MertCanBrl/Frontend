@@ -343,22 +343,6 @@
 
           <div class="legends-row">
             <div class="outcome-legend-panel">
-              <button class="outcome-legend-toggle" (click)="togglePoLegend()" type="button">
-                Program Çıktısı Açıklamaları
-                <span class="outcome-legend-chevron">{{ poLegendOpen() ? '▲' : '▼' }}</span>
-              </button>
-              @if (poLegendOpen()) {
-                <div class="outcome-legend-body">
-                  @for (po of matrix()!.programOutcomes; track po.id) {
-                    <div class="outcome-legend-row">
-                      <span class="outcome-legend-code">{{ po.code }}</span>
-                      <span class="outcome-legend-desc">{{ po.description }}</span>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-            <div class="outcome-legend-panel">
               <button class="outcome-legend-toggle" (click)="toggleLoLegend()" type="button">
                 Öğrenme Çıktısı Açıklamaları
                 <span class="outcome-legend-chevron">{{ loLegendOpen() ? '▲' : '▼' }}</span>
@@ -369,6 +353,22 @@
                     <div class="outcome-legend-row">
                       <span class="outcome-legend-code">{{ lo.code }}</span>
                       <span class="outcome-legend-desc">{{ lo.description }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            <div class="outcome-legend-panel">
+              <button class="outcome-legend-toggle" (click)="togglePoLegend()" type="button">
+                Program Çıktısı Açıklamaları
+                <span class="outcome-legend-chevron">{{ poLegendOpen() ? '▲' : '▼' }}</span>
+              </button>
+              @if (poLegendOpen()) {
+                <div class="outcome-legend-body">
+                  @for (po of matrix()!.programOutcomes; track po.id) {
+                    <div class="outcome-legend-row">
+                      <span class="outcome-legend-code">{{ po.code }}</span>
+                      <span class="outcome-legend-desc">{{ po.description }}</span>
                     </div>
                   }
                 </div>
