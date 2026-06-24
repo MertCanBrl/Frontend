@@ -66,8 +66,8 @@ public class ProgramOutcomeController : ControllerBase
     {
         var po = new ProgramOutcome
         {
-            Code = request.Code,
-            Description = request.Description,
+            Code = request.Code.Trim().ToUpperInvariant(),
+            Description = request.Description.Trim(),
             Details = request.Details,
             GroupId = request.GroupId
         };
