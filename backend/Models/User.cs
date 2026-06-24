@@ -1,13 +1,22 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Backend.Models;
 
 public class User
 {
     public int Id { get; set; }
-    public string FullName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;   // "Admin" veya "Instructor"
 
-    // Bu öğretmene atanan dersler (navigation property)
+    [MaxLength(200)]
+    public string FullName { get; set; } = string.Empty;
+
+    [MaxLength(256)]
+    public string Email { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string PasswordHash { get; set; } = string.Empty;
+
+    [MaxLength(20)]
+    public string Role { get; set; } = string.Empty;
+
     public ICollection<Course> Courses { get; set; } = new List<Course>();
 }

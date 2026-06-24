@@ -1,31 +1,51 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Backend.Models;
 
 public class Course
 {
     public int Id { get; set; }
+
+    [MaxLength(20)]
     public string Code { get; set; } = string.Empty;
+
+    [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
+
+    [MaxLength(20)]
     public string Semester { get; set; } = string.Empty;
+
     public int Credit { get; set; }
     public bool IsMandatory { get; set; }
 
-    // Yeni alanlar
     public int Akts { get; set; } = 0;
     public int WeeklyHours { get; set; } = 3;
+
+    [MaxLength(100)]
     public string Department { get; set; } = string.Empty;
+
     public int ClassYear { get; set; } = 1;
+
+    [MaxLength(50)]
     public string CourseType { get; set; } = "Teorik";
+
     public bool IsLocked { get; set; } = false;
 
-    // İçerik alanları
+    [MaxLength(4000)]
     public string? Description { get; set; }
+
+    [MaxLength(4000)]
     public string? Objective { get; set; }
 
-    // Onay durumu: Draft | PendingApproval | Approved | RevisionRequested
+    [MaxLength(30)]
     public string ContentStatus { get; set; } = "Draft";
+
     public DateTime? SubmittedAt { get; set; }
     public DateTime? ApprovedAt { get; set; }
+
+    [MaxLength(2000)]
     public string? ReviewNote { get; set; }
+
     public int? ReviewedByUserId { get; set; }
     public User? ReviewedBy { get; set; }
 

@@ -20,9 +20,8 @@ public class EmailService : IEmailService
 
         if (string.IsNullOrWhiteSpace(host))
         {
-            _logger.LogWarning(
-                "SMTP yapılandırılmamış. E-posta atlandı. >> Kullanıcı: {Email} | Şifre: {Password}",
-                toEmail, password);
+            // Parola asla loglanmaz; yalnızca yapılandırma eksikliği uyarısı verilir
+            _logger.LogWarning("SMTP yapılandırılmamış. Kimlik bilgileri e-posta ile gönderilemedi: {Email}", toEmail);
             return;
         }
 

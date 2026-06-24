@@ -64,6 +64,9 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         // ── Seed Data ────────────────────────────────────────
+        // TODO: Bu seed verileri EF migration ile production DB'ye de eklenir.
+        // Production'da demo hesapların (admin@mudek.edu.tr, ali.vural@mudek.edu.tr)
+        // şifrelerini ilk deploy sonrası mutlaka değiştirin veya devre dışı bırakın.
 
         modelBuilder.Entity<User>().HasData(
             new User { Id = 1, FullName = "Sistem Yöneticisi", Email = "admin@mudek.edu.tr", PasswordHash = "$2a$11$nKSgs23VvGfIptin60wqB.z/b7RyNWK8ixzrKy6gd4fAPc2ON1bee", Role = "Admin" },

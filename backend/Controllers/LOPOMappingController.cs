@@ -19,10 +19,15 @@ public class LOPOMappingController : ControllerBase
     private int GetUserId() =>
         int.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
 
+    private async Task<bool> CanRead(int courseId) =>
+        User.IsInRole("Admin") ||
+        await _context.Courses.AnyAsync(c => c.Id == courseId && c.InstructorId == GetUserId());
+
     // GET: api/courses/{courseId}/mapping
     [HttpGet]
     public async Task<ActionResult<MappingMatrixDto>> GetMatrix(int courseId)
     {
+        if (!await CanRead(courseId)) return Forbid();
         var learningOutcomes = await _context.LearningOutcomes
             .Where(lo => lo.CourseId == courseId)
             .OrderBy(lo => lo.Code)

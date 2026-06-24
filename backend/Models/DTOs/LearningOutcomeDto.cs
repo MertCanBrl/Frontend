@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Backend.Models.DTOs;
 
 public class LearningOutcomeDto
@@ -11,7 +13,13 @@ public class LearningOutcomeDto
 
 public class SaveLearningOutcomeRequest
 {
+    [Required]
+    [MaxLength(500)]
     public string Description { get; set; } = string.Empty;
+
+    [MaxLength(50)]
     public string? BloomLevel { get; set; }
+
+    [MaxLength(100)]
     public string? Component { get; set; }
 }
