@@ -49,8 +49,8 @@
 .badge-elective { background: #f3ecff; color: #6d3ecb; }
 
 /* Info grid */
-.info-grid-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.info-card { background: #fff; border: 1px solid var(--c-line); border-radius: 10px; padding: 1.4rem; }
+.info-grid-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; align-items: stretch; }
+.info-card { background: #fff; border: 1px solid var(--c-line); border-radius: 10px; padding: 1.4rem; display: flex; flex-direction: column; }
 .info-card-title { font-family: 'Fraunces', serif; font-size: 0.95rem; font-weight: 600; color: var(--c-ink); margin: 0 0 0.9rem; }
 .info-rows { display: flex; flex-direction: column; }
 .info-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--c-line); font-size: 0.875rem; }
@@ -82,11 +82,6 @@
 .content-textarea:focus-visible { outline: none; border-color: var(--c-navy); background: #fff; }
 .section-footer { display: flex; justify-content: flex-end; }
 
-.btn-ai {
-  padding: 0.4rem 0.85rem; border: 1px solid var(--c-line); border-radius: 7px;
-  background: #f8f6f2; color: var(--c-slate); font-family: inherit; font-size: 0.8rem;
-  cursor: not-allowed; opacity: 0.7;
-}
 
 /* Section toolbar */
 .section-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -229,6 +224,32 @@
   padding: 0.75rem 1rem; background: #f0f4ff; color: #2b5fad;
   border: 1px solid #c5d4f0; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
 }
+
+/* ── Sticky alt aksiyon çubuğu ───────────────────────────────────────────── */
+.sticky-action-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  margin-top: auto;
+  background: #fff;
+  border-top: 1px solid var(--c-line);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  margin-left: -2.5rem;
+  margin-right: -2.5rem;
+  margin-bottom: -2rem;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  z-index: 50;
+}
+.action-bar-msg {
+  font-size: 0.875rem; font-weight: 500; padding: 0.35rem 0.75rem; border-radius: 6px;
+}
+.action-bar-success { background: #e8f5ee; color: #1a7a4a; }
+.action-bar-error { background: #fdecea; color: var(--c-danger); }
 
 /* ── Matris kilitleme ────────────────────────────────────────────────────── */
 .matrix-cell-locked { cursor: default !important; }

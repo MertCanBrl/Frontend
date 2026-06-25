@@ -30,6 +30,9 @@ public class InstructorController : ControllerBase
     private async Task<bool> OwnsCourse(int courseId) =>
         await _context.Courses.AnyAsync(c => c.Id == courseId && c.InstructorId == GetUserId());
 
+    private async Task<bool> OwnsUnlockedCourse(int courseId) =>
+        await _context.Courses.AnyAsync(c => c.Id == courseId && c.InstructorId == GetUserId() && !c.IsLocked);
+
     // ── Mevcut endpointler (geriye dönük uyumluluk) ──────────────────────────
 
     [HttpGet("my-courses")]
@@ -128,6 +131,7 @@ public class InstructorController : ControllerBase
         var userId = GetUserId();
         var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == courseId && c.InstructorId == userId);
         if (course == null) return NotFound();
+        if (course.IsLocked) return Forbid();
 
         course.Description = request.Description;
         course.Objective = request.Objective;
@@ -179,7 +183,7 @@ public class InstructorController : ControllerBase
     [HttpPost("course-contents/{courseId:int}/survey-questions")]
     public async Task<ActionResult<SurveyQuestionDto>> AddSurveyQuestion(int courseId, SaveSurveyQuestionRequest request)
     {
-        if (!await OwnsCourse(courseId)) return Forbid();
+        if (!await OwnsUnlockedCourse(courseId)) return Forbid();
 
         var question = new CourseSurveyQuestion
         {
@@ -209,7 +213,7 @@ public class InstructorController : ControllerBase
     [HttpPut("course-contents/{courseId:int}/survey-questions/{questionId:int}")]
     public async Task<IActionResult> UpdateSurveyQuestion(int courseId, int questionId, SaveSurveyQuestionRequest request)
     {
-        if (!await OwnsCourse(courseId)) return Forbid();
+        if (!await OwnsUnlockedCourse(courseId)) return Forbid();
 
         var question = await _context.CourseSurveyQuestions
             .FirstOrDefaultAsync(q => q.Id == questionId && q.CourseId == courseId);
@@ -225,7 +229,7 @@ public class InstructorController : ControllerBase
     [HttpDelete("course-contents/{courseId:int}/survey-questions/{questionId:int}")]
     public async Task<IActionResult> DeleteSurveyQuestion(int courseId, int questionId)
     {
-        if (!await OwnsCourse(courseId)) return Forbid();
+        if (!await OwnsUnlockedCourse(courseId)) return Forbid();
 
         var question = await _context.CourseSurveyQuestions
             .FirstOrDefaultAsync(q => q.Id == questionId && q.CourseId == courseId);

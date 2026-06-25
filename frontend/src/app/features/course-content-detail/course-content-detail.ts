@@ -8,6 +8,7 @@ import {
   MappingMatrixDto, MappingCellDto,
   SurveyQuestionDto
 } from '../../core/models/course.models';
+import { extractErrorMessage } from '../../core/utils/http-error.util';
 
 type Tab = 'info' | 'topics' | 'outcomes' | 'mapping' | 'survey';
 
@@ -60,12 +61,18 @@ export class CourseContentDetail implements OnInit {
     return classes[this.course()?.contentStatus ?? ''] ?? 'badge status-draft';
   });
 
-  // ── General info forms ────────────────────────────────────────────────────
+  // ── General info form ─────────────────────────────────────────────────────
 
   infoSaving = signal(false);
   infoSuccess = signal(false);
-  descForm = this.fb.group({ description: [''] });
-  objForm = this.fb.group({ objective: [''] });
+  infoError = signal<string | null>(null);
+  infoForm = this.fb.group({ description: [''], objective: [''] });
+
+  // Computed counters — reflect live list when tab is loaded, fall back to DTO value
+  topicsLoaded = signal(false);
+  outcomesLoaded = signal(false);
+  topicCount = computed(() => this.topicsLoaded() ? this.topics().length : (this.course()?.topicCount ?? 0));
+  outcomeCount = computed(() => this.outcomesLoaded() ? this.outcomes().length : (this.course()?.learningOutcomeCount ?? 0));
 
   // Topics
   topics = signal<CourseTopicDto[]>([]);
@@ -115,14 +122,12 @@ export class CourseContentDetail implements OnInit {
   });
 
   constructor() {
-    // Ders kilitliyse (PendingApproval / Approved) genel bilgi formlarını devre dışı bırak
+    // Ders kilitliyse (PendingApproval / Approved) genel bilgi formunu devre dışı bırak
     effect(() => {
       if (this.isEditable()) {
-        this.descForm.enable();
-        this.objForm.enable();
+        this.infoForm.enable();
       } else {
-        this.descForm.disable();
-        this.objForm.disable();
+        this.infoForm.disable();
       }
     });
   }
@@ -139,8 +144,7 @@ export class CourseContentDetail implements OnInit {
       next: (c) => {
         this.course.set(c);
         this.loading.set(false);
-        this.descForm.patchValue({ description: c.description ?? '' });
-        this.objForm.patchValue({ objective: c.objective ?? '' });
+        this.infoForm.patchValue({ description: c.description ?? '', objective: c.objective ?? '' });
       },
       error: () => this.loading.set(false),
     });
@@ -168,40 +172,31 @@ export class CourseContentDetail implements OnInit {
       },
       error: (err) => {
         this.submitLoading.set(false);
-        this.submitError.set(typeof err?.error === 'string' ? err.error : 'Bir hata oluştu. Lütfen tekrar deneyin.');
+        this.submitError.set(extractErrorMessage(err, 'Bir hata oluştu. Lütfen tekrar deneyin.'));
       },
     });
   }
 
   // ── General Info ──────────────────────────────────────────────────────────
 
-  saveDescription(): void {
+  saveInfo(): void {
     if (!this.isEditable()) return;
     this.infoSaving.set(true);
-    const desc = this.descForm.getRawValue().description ?? null;
-    const obj = this.course()?.objective ?? null;
-    this.svc.updateCourseContentInfo(this.courseId(), { description: desc, objective: obj }).subscribe({
+    this.infoError.set(null);
+    const raw = this.infoForm.getRawValue();
+    this.svc.updateCourseContentInfo(this.courseId(), {
+      description: raw.description ?? null,
+      objective: raw.objective ?? null,
+    }).subscribe({
       next: () => {
-        this.course.update(c => c ? { ...c, description: desc } : c);
+        this.course.update(c => c ? { ...c, description: raw.description, objective: raw.objective } : c);
         this.infoSaving.set(false);
         this.flashSuccess();
       },
-      error: () => this.infoSaving.set(false),
-    });
-  }
-
-  saveObjective(): void {
-    if (!this.isEditable()) return;
-    this.infoSaving.set(true);
-    const obj = this.objForm.getRawValue().objective ?? null;
-    const desc = this.course()?.description ?? null;
-    this.svc.updateCourseContentInfo(this.courseId(), { description: desc, objective: obj }).subscribe({
-      next: () => {
-        this.course.update(c => c ? { ...c, objective: obj } : c);
+      error: (err) => {
         this.infoSaving.set(false);
-        this.flashSuccess();
+        this.infoError.set(extractErrorMessage(err, 'Bilgiler kaydedilemedi.'));
       },
-      error: () => this.infoSaving.set(false),
     });
   }
 
@@ -213,7 +208,7 @@ export class CourseContentDetail implements OnInit {
   // ── Topics ────────────────────────────────────────────────────────────────
 
   loadTopics(): void {
-    this.svc.getTopics(this.courseId()).subscribe(t => this.topics.set(t));
+    this.svc.getTopics(this.courseId()).subscribe(t => { this.topics.set(t); this.topicsLoaded.set(true); });
   }
 
   openTopicForm(topic?: CourseTopicDto): void {
@@ -255,7 +250,7 @@ export class CourseContentDetail implements OnInit {
   // ── Learning Outcomes ─────────────────────────────────────────────────────
 
   loadOutcomes(): void {
-    this.svc.getLearningOutcomes(this.courseId()).subscribe(o => this.outcomes.set(o));
+    this.svc.getLearningOutcomes(this.courseId()).subscribe(o => { this.outcomes.set(o); this.outcomesLoaded.set(true); });
   }
 
   openOutcomeForm(outcome?: LearningOutcomeDto): void {
