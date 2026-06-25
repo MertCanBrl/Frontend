@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models;
 using Backend.Models.DTOs;
+using Backend.Utils;
 
 namespace Backend.Controllers;
 
@@ -1311,6 +1312,148 @@ public class InstructorController : ControllerBase
             });
 
         await _context.SaveChangesAsync();
+    }
+
+    // ── Devam (Devamsızlık) ────────────────────────────────────────────────────
+
+    [HttpGet("term-courses/{courseId:int}/attendance")]
+    public async Task<ActionResult<AttendanceMatrixDto>> GetAttendance(int courseId)
+    {
+        if (!await OwnsCourse(courseId)) return Forbid();
+
+        var course = await _context.Courses
+            .Where(c => c.Id == courseId)
+            .Select(c => new { c.AttendanceTotalWeeks, c.AttendanceLimitPercent })
+            .FirstOrDefaultAsync();
+        if (course == null) return NotFound();
+
+        var enrollments = await _context.Enrollments
+            .Include(e => e.Student)
+            .Where(e => e.CourseId == courseId)
+            .OrderBy(e => e.Student.StudentNumber)
+            .ToListAsync();
+
+        var absencesByStudent = (await _context.AttendanceRecords
+            .Where(a => a.CourseId == courseId)
+            .ToListAsync())
+            .GroupBy(a => a.StudentId)
+            .ToDictionary(g => g.Key, g => g.Select(a => a.WeekNumber).OrderBy(w => w).ToList());
+
+        var rows = enrollments.Select(e =>
+        {
+            absencesByStudent.TryGetValue(e.StudentId, out var weeks);
+            weeks ??= [];
+            var absentCount = weeks.Count;
+            return new AttendanceStudentRowDto
+            {
+                StudentId = e.StudentId,
+                StudentNumber = e.Student.StudentNumber,
+                FullName = e.Student.FirstName + " " + e.Student.LastName,
+                AbsentWeeks = weeks,
+                AbsentCount = absentCount,
+                AbsenceRate = AttendanceCalculator.AbsenceRate(absentCount, course.AttendanceTotalWeeks),
+                Status = AttendanceCalculator.Status(absentCount, course.AttendanceTotalWeeks, course.AttendanceLimitPercent)
+            };
+        }).ToList();
+
+        return Ok(new AttendanceMatrixDto
+        {
+            CourseId = courseId,
+            TotalWeeks = course.AttendanceTotalWeeks,
+            LimitPercent = course.AttendanceLimitPercent,
+            Students = rows,
+            Summary = new AttendanceSummaryDto
+            {
+                TotalStudents = rows.Count,
+                FailedCount = rows.Count(r => r.Status == AttendanceCalculator.Failed),
+                RiskCount = rows.Count(r => r.Status == AttendanceCalculator.Risk)
+            }
+        });
+    }
+
+    [HttpPut("term-courses/{courseId:int}/attendance")]
+    public async Task<IActionResult> SaveAttendance(int courseId, SaveAttendanceRequest request)
+    {
+        if (!await OwnsCourse(courseId)) return Forbid();
+
+        var totalWeeks = await _context.Courses
+            .Where(c => c.Id == courseId)
+            .Select(c => c.AttendanceTotalWeeks)
+            .FirstAsync();
+
+        var enrolledIds = await _context.Enrollments
+            .Where(e => e.CourseId == courseId)
+            .Select(e => e.StudentId)
+            .ToHashSetAsync();
+
+        // Validation — yazmadan önce
+        foreach (var s in request.Students)
+        {
+            if (!enrolledIds.Contains(s.StudentId))
+                return BadRequest(new { message = $"Öğrenci {s.StudentId} bu derse kayıtlı değil." });
+            foreach (var w in s.AbsentWeeks)
+                if (w < 1 || w > totalWeeks)
+                    return BadRequest(new { message = $"Geçersiz hafta numarası ({w}). 1 ile {totalWeeks} arasında olmalıdır." });
+        }
+
+        var existing = await _context.AttendanceRecords
+            .Where(a => a.CourseId == courseId)
+            .ToListAsync();
+        var existingByKey = existing.ToDictionary(a => (a.StudentId, a.WeekNumber));
+        var now = DateTime.UtcNow;
+
+        // İstenen devamsız hücreler kümesi
+        var desired = new HashSet<(int StudentId, int WeekNumber)>();
+        foreach (var s in request.Students)
+            foreach (var w in s.AbsentWeeks.Distinct())
+                desired.Add((s.StudentId, w));
+
+        // Eklenecekler (istenip de mevcut olmayanlar)
+        foreach (var key in desired)
+            if (!existingByKey.ContainsKey(key))
+                _context.AttendanceRecords.Add(new AttendanceRecord
+                {
+                    CourseId = courseId,
+                    StudentId = key.StudentId,
+                    WeekNumber = key.WeekNumber,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+
+        // Silinecekler — yalnızca istekte yer alan öğrenciler için (kısmi kaydetmeyi destekler)
+        var touchedStudents = request.Students.Select(s => s.StudentId).ToHashSet();
+        foreach (var rec in existing)
+            if (touchedStudents.Contains(rec.StudentId) && !desired.Contains((rec.StudentId, rec.WeekNumber)))
+                _context.AttendanceRecords.Remove(rec);
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Devamsızlık kayıtları kaydedildi." });
+    }
+
+    [HttpPut("term-courses/{courseId:int}/attendance/settings")]
+    public async Task<IActionResult> SaveAttendanceSettings(int courseId, SaveAttendanceSettingsRequest request)
+    {
+        if (!await OwnsCourse(courseId)) return Forbid();
+
+        if (request.TotalWeeks < 1 || request.TotalWeeks > 30)
+            return BadRequest(new { message = "Toplam hafta sayısı 1 ile 30 arasında olmalıdır." });
+        if (request.LimitPercent < 0 || request.LimitPercent > 100)
+            return BadRequest(new { message = "Devamsızlık sınırı 0 ile 100 arasında olmalıdır." });
+
+        var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == courseId);
+        if (course == null) return NotFound();
+
+        course.AttendanceTotalWeeks = request.TotalWeeks;
+        course.AttendanceLimitPercent = request.LimitPercent;
+
+        // Hafta sayısı küçültülürse, sınır dışında kalan haftalardaki kayıtları temizle.
+        var stale = await _context.AttendanceRecords
+            .Where(a => a.CourseId == courseId && a.WeekNumber > request.TotalWeeks)
+            .ToListAsync();
+        if (stale.Count > 0) _context.AttendanceRecords.RemoveRange(stale);
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Devam ayarları kaydedildi." });
     }
 
     // Risk Analysis

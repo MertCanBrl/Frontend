@@ -43,6 +43,12 @@ public class Course
     public DateTime? SubmittedAt { get; set; }
     public DateTime? ApprovedAt { get; set; }
 
+    // ── Devam (devamsızlık) ayarları ─────────────────────────────────────────
+    // Dönemdeki toplam hafta sayısı (ders bazında ayarlanabilir).
+    public int AttendanceTotalWeeks { get; set; } = 14;
+    // Devamsızlık sınırı (%). Bu oranı AŞAN öğrenci dersten kalır. Risk eşiği = sınırın %80'i.
+    public decimal AttendanceLimitPercent { get; set; } = 30;
+
     [MaxLength(2000)]
     public string? ReviewNote { get; set; }
 
@@ -58,4 +64,5 @@ public class Course
     public ICollection<CourseSurveyQuestion> SurveyQuestions { get; set; } = new List<CourseSurveyQuestion>();
     public ICollection<Exam> Exams { get; set; } = new List<Exam>();
     public ICollection<AssessmentComponent> AssessmentComponents { get; set; } = new List<AssessmentComponent>();
+    public ICollection<AttendanceRecord> AttendanceRecords { get; set; } = new List<AttendanceRecord>();
 }

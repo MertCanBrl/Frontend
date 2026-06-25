@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<AssessmentComponent> AssessmentComponents => Set<AssessmentComponent>();
     public DbSet<AssessmentComponentLearningOutcome> AssessmentComponentLearningOutcomes => Set<AssessmentComponentLearningOutcome>();
     public DbSet<AssessmentComponentStudentGrade> AssessmentComponentStudentGrades => Set<AssessmentComponentStudentGrade>();
+    public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -152,6 +153,23 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<AssessmentComponentStudentGrade>()
             .HasIndex(g => new { g.AssessmentComponentId, g.StudentId })
+            .IsUnique();
+
+        // ── AttendanceRecord ilişkileri ──────────────────────
+        modelBuilder.Entity<AttendanceRecord>()
+            .HasOne(a => a.Course)
+            .WithMany(c => c.AttendanceRecords)
+            .HasForeignKey(a => a.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AttendanceRecord>()
+            .HasOne(a => a.Student)
+            .WithMany()
+            .HasForeignKey(a => a.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AttendanceRecord>()
+            .HasIndex(a => new { a.CourseId, a.StudentId, a.WeekNumber })
             .IsUnique();
 
         // ── Seed Data ────────────────────────────────────────
