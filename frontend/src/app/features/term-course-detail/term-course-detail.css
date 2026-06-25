@@ -421,6 +421,44 @@
 .comp-col { font-size: 0.78rem; max-width: 120px; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 
+/* ── LO Weight Mini (question table cell) ────────────────────────────────── */
+.lo-weight-mini { display: flex; flex-direction: column; gap: 0.2rem; }
+.lo-weight-mini-row { display: flex; align-items: center; gap: 0.25rem; }
+.lo-code-mini { font-weight: 700; color: var(--c-navy); min-width: 32px; font-size: 0.73rem; }
+.lo-weight-input { width: 42px; padding: 0.1rem 0.2rem; border: 1px solid var(--c-border);
+  border-radius: 4px; text-align: center; font-size: 0.73rem; }
+.lo-pct-unit { color: var(--c-slate); font-size: 0.68rem; }
+.lo-remove-btn { background: none; border: none; cursor: pointer; color: #ef4444;
+  font-size: 0.85rem; padding: 0 0.1rem; line-height: 1; }
+.lo-weight-total-mini { font-size: 0.7rem; font-weight: 700; }
+.total-ok { color: #16a34a; }
+.total-err { color: #dc2626; }
+.lo-add-select { margin-top: 0.2rem; font-size: 0.73rem; padding: 0.15rem 0.25rem;
+  border: 1px dashed var(--c-border); border-radius: 4px; width: 100%; cursor: pointer;
+  background: #fff; color: var(--c-ink); }
+.lo-add-select:disabled { opacity: 0.5; cursor: default; }
+
+/* ── LO Weight Table (component form) ────────────────────────────────────── */
+.lo-weight-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 0.25rem; }
+.lo-weight-table th { font-weight: 600; color: var(--c-slate); padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid var(--c-border); text-align: left; }
+.lo-weight-table td { padding: 0.3rem 0.4rem; border-bottom: 1px solid #f1f5f9; }
+.lwt-col-code { width: 60px; }
+.lwt-col-weight { width: 90px; }
+.lwt-col-action { width: 36px; }
+.lwt-weight-input { width: 70px !important; }
+.lwt-desc { max-width: 220px; font-size: 0.78rem; color: var(--c-slate); }
+.lo-weight-table tfoot td { border-top: 1px solid var(--c-border); border-bottom: none; padding-top: 0.4rem; }
+.lwt-total-label { text-align: right; font-size: 0.8rem; color: var(--c-slate); }
+.lwt-total-value { font-size: 0.82rem; }
+.total-check { color: #16a34a; margin-left: 0.3rem; }
+.total-warn { color: #dc2626; font-size: 0.75rem; margin-left: 0.3rem; }
+.lo-add-row { margin-top: 0.5rem; }
+
+/* LO weight badge in ÖÇ source detail */
+.lo-weight-badge { font-size: 0.68rem; color: #6d3ecb; background: #f3ecff;
+  padding: 0 0.3rem; border-radius: 10px; margin-left: 0.3rem; }
+
 /* ── ÖÇ Durum Tablosu ────────────────────────────────────────────────────── */
 .lo-status-hint { font-size: 0.82rem; color: var(--c-slate); margin: 0; }
 .lo-status-table .lo-row { cursor: pointer; transition: background 0.1s; }

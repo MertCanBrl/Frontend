@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DecimalPipe, SlicePipe } from '@angular/common';
@@ -10,7 +10,8 @@ import {
   AssessmentComponentDto, SaveAssessmentComponentRequest,
   ComponentGradeEntryDto, SaveComponentGradeEntryRequest,
   RiskAnalysisDto, CourseStatisticsDto,
-  LearningOutcomeStatusDto, ComponentReportItemDto
+  LearningOutcomeStatusDto, ComponentReportItemDto,
+  LearningOutcomeWeight
 } from '../../core/models/course.models';
 
 type Tab = 'info' | 'students' | 'exams' | 'components' | 'attendance' | 'risk' | 'outcomes' | 'reports';
@@ -31,7 +32,7 @@ interface QuestionRow {
   bookletB: number | null;
   bookletC: number | null;
   bookletD: number | null;
-  learningOutcomeIds: number[];
+  loWeights: { loId: number; weight: number }[];
 }
 
 @Component({
@@ -122,7 +123,12 @@ export class TermCourseDetail implements OnInit {
     { value: 'Final', label: 'Final Grubu' },
     { value: 'Makeup', label: 'Bütünleme Grubu' },
   ];
-  selectedLoIds = signal<number[]>([]);   // çoklu ÖÇ seçimi
+  loWeights = signal<{ loId: number; weight: number }[]>([]);
+
+  readonly availableCompLOs = computed(() => {
+    const selected = this.loWeights().map(w => w.loId);
+    return this.learningOutcomes().filter(lo => !selected.includes(lo.id));
+  });
   componentForm = this.fb.group({
     name: ['', Validators.required],
     type: ['', Validators.required],
@@ -194,6 +200,7 @@ export class TermCourseDetail implements OnInit {
     if (tab === 'reports') {
       if (this.stats() === null) this.loadStatistics();
       if (this.componentReport().length === 0) this.loadComponentReport();
+      if (!this.learningOutcomesLoaded()) this.loadLearningOutcomes();
     }
   }
 
@@ -276,7 +283,7 @@ export class TermCourseDetail implements OnInit {
         bookletB: null,
         bookletC: null,
         bookletD: null,
-        learningOutcomeIds: [],
+        loWeights: [],
       }));
       this.questionRows.set([...current, ...newRows]);
     } else if (count < current.length) {
@@ -299,7 +306,7 @@ export class TermCourseDetail implements OnInit {
       bookletB: null,
       bookletC: null,
       bookletD: null,
-      learningOutcomeIds: [],
+      loWeights: [],
     };
     this.questionRows.set([...rows, newRow]);
     this.examForm.get('questionCount')?.setValue(rows.length + 1);
@@ -323,17 +330,41 @@ export class TermCourseDetail implements OnInit {
   toggleLO(rowIndex: number, loId: number): void {
     const rows = [...this.questionRows()];
     const row = { ...rows[rowIndex] };
-    const ids = [...row.learningOutcomeIds];
-    const idx = ids.indexOf(loId);
-    if (idx >= 0) ids.splice(idx, 1);
-    else ids.push(loId);
-    row.learningOutcomeIds = ids;
+    const loWeights = [...row.loWeights];
+    const idx = loWeights.findIndex(w => w.loId === loId);
+    if (idx >= 0) {
+      loWeights.splice(idx, 1);
+      if (loWeights.length === 1) loWeights[0] = { ...loWeights[0], weight: 100 };
+    } else {
+      const defaultWeight = loWeights.length === 0 ? 100 : 0;
+      loWeights.push({ loId, weight: defaultWeight });
+    }
+    row.loWeights = loWeights;
     rows[rowIndex] = row;
     this.questionRows.set(rows);
   }
 
   isLOSelected(rowIndex: number, loId: number): boolean {
-    return this.questionRows()[rowIndex]?.learningOutcomeIds.includes(loId) ?? false;
+    return this.questionRows()[rowIndex]?.loWeights.some(w => w.loId === loId) ?? false;
+  }
+
+  updateQuestionLoWeight(rowIndex: number, loId: number, weight: number): void {
+    const rows = [...this.questionRows()];
+    const row = { ...rows[rowIndex] };
+    row.loWeights = row.loWeights.map(w => w.loId === loId ? { ...w, weight } : w);
+    rows[rowIndex] = row;
+    this.questionRows.set(rows);
+  }
+
+  getQuestionLoWeightTotal(rowIndex: number): number {
+    const row = this.questionRows()[rowIndex];
+    if (!row) return 0;
+    return Math.round(row.loWeights.reduce((sum, w) => sum + (w.weight || 0), 0) * 100) / 100;
+  }
+
+  getAvailableLOsForQuestion(rowIndex: number): LearningOutcomeDto[] {
+    const selected = this.questionRows()[rowIndex]?.loWeights.map(w => w.loId) ?? [];
+    return this.learningOutcomes().filter(lo => !selected.includes(lo.id));
   }
 
   private validateQuestions(): string[] {
@@ -349,8 +380,13 @@ export class TermCourseDetail implements OnInit {
         errors.push(`${num}. soru için puan girilmelidir.`);
       }
       if (!r.difficulty) errors.push(`${num}. soru için zorluk seviyesi seçilmelidir.`);
-      if (r.learningOutcomeIds.length === 0 && this.learningOutcomes().length > 0) {
-        errors.push(`${num}. soru için en az bir öğrenme çıktısı seçilmelidir.`);
+      if (r.loWeights.length === 0 && this.learningOutcomes().length > 0) {
+        errors.push(`Soru ${num} için en az bir Öğrenme Çıktısı seçilmelidir.`);
+      } else if (r.loWeights.length > 0) {
+        const total = Math.round(r.loWeights.reduce((sum, w) => sum + (w.weight || 0), 0) * 100) / 100;
+        if (Math.abs(total - 100) > 0.01) {
+          errors.push(`Soru ${num} için ÖÇ ağırlıkları toplamı 100 olmalıdır (şu an: ${total}%).`);
+        }
       }
     });
 
@@ -394,7 +430,10 @@ export class TermCourseDetail implements OnInit {
         bookletBQuestionNumber: r.bookletB ?? null,
         bookletCQuestionNumber: r.bookletC ?? null,
         bookletDQuestionNumber: r.bookletD ?? null,
-        learningOutcomeIds: r.learningOutcomeIds,
+        learningOutcomeWeights: r.loWeights.map(w => ({
+          learningOutcomeId: w.loId,
+          weightPercentage: w.weight,
+        } satisfies LearningOutcomeWeight)),
       } satisfies SaveExamQuestionRequest)),
     };
 
@@ -486,7 +525,7 @@ export class TermCourseDetail implements OnInit {
       bookletB: q.bookletBQuestionNumber,
       bookletC: q.bookletCQuestionNumber,
       bookletD: q.bookletDQuestionNumber,
-      learningOutcomeIds: [...q.learningOutcomeIds],
+      loWeights: q.learningOutcomeWeights.map(w => ({ loId: w.learningOutcomeId, weight: w.weightPercentage })),
     };
   }
 
@@ -648,7 +687,9 @@ export class TermCourseDetail implements OnInit {
 
   openComponentForm(component?: AssessmentComponentDto): void {
     this.editingComponentId.set(component?.id ?? null);
-    this.selectedLoIds.set(component?.learningOutcomeIds ?? []);
+    this.loWeights.set(
+      (component?.learningOutcomeWeights ?? []).map(w => ({ loId: w.learningOutcomeId, weight: w.weightPercentage }))
+    );
     this.componentForm.reset({
       name: component?.name ?? '',
       type: component?.type ?? '',
@@ -667,22 +708,56 @@ export class TermCourseDetail implements OnInit {
   cancelComponentForm(): void {
     this.componentFormVisible.set(false);
     this.editingComponentId.set(null);
-    this.selectedLoIds.set([]);
+    this.loWeights.set([]);
   }
 
-  toggleLoSelection(loId: number): void {
-    const current = this.selectedLoIds();
-    if (current.includes(loId)) {
-      this.selectedLoIds.set(current.filter(id => id !== loId));
-    } else {
-      this.selectedLoIds.set([...current, loId]);
-    }
+  addCompLoWeight(loIdStr: string): void {
+    const loId = Number(loIdStr);
+    if (!loId) return;
+    const current = this.loWeights();
+    if (current.some(w => w.loId === loId)) return;
+    const weight = current.length === 0 ? 100 : 0;
+    this.loWeights.set([...current, { loId, weight }]);
+  }
+
+  removeCompLoWeight(index: number): void {
+    this.loWeights.update(ws => {
+      const newWs = ws.filter((_, i) => i !== index);
+      if (newWs.length === 1) newWs[0] = { ...newWs[0], weight: 100 };
+      return newWs;
+    });
+  }
+
+  updateCompLoWeight(index: number, weight: number): void {
+    this.loWeights.update(ws => ws.map((w, i) => i === index ? { ...w, weight } : w));
+  }
+
+  getCompLoWeightTotal(): number {
+    return Math.round(this.loWeights().reduce((sum, w) => sum + (w.weight || 0), 0) * 100) / 100;
+  }
+
+  getLoDescription(loId: number): string {
+    return this.learningOutcomes().find(lo => lo.id === loId)?.description ?? '';
   }
 
   saveComponentForm(): void {
     if (this.componentForm.invalid) { this.componentForm.markAllAsTouched(); return; }
-    this.componentSaving.set(true);
+
+    const loWeightsArr = this.loWeights();
     const raw = this.componentForm.getRawValue();
+    if ((raw.isIncludedInAverage ?? false) && loWeightsArr.length === 0) {
+      alert('Ortalamaya dahil edilen ölçme bileşeni en az bir Öğrenme Çıktısı ile eşleştirilmelidir.');
+      return;
+    }
+    if (loWeightsArr.length > 0) {
+      const total = this.getCompLoWeightTotal();
+      if (Math.abs(total - 100) > 0.01) {
+        alert(`ÖÇ ağırlıkları toplamı 100 olmalıdır (şu an: ${total}%).`);
+        return;
+      }
+    }
+
+    this.componentSaving.set(true);
     const req: SaveAssessmentComponentRequest = {
       name: raw.name!,
       type: raw.type!,
@@ -693,13 +768,16 @@ export class TermCourseDetail implements OnInit {
       isIncludedInAverage: raw.isIncludedInAverage ?? false,
       gradeGroup: raw.gradeGroup || null,
       groupWeightPercentage: raw.groupWeightPercentage ?? 0,
-      learningOutcomeIds: this.selectedLoIds(),
+      learningOutcomeWeights: loWeightsArr.map(w => ({
+        learningOutcomeId: w.loId,
+        weightPercentage: w.weight,
+      } satisfies LearningOutcomeWeight)),
     };
     const id = this.editingComponentId();
     if (id) {
       this.svc.updateAssessmentComponent(this.courseId(), id, req).subscribe({
         next: () => {
-          this.components.update(cs => cs.map(c => c.id === id ? { ...c, ...req, learningOutcomeIds: req.learningOutcomeIds } : c));
+          this.components.update(cs => cs.map(c => c.id === id ? { ...c, ...req } : c));
           this.cancelComponentForm();
           this.componentSaving.set(false);
         },

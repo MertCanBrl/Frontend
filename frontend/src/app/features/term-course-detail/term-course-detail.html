@@ -366,22 +366,38 @@
                                 }
                               </select>
                             </td>
-                            <!-- Tek kolon — tüm ÖÇ'ler dikey checkbox -->
+                            <!-- ÖÇ Ağırlıklı Seçim -->
                             <td class="q-col-lo-cell">
                               @if (learningOutcomes().length === 0) {
                                 <span class="lo-none">—</span>
                               } @else {
-                                <div class="lo-chip-list">
-                                  @for (lo of learningOutcomes(); track lo.id) {
-                                    <label class="lo-chip-label" [title]="lo.description"
-                                      [class.lo-chip-selected]="isLOSelected(i, lo.id)">
-                                      <input type="checkbox"
-                                        [checked]="isLOSelected(i, lo.id)"
-                                        (change)="toggleLO(i, lo.id)" />
-                                      {{ lo.code }}
-                                    </label>
+                                @if (row.loWeights.length > 0) {
+                                  <div class="lo-weight-mini">
+                                    @for (w of row.loWeights; track w.loId) {
+                                      <div class="lo-weight-mini-row">
+                                        <span class="lo-code-mini">{{ getLoCode(w.loId) }}</span>
+                                        <input class="lo-weight-input" type="number" min="0.01" max="100" step="1"
+                                          [value]="w.weight"
+                                          (input)="updateQuestionLoWeight(i, w.loId, +$any($event.target).value)" />
+                                        <span class="lo-pct-unit">%</span>
+                                        <button type="button" class="lo-remove-btn" title="Kaldır"
+                                          (click)="toggleLO(i, w.loId)">×</button>
+                                      </div>
+                                    }
+                                    @let qTotal = getQuestionLoWeightTotal(i);
+                                    <div class="lo-weight-total-mini" [class.total-ok]="qTotal === 100" [class.total-err]="qTotal !== 100">
+                                      Σ {{ qTotal }}%
+                                    </div>
+                                  </div>
+                                }
+                                <select class="lo-add-select"
+                                  (change)="toggleLO(i, +$any($event.target).value); $any($event.target).value = ''"
+                                  [disabled]="getAvailableLOsForQuestion(i).length === 0">
+                                  <option value="">+ ÖÇ Ekle</option>
+                                  @for (lo of getAvailableLOsForQuestion(i); track lo.id) {
+                                    <option [value]="lo.id">{{ lo.code }}</option>
                                   }
-                                </div>
+                                </select>
                               }
                             </td>
                             <td class="q-col-actions">
@@ -692,22 +708,62 @@
                 <textarea class="field-input" formControlName="description" rows="2" placeholder="İsteğe bağlı…"></textarea>
               </div>
 
-              <!-- ÖÇ Çoklu Seçim -->
+              <!-- ÖÇ Ağırlıklı Seçim -->
               <div class="field">
                 <label class="field-label">İlişkili Öğrenme Çıktıları</label>
                 @if (learningOutcomes().length === 0) {
                   <p class="lo-empty-note">Bu ders için öğrenme çıktısı tanımlanmamış.</p>
                 } @else {
-                  <div class="lo-checkbox-list">
-                    @for (lo of learningOutcomes(); track lo.id) {
-                      <label class="lo-checkbox-item" [class.lo-checked]="selectedLoIds().includes(lo.id)">
-                        <input type="checkbox"
-                          [checked]="selectedLoIds().includes(lo.id)"
-                          (change)="toggleLoSelection(lo.id)" />
-                        <span class="lo-info-code">{{ lo.code }}</span>
-                        <span class="lo-checkbox-desc">{{ lo.description }}</span>
-                      </label>
-                    }
+                  @if (loWeights().length > 0) {
+                    <table class="lo-weight-table">
+                      <thead>
+                        <tr>
+                          <th class="lwt-col-code">Kod</th>
+                          <th class="lwt-col-desc">Açıklama</th>
+                          <th class="lwt-col-weight">Ağırlık %</th>
+                          <th class="lwt-col-action"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (w of loWeights(); track w.loId; let wi = $index) {
+                          <tr>
+                            <td><span class="lo-code">{{ getLoCode(w.loId) }}</span></td>
+                            <td class="lwt-desc">{{ getLoDescription(w.loId) }}</td>
+                            <td>
+                              <input class="q-input q-input-num lwt-weight-input" type="number" min="0.01" max="100" step="1"
+                                [value]="w.weight"
+                                (input)="updateCompLoWeight(wi, +$any($event.target).value)" />
+                            </td>
+                            <td>
+                              <button type="button" class="icon-btn danger" title="Kaldır" (click)="removeCompLoWeight(wi)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td colspan="2" class="lwt-total-label">Toplam Ağırlık</td>
+                          <td class="lwt-total-value" [class.total-ok]="getCompLoWeightTotal() === 100" [class.total-err]="getCompLoWeightTotal() !== 100">
+                            <strong>{{ getCompLoWeightTotal() | number:'1.0-2' }}%</strong>
+                            @if (getCompLoWeightTotal() === 100) { <span class="total-check">✓</span> }
+                            @else { <span class="total-warn">≠ 100</span> }
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  }
+                  <div class="lo-add-row">
+                    <select class="field-input"
+                      (change)="addCompLoWeight($any($event.target).value); $any($event.target).value = ''"
+                      [disabled]="availableCompLOs().length === 0">
+                      <option value="">{{ loWeights().length === 0 ? '+ Öğrenme Çıktısı Ekle' : '+ Öğrenme Çıktısı Ekle' }}</option>
+                      @for (lo of availableCompLOs(); track lo.id) {
+                        <option [value]="lo.id">{{ lo.code }} – {{ lo.description | slice:0:50 }}</option>
+                      }
+                    </select>
                   </div>
                 }
               </div>
@@ -762,10 +818,13 @@
                       {{ c.isIncludedInAverage ? '%' + c.groupWeightPercentage : '—' }}
                     </td>
                     <td>
-                      @if (c.learningOutcomeIds.length > 0) {
+                      @if (c.learningOutcomeWeights.length > 0) {
                         <div class="lo-tags">
-                          @for (loId of c.learningOutcomeIds; track loId) {
-                            <span class="lo-tag">{{ getLoCode(loId) }}</span>
+                          @for (w of c.learningOutcomeWeights; track w.learningOutcomeId) {
+                            <span class="lo-tag">
+                              {{ getLoCode(w.learningOutcomeId) }}
+                              @if (c.learningOutcomeWeights.length > 1) { ({{ w.weightPercentage | number:'1.0-0' }}%) }
+                            </span>
                           }
                         </div>
                       } @else { — }
@@ -977,6 +1036,9 @@
                             {{ src.sourceType === 'ExamQuestion' ? src.examType + ' Sorusu' : src.examType }}
                           </span>
                           {{ src.sourceName }}
+                          @if (src.loWeightPercentage !== 100) {
+                            <span class="lo-weight-badge">Ağırlık: {{ src.loWeightPercentage | number:'1.0-0' }}%</span>
+                          }
                         </td>
                         <td class="num-col" style="font-size:0.72rem;color:#6b7280">{{ src.studentCount }} öğ.</td>
                         <td class="num-col">
@@ -1102,6 +1164,7 @@
                       <th>Tür</th>
                       <th>Not Grubu</th>
                       <th class="num-col">Grup Ağırlık</th>
+                      <th>İlişkili ÖÇ</th>
                       <th class="num-col">Maks. Puan</th>
                       <th class="num-col">Not Girilen</th>
                       <th class="num-col">Ort. Puan</th>
@@ -1118,6 +1181,15 @@
                         <td><span class="type-badge">{{ c.type }}</span></td>
                         <td>{{ gradeGroupLabel(c.gradeGroup) }}</td>
                         <td class="num-col">{{ c.isIncludedInAverage ? '%' + c.groupWeightPercentage : '—' }}</td>
+                        <td>
+                          @if (c.learningOutcomeWeights.length > 0) {
+                            <div class="lo-tags">
+                              @for (w of c.learningOutcomeWeights; track w.learningOutcomeId) {
+                                <span class="lo-tag">{{ getLoCode(w.learningOutcomeId) }}@if (c.learningOutcomeWeights.length > 1) { ({{ w.weightPercentage | number:'1.0-0' }}%)}</span>
+                              }
+                            </div>
+                          } @else { — }
+                        </td>
                         <td class="num-col">{{ c.maxScore }}</td>
                         <td class="num-col">{{ c.gradedCount }} / {{ c.totalStudents }}</td>
                         <td class="num-col">

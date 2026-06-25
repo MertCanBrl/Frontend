@@ -55,7 +55,10 @@ public class LoSourceDto
     public string SourceType { get; set; } = string.Empty;
     public string SourceName { get; set; } = string.Empty;
     public string ExamType { get; set; } = string.Empty;
+    public decimal MaxRawScore { get; set; }
+    public decimal? AverageRawScore { get; set; }
     public decimal? AverageNormalized { get; set; }
+    public decimal LoWeightPercentage { get; set; } = 100m;
     public int StudentCount { get; set; }
 }
 
@@ -68,7 +71,7 @@ public class ComponentReportItemDto
     public decimal GroupWeightPercentage { get; set; }
     public decimal MaxScore { get; set; }
     public bool IsIncludedInAverage { get; set; }
-    public List<int> LearningOutcomeIds { get; set; } = [];
+    public List<LearningOutcomeWeightDto> LearningOutcomeWeights { get; set; } = [];
     public int TotalStudents { get; set; }
     public int GradedCount { get; set; }
     public decimal? AverageScore { get; set; }
