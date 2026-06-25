@@ -1092,11 +1092,14 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">ÖÇ Durum Tablosu</h2>
-          <button class="btn-secondary" (click)="loadLoStatus()">Yenile</button>
+          <div class="toolbar-actions">
+            <button class="btn-secondary" (click)="downloadLoStatusCsv()" [disabled]="loStatus().length === 0">CSV İndir</button>
+            <button class="btn-secondary" (click)="loadLoStatus()">Yenile</button>
+          </div>
         </div>
 
         <p class="lo-status-hint">
-          Her öğrenme çıktısı için ilişkili sınav soruları ve ölçme bileşenlerinden hesaplanan ortalama başarı oranı gösterilmektedir.
+          Her öğrenme çıktısı için ilişkili ölçme araçlarından hesaplanan bu dönemki ortalama başarı oranı gösterilmektedir.
           Satıra tıklayarak kaynak detaylarını genişletebilirsiniz.
         </p>
 
@@ -1104,18 +1107,19 @@
           <div class="loading-small">Hesaplanıyor…</div>
         } @else if (loStatus().length === 0) {
           <div class="empty-panel">
-            <p>Bu ders için öğrenme çıktısı tanımlanmamış ya da henüz not girişi yapılmamış.</p>
+            <p>Bu ders için henüz öğrenme çıktısı tanımlanmamış.</p>
           </div>
         } @else {
           <div class="table-wrapper">
             <table class="data-table lo-status-table">
               <thead>
                 <tr>
-                  <th style="width:80px">Kod</th>
+                  <th style="width:70px">ÖÇ Kodu</th>
                   <th>Öğrenme Çıktısı</th>
-                  <th class="num-col" style="width:80px">Kaynak</th>
-                  <th class="num-col" style="width:120px">Ort. Başarı %</th>
-                  <th class="num-col" style="width:40px"></th>
+                  <th class="num-col" style="width:90px">Ölçme Sayısı</th>
+                  <th class="num-col" style="width:140px">Ölçme Ağırlığı (%)*</th>
+                  <th class="num-col" style="width:110px">Bu Dönem</th>
+                  <th class="num-col" style="width:36px"></th>
                 </tr>
               </thead>
               <tbody>
@@ -1124,8 +1128,13 @@
                     <td><span class="lo-code">{{ lo.code }}</span></td>
                     <td class="lo-desc-cell">{{ lo.description }}</td>
                     <td class="num-col">
-                      @if (lo.sourceCount === 0) { <span class="grade-empty">—</span> }
-                      @else { {{ lo.sourceCount }} }
+                      @if (lo.measurementCount > 0) { {{ lo.measurementCount }} }
+                      @else { <span class="grade-empty">—</span> }
+                    </td>
+                    <td class="num-col">
+                      <span [class.grade-empty]="lo.measurementWeightPercentage === null">
+                        {{ lo.measurementWeightPercentage !== null ? (lo.measurementWeightPercentage | number:'1.2-2') : '—' }}
+                      </span>
                     </td>
                     <td class="num-col">
                       <span [class]="successClass(lo.averageSuccess)">
@@ -1133,36 +1142,38 @@
                       </span>
                     </td>
                     <td class="num-col" style="font-size:0.75rem;color:#6b7280">
-                      {{ lo.sourceCount > 0 ? (expandedLoId() === lo.learningOutcomeId ? '▲' : '▼') : '' }}
+                      {{ lo.sources.length > 0 ? (expandedLoId() === lo.learningOutcomeId ? '▲' : '▼') : '' }}
                     </td>
                   </tr>
                   @if (expandedLoId() === lo.learningOutcomeId && lo.sources.length > 0) {
-                    @for (src of lo.sources; track src.sourceName) {
-                      <tr class="lo-source-row">
-                        <td></td>
-                        <td class="lo-desc-cell">
-                          <span class="source-type-badge" [class.source-exam]="src.sourceType === 'ExamQuestion'" [class.source-comp]="src.sourceType === 'Component'">
-                            {{ src.sourceType === 'ExamQuestion' ? src.examType + ' Sorusu' : src.examType }}
-                          </span>
-                          {{ src.sourceName }}
-                          @if (src.loWeightPercentage !== 100) {
-                            <span class="lo-weight-badge">Ağırlık: {{ src.loWeightPercentage | number:'1.0-0' }}%</span>
+                    <tr class="lo-source-row">
+                      <td></td>
+                      <td [attr.colspan]="5">
+                        <div class="lo-source-list">
+                          @for (src of lo.sources; track src.sourceName) {
+                            <div class="lo-source-item">
+                              <span class="source-type-badge" [class.source-exam]="src.sourceType === 'ExamQuestion'" [class.source-comp]="src.sourceType === 'Component'">
+                                {{ src.sourceType === 'ExamQuestion' ? src.examType + ' Sorusu' : src.examType }}
+                              </span>
+                              <span class="lo-source-name">{{ src.sourceName }}</span>
+                              @if (src.loWeightPercentage !== 100) {
+                                <span class="lo-weight-badge">Ağırlık: {{ src.loWeightPercentage | number:'1.0-0' }}%</span>
+                              }
+                              <span class="lo-source-students">{{ src.studentCount }} öğ.</span>
+                              <span class="lo-source-score" [class]="successClass(src.averageNormalized)">
+                                {{ src.averageNormalized !== null ? (src.averageNormalized | number:'1.1-1') + '%' : '—' }}
+                              </span>
+                            </div>
                           }
-                        </td>
-                        <td class="num-col" style="font-size:0.72rem;color:#6b7280">{{ src.studentCount }} öğ.</td>
-                        <td class="num-col">
-                          <span [class]="successClass(src.averageNormalized)">
-                            {{ src.averageNormalized !== null ? (src.averageNormalized | number:'1.1-1') + '%' : '—' }}
-                          </span>
-                        </td>
-                        <td></td>
-                      </tr>
-                    }
+                        </div>
+                      </td>
+                    </tr>
                   }
                 }
               </tbody>
             </table>
           </div>
+          <p class="lo-status-footnote">* Ölçme Ağırlığı: Bu ÖÇ'ye ayrılan katkı ağırlığının, dersin tüm ÖÇ ağırlıklarına oranıdır.</p>
           <p class="table-footer">Toplam {{ loStatus().length }} öğrenme çıktısı</p>
         }
       </div>

@@ -974,6 +974,40 @@ export class TermCourseDetail implements OnInit {
     return 'grade-fail';
   }
 
+  // Tabloyu CSV olarak indir (TR Excel uyumu: ; ayraç, ondalık virgül, UTF-8 BOM)
+  downloadLoStatusCsv(): void {
+    const rows = this.loStatus();
+    if (rows.length === 0) return;
+
+    const D = ';';
+    const esc = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`;
+    const num = (n: number | null | undefined) =>
+      (n === null || n === undefined) ? '-' : String(n).replace('.', ',');
+
+    const headers = ['ÖÇ Kodu', 'Öğrenme Çıktısı', 'Ölçme Sayısı', 'Ölçme Ağırlığı (%)', 'Bu Dönem (%)'];
+
+    const lines = [headers.map(esc).join(D)];
+    for (const lo of rows) {
+      lines.push([
+        esc(lo.code),
+        esc(lo.description),
+        lo.measurementCount > 0 ? String(lo.measurementCount) : '-',
+        num(lo.measurementWeightPercentage),
+        num(lo.averageSuccess),
+      ].join(D));
+    }
+
+    const bom = String.fromCharCode(0xFEFF);   // Excel'in UTF-8'i tanıması için
+    const csv = bom + lines.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `oc-durum-tablosu-${this.course()?.code ?? 'ders'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // ── Component Report ───────────────────────────────────────────────────────
 
   loadComponentReport(): void {

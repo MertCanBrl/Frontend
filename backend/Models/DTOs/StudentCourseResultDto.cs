@@ -49,7 +49,14 @@ public class LearningOutcomeStatusDto
     public int LearningOutcomeId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+
+    // İlişkilendirilmiş ölçme/soru adedi (not girilmemiş olsa da sayılır)
+    public int MeasurementCount { get; set; }
+    // Bu ÖÇ'ye ayrılan katkı ağırlığının, dersin tüm ÖÇ ağırlıklarına oranı (%)
+    public decimal? MeasurementWeightPercentage { get; set; }
+    // Bu dönemki ortalama başarı oranı (mevcut hesaplama)
     public decimal? AverageSuccess { get; set; }
+
     public int SourceCount { get; set; }
     public List<LoSourceDto> Sources { get; set; } = [];
 }

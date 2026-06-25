@@ -291,7 +291,9 @@ export interface LearningOutcomeStatusDto {
   learningOutcomeId: number;
   code: string;
   description: string;
-  averageSuccess: number | null;
+  measurementCount: number;
+  measurementWeightPercentage: number | null;
+  averageSuccess: number | null;        // Bu Dönem
   sourceCount: number;
   sources: LoSourceDto[];
 }

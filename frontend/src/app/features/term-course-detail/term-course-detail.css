@@ -470,6 +470,15 @@
 .source-exam { background: #edf2ff; color: #2b5fad; }
 .source-comp { background: #f3ecff; color: #6d3ecb; }
 
+.lo-status-footnote { font-size: 0.75rem; color: var(--c-slate); margin: 0.5rem 0 0; font-style: italic; }
+
+/* Genişletilmiş kaynak listesi (satır detayı) */
+.lo-source-list { display: flex; flex-direction: column; gap: 0.35rem; }
+.lo-source-item { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
+.lo-source-name { color: var(--c-navy); }
+.lo-source-students { font-size: 0.72rem; color: #6b7280; margin-left: auto; }
+.lo-source-score { min-width: 56px; text-align: right; }
+
 /* ── Missing grades page-level banner ────────────────────────────────────── */
 .missing-grades-banner {
   display: flex; align-items: flex-start; gap: 0.6rem;

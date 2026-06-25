@@ -1174,6 +1174,19 @@ public class InstructorController : ControllerBase
                 .ToListAsync()
             : [];
 
+        // İlişkilendirilmiş ölçme adedi (not durumundan bağımsız: soru + bileşen eşleştirmeleri)
+        var measurementCountByLo = loIds.ToDictionary(
+            id => id,
+            id => questionMappings.Count(m => m.LearningOutcomeId == id)
+                + componentMappings.Count(m => m.LearningOutcomeId == id));
+
+        // Her ÖÇ'nin ham katkı ağırlığı = tüm eşleştirmelerdeki LoWeight toplamı
+        var rawWeightByLo = loIds.ToDictionary(
+            id => id,
+            id => questionMappings.Where(m => m.LearningOutcomeId == id).Sum(m => m.WeightPercentage)
+                + componentMappings.Where(m => m.LearningOutcomeId == id).Sum(m => m.WeightPercentage));
+        var totalRawWeight = rawWeightByLo.Values.Sum();
+
         var result = learningOutcomes.Select(lo =>
         {
             var sources = new List<LoSourceDto>();
@@ -1240,11 +1253,17 @@ public class InstructorController : ControllerBase
                 ? Math.Round(totalWeightedScore / totalWeightedMax * 100m, 1)
                 : null as decimal?;
 
+            var weightShare = totalRawWeight > 0
+                ? Math.Round(rawWeightByLo[lo.Id] / totalRawWeight * 100m, 2)
+                : null as decimal?;
+
             return new LearningOutcomeStatusDto
             {
                 LearningOutcomeId = lo.Id,
                 Code = lo.Code,
                 Description = lo.Description,
+                MeasurementCount = measurementCountByLo[lo.Id],
+                MeasurementWeightPercentage = weightShare,
                 AverageSuccess = overallAvg,
                 SourceCount = sources.Count,
                 Sources = sources
