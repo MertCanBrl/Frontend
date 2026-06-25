@@ -68,6 +68,15 @@
   transition: color 0.15s, gap 0.15s;
 }
 .detail-link:hover { color: var(--c-gold); gap: 0.55rem; }
+.detail-link-disabled { color: var(--c-slate); cursor: default; font-style: italic; font-weight: 400; }
+
+.card-inactive { opacity: 0.72; }
+.card-inactive:hover { transform: none; box-shadow: none; border-color: var(--c-line); }
+
+.status-draft     { background: #f2f2f5; color: #555; }
+.status-pending   { background: #fff3cd; color: #856404; }
+.status-approved  { background: #d4edda; color: #155724; }
+.status-revision  { background: #fde2e2; color: #922b21; }
 
 @media (max-width: 640px) {
   .page { padding: 1.5rem 1.25rem; }

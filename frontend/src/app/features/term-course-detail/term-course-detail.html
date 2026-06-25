@@ -92,6 +92,12 @@
         } @else if (students().length === 0) {
           <div class="empty-panel"><p>Bu derse kayıtlı öğrenci bulunamadı.</p></div>
         } @else {
+          @if (students().some(s => s.hasMissingGrades)) {
+            <div class="missing-grades-banner">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>Bazı öğrenciler için ölçme bileşeni notu eksik. <strong>Eksik notlar 0 kabul edilerek ağırlıklı ortalama hesaplandı.</strong> Sarı satırlar eksik not içeren öğrencileri gösteriyor.</span>
+            </div>
+          }
           <div class="table-wrapper">
             <table class="data-table">
               <thead>
@@ -100,21 +106,40 @@
                   <th>Ad Soyad</th>
                   <th>E-posta</th>
                   <th class="num-col">Vize</th>
+                  @for (comp of components(); track comp.id) {
+                    <th class="num-col comp-col" [title]="comp.name + ' (maks: ' + comp.maxScore + ')'">
+                      {{ comp.name }}
+                    </th>
+                  }
                   <th class="num-col">Final</th>
                   <th class="num-col">Bütünleme</th>
+                  <th class="num-col">Ağ. Ortalama</th>
                 </tr>
               </thead>
               <tbody>
                 @for (s of students(); track s.studentId) {
-                  <tr>
+                  <tr [class.row-missing]="s.hasMissingGrades">
                     <td><span class="student-no">{{ s.studentNo }}</span></td>
-                    <td class="student-name">{{ s.fullName }}</td>
+                    <td class="student-name">
+                      {{ s.fullName }}
+                      @if (s.hasMissingGrades) {
+                        <span class="missing-badge" [title]="'Eksik: ' + s.missingComponentNames.join(', ')">Eksik Not</span>
+                      }
+                    </td>
                     <td class="student-email">{{ s.email || '—' }}</td>
                     <td class="num-col">
                       <span [class]="s.midterm !== null ? gradeClass(s.midterm!) : 'grade-empty'">
                         {{ s.midterm !== null ? s.midterm : '—' }}
                       </span>
                     </td>
+                    @for (comp of components(); track comp.id) {
+                      @let cs = getComponentScore(s, comp.id);
+                      <td class="num-col">
+                        <span [class]="cs !== null ? gradeClass(cs) : 'grade-empty'">
+                          {{ cs !== null ? cs : '—' }}
+                        </span>
+                      </td>
+                    }
                     <td class="num-col">
                       <span [class]="s.final !== null ? gradeClass(s.final!) : 'grade-empty'">
                         {{ s.final !== null ? s.final : '—' }}
@@ -124,6 +149,14 @@
                       <span [class]="s.makeUp !== null ? gradeClass(s.makeUp!) : 'grade-empty'">
                         {{ s.makeUp !== null ? s.makeUp : '—' }}
                       </span>
+                    </td>
+                    <td class="num-col">
+                      <span [class]="s.weightedAverage !== null ? gradeClass(s.weightedAverage!) : 'grade-empty'">
+                        <strong>{{ s.weightedAverage !== null ? (s.weightedAverage | number:'1.2-2') : '—' }}</strong>
+                      </span>
+                      @if (s.hasMissingGrades) {
+                        <div class="missing-hint">eksik not 0 sayıldı</div>
+                      }
                     </td>
                   </tr>
                 }
@@ -138,16 +171,56 @@
     <!-- ── TAB: Sınavlar ─────────────────────────────────────────────────── -->
     @if (activeTab() === 'exams') {
       <div class="tab-panel">
-        <div class="section-toolbar">
-          <h2 class="section-title">Sınavlar</h2>
-          <button class="btn-primary" (click)="openExamForm()">+ Yeni Sınav</button>
-        </div>
 
+        @if (!examFormVisible()) {
+          <div class="section-toolbar">
+            <h2 class="section-title">Sınavlar</h2>
+            <div class="toolbar-actions">
+              <button class="btn-secondary" (click)="onPlaceholderAction('Optimal Soru Seti Oluştur')" disabled title="Yakında eklenecek">
+                Optimal Soru Seti Oluştur
+              </button>
+              <button class="btn-secondary" (click)="onPlaceholderAction('Geçmiş Sınavlardan Soru Aktar')" disabled title="Yakında eklenecek">
+                Geçmiş Sınavlardan Soru Aktar
+              </button>
+              <button class="btn-primary" (click)="openExamForm()">+ Yeni Sınav</button>
+            </div>
+          </div>
+        }
+
+        <!-- ── Sınav Formu ─────────────────────────────────────────────── -->
         @if (examFormVisible()) {
-          <div class="form-card">
-            <h3 class="form-title">{{ editingExamId() ? 'Sınavı Düzenle' : 'Yeni Sınav Ekle' }}</h3>
+          <div class="exam-form-card">
+
+            <!-- Başlık + zorluk özeti -->
+            <div class="exam-form-header">
+              <h3 class="form-title">{{ editingExamId() ? 'Sınavı Düzenle' : 'Yeni Sınav Ekle' }}</h3>
+              <div class="diff-summary">
+                <span class="diff-chip diff-kolay">KOLAY: {{ difficultyCounts.kolay }}</span>
+                <span class="diff-chip diff-orta">ORTA: {{ difficultyCounts.orta }}</span>
+                <span class="diff-chip diff-zor">ZOR: {{ difficultyCounts.zor }}</span>
+              </div>
+              <button class="btn-ghost" (click)="cancelExamForm()">✕ Kapat</button>
+            </div>
+
+            <!-- Backend hata mesajı (okunabilir string) -->
+            @if (examLoadError()) {
+              <div class="error-banner">{{ examLoadError() }}</div>
+            }
+
+            <!-- Frontend validasyon hataları -->
+            @if (examValidationErrors().length > 0) {
+              <div class="validation-errors">
+                <ul>
+                  @for (e of examValidationErrors(); track e) {
+                    <li>{{ e }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
             <form [formGroup]="examForm" (ngSubmit)="saveExamForm()" class="form-body">
-              <div class="field-row">
+              <!-- Üst alan grubu -->
+              <div class="field-row-4">
                 <div class="field">
                   <label class="field-label">Sınav Türü *</label>
                   <select class="field-input" formControlName="examType">
@@ -168,21 +241,168 @@
                     <span class="field-error">Sınav tipi gereklidir.</span>
                   }
                 </div>
-              </div>
-              <div class="field-row">
                 <div class="field">
                   <label class="field-label">Sınav Tarihi</label>
                   <input type="date" class="field-input" formControlName="date" />
                 </div>
                 <div class="field">
                   <label class="field-label">Soru Sayısı</label>
-                  <input type="number" class="field-input" formControlName="questionCount" placeholder="örn. 20" min="1" />
+                  <input type="number" class="field-input" formControlName="questionCount"
+                    placeholder="örn. 4" min="1" max="200"
+                    (blur)="onQuestionCountChange()" />
                 </div>
               </div>
-              <div class="field">
-                <label class="field-label">Açıklama</label>
-                <textarea class="field-input" formControlName="description" rows="2" placeholder="İsteğe bağlı not…"></textarea>
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label">Açıklama</label>
+                  <textarea class="field-input" formControlName="description" rows="2" placeholder="İsteğe bağlı not…"></textarea>
+                </div>
+                <div class="field">
+                  <label class="field-label">Genel Ortalamaya Etkisi (%)</label>
+                  <input type="number" class="field-input" formControlName="weightPercentage"
+                    placeholder="örn. 40" min="0" max="100" />
+                  <span class="field-hint">Örn: Vize %40, Final %60</span>
+                </div>
               </div>
+
+              <!-- ── Dersin Öğrenme Çıktıları ────────────────────────── -->
+              <div class="lo-info-section">
+                <span class="lo-info-title">Dersin Öğrenme Çıktıları</span>
+                @if (!learningOutcomesLoaded()) {
+                  <span class="lo-loading">Yükleniyor…</span>
+                } @else if (learningOutcomes().length === 0) {
+                  <p class="lo-empty-note">
+                    Bu ders için öğrenme çıktısı bulunamadı. Sınav sorularını ÖÇ ile eşleştirmek için
+                    önce <strong>Ders İçerikleri</strong> kısmından öğrenme çıktısı ekleyin.
+                  </p>
+                } @else {
+                  <div class="lo-info-list">
+                    @for (lo of learningOutcomes(); track lo.id) {
+                      <div class="lo-info-item">
+                        <span class="lo-info-code">{{ lo.code }}</span>
+                        <span class="lo-info-desc">{{ lo.description }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- ── Soru Tablosu ────────────────────────────────────── -->
+              @if (questionRows().length > 0) {
+                <div class="question-section">
+                  <div class="question-section-header">
+                    <span class="question-section-title">Sorular</span>
+                    <span class="score-total" [class]="totalScoreClass">
+                      Toplam: {{ totalScore }} / 100
+                      @if (totalScore === 100) { ✓ }
+                      @else if (totalScore > 100) { ⚠ 100'ü aşıyor }
+                      @else { (eksik: {{ 100 - totalScore }}) }
+                    </span>
+                    <button type="button" class="btn-sm btn-ghost" (click)="addQuestionRow()">+ Soru Ekle</button>
+                  </div>
+
+                  @if (learningOutcomes().length === 0 && learningOutcomesLoaded()) {
+                    <p class="lo-empty-note">ÖÇ seçimi için önce ders içeriğinden öğrenme çıktısı eklenmeli.</p>
+                  }
+
+                  <div class="question-table-wrapper">
+                    <table class="question-table">
+                      <thead>
+                        <tr>
+                          <th class="q-col-num">S.</th>
+                          <th class="q-col-desc">Soru Açıklaması</th>
+                          <th class="q-col-book" title="A kitapçığı (varsayılan)">A</th>
+                          <th class="q-col-book">B</th>
+                          <th class="q-col-book">C</th>
+                          <th class="q-col-book">D</th>
+                          <th class="q-col-score">Puan</th>
+                          <th class="q-col-diff">Zorluk</th>
+                          <th class="q-col-lo-cell">Öğrenme Çıktıları</th>
+                          <th class="q-col-actions"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (row of questionRows(); track row.questionNumber; let i = $index) {
+                          <tr class="question-row">
+                            <td class="q-col-num q-num-cell">{{ row.questionNumber }}</td>
+                            <td class="q-col-desc">
+                              <input class="q-input q-input-wide"
+                                [value]="row.description"
+                                (input)="updateQuestionField(i, 'description', $any($event.target).value)"
+                                placeholder="Soru açıklaması…" />
+                            </td>
+                            <td class="q-col-book">
+                              <input class="q-input q-input-num" type="number" min="1"
+                                [value]="row.bookletA ?? ''"
+                                (input)="updateQuestionField(i, 'bookletA', $any($event.target).value ? +$any($event.target).value : null)" />
+                            </td>
+                            <td class="q-col-book">
+                              <input class="q-input q-input-num" type="number" min="1"
+                                [value]="row.bookletB ?? ''"
+                                (input)="updateQuestionField(i, 'bookletB', $any($event.target).value ? +$any($event.target).value : null)" />
+                            </td>
+                            <td class="q-col-book">
+                              <input class="q-input q-input-num" type="number" min="1"
+                                [value]="row.bookletC ?? ''"
+                                (input)="updateQuestionField(i, 'bookletC', $any($event.target).value ? +$any($event.target).value : null)" />
+                            </td>
+                            <td class="q-col-book">
+                              <input class="q-input q-input-num" type="number" min="1"
+                                [value]="row.bookletD ?? ''"
+                                (input)="updateQuestionField(i, 'bookletD', $any($event.target).value ? +$any($event.target).value : null)" />
+                            </td>
+                            <td class="q-col-score">
+                              <input class="q-input q-input-num" type="number" min="0" max="100"
+                                [value]="row.score ?? ''"
+                                (input)="updateQuestionField(i, 'score', $any($event.target).value === '' ? null : +$any($event.target).value)" />
+                            </td>
+                            <td class="q-col-diff">
+                              <select class="q-input q-select"
+                                [value]="row.difficulty"
+                                (change)="updateQuestionField(i, 'difficulty', $any($event.target).value)">
+                                <option value="">—</option>
+                                @for (d of difficulties; track d) {
+                                  <option [value]="d">{{ d }}</option>
+                                }
+                              </select>
+                            </td>
+                            <!-- Tek kolon — tüm ÖÇ'ler dikey checkbox -->
+                            <td class="q-col-lo-cell">
+                              @if (learningOutcomes().length === 0) {
+                                <span class="lo-none">—</span>
+                              } @else {
+                                <div class="lo-chip-list">
+                                  @for (lo of learningOutcomes(); track lo.id) {
+                                    <label class="lo-chip-label" [title]="lo.description"
+                                      [class.lo-chip-selected]="isLOSelected(i, lo.id)">
+                                      <input type="checkbox"
+                                        [checked]="isLOSelected(i, lo.id)"
+                                        (change)="toggleLO(i, lo.id)" />
+                                      {{ lo.code }}
+                                    </label>
+                                  }
+                                </div>
+                              }
+                            </td>
+                            <td class="q-col-actions">
+                              <button type="button" class="icon-btn danger" title="Soruyu Sil" (click)="removeQuestionRow(i)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+
+              @if (questionRows().length === 0) {
+                <p class="lo-empty-note">
+                  Soru eklemek için soru sayısı alanına bir değer girin ve alandan çıkın, ya da "+ Soru Ekle" butonunu kullanın.
+                </p>
+              }
+
               <div class="form-actions">
                 <button type="button" class="btn-ghost" (click)="cancelExamForm()">İptal</button>
                 <button type="submit" class="btn-primary" [disabled]="examSaving()">
@@ -193,43 +413,201 @@
           </div>
         }
 
-        @if (exams().length === 0 && !examFormVisible()) {
-          <div class="empty-panel"><p>Henüz sınav tanımlanmamış.</p></div>
-        } @else {
-          <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Tür</th>
-                  <th>Tip</th>
-                  <th>Tarih</th>
-                  <th>Soru Sayısı</th>
-                  <th>Açıklama</th>
-                  <th>İşlemler</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (exam of exams(); track exam.id) {
+        <!-- ── Sınav Listesi ────────────────────────────────────────────── -->
+        @if (!examFormVisible() && !gradeEntryVisible()) {
+          @if (exams().length === 0) {
+            <div class="empty-panel"><p>Henüz sınav tanımlanmamış.</p></div>
+          } @else {
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
                   <tr>
-                    <td><span class="type-badge">{{ exam.examType }}</span></td>
-                    <td>{{ exam.examMethod }}</td>
-                    <td>{{ exam.date ? (exam.date | slice:0:10) : '—' }}</td>
-                    <td class="num-col">{{ exam.questionCount ?? '—' }}</td>
-                    <td class="desc-cell">{{ exam.description || '—' }}</td>
-                    <td>
-                      <div class="list-actions">
-                        <button class="icon-btn" title="Düzenle" (click)="openExamForm(exam)">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button class="icon-btn danger" title="Sil" (click)="deleteExam(exam.id)">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                        </button>
-                      </div>
-                    </td>
+                    <th>Tür</th>
+                    <th>Tip</th>
+                    <th>Tarih</th>
+                    <th>Soru Sayısı</th>
+                    <th>Açıklama</th>
+                    <th class="num-col">Toplam Puan</th>
+                    <th class="num-col">Ağırlık %</th>
+                    <th>Not Durumu</th>
+                    <th>İşlemler</th>
                   </tr>
+                </thead>
+                <tbody>
+                  @for (exam of exams(); track exam.id) {
+                    <tr>
+                      <td><span class="type-badge">{{ exam.examType }}</span></td>
+                      <td>{{ exam.examMethod }}</td>
+                      <td>{{ exam.date ? (exam.date | slice:0:10) : '—' }}</td>
+                      <td class="num-col">{{ exam.questionCount ?? '—' }}</td>
+                      <td class="desc-cell">{{ exam.description || '—' }}</td>
+                      <td class="num-col">
+                        <span [class.score-ok]="exam.totalScore === 100" [class.score-over]="exam.totalScore > 100">
+                          {{ exam.totalScore || '—' }}
+                        </span>
+                      </td>
+                      <td class="num-col">
+                        {{ exam.weightPercentage !== null ? '%' + exam.weightPercentage : '—' }}
+                      </td>
+                      <td>
+                        @if (exam.hasGrades) {
+                          <span class="not-durumu-badge badge-graded">
+                            {{ exam.gradedStudentCount }}/{{ exam.totalStudentCount }} Girildi
+                          </span>
+                        } @else {
+                          <span class="not-durumu-badge badge-not-graded">Girilmedi</span>
+                        }
+                      </td>
+                      <td>
+                        <div class="list-actions">
+                          <button class="icon-btn" title="Düzenle" (click)="openExamForm(exam)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button class="icon-btn accent" title="Not Girişi" (click)="openGradeEntry(exam)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          </button>
+                          <button class="icon-btn danger" title="Sil" (click)="deleteExam(exam.id)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        <!-- ── Diğer Ölçme Bileşenleri Not Girişi ─────────────────────────── -->
+        @if (!examFormVisible() && !gradeEntryVisible() && components().length > 0) {
+          <div class="report-section" style="margin-top:1.5rem">
+            <h3 class="report-section-title" style="font-size:0.95rem">Diğer Ölçme Bileşenleri Not Girişi</h3>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Bileşen Adı</th>
+                    <th>Tür</th>
+                    <th>Not Grubu</th>
+                    <th class="num-col">Maks. Puan</th>
+                    <th>İşlem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of components(); track c.id) {
+                    <tr>
+                      <td>
+                        {{ c.name }}
+                        @if (c.isIncludedInAverage) { <span class="badge-avg">Ortalamada</span> }
+                      </td>
+                      <td><span class="type-badge">{{ c.type }}</span></td>
+                      <td>{{ gradeGroupLabel(c.gradeGroup) }}</td>
+                      <td class="num-col">{{ c.maxScore }}</td>
+                      <td>
+                        <button class="icon-btn accent" title="Not Girişi" (click)="openCompGradeEntryFromExams(c)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          Not Girişi
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- ── Not Girişi Paneli ─────────────────────────────────────────── -->
+        @if (gradeEntryVisible()) {
+          <div class="grade-entry-panel">
+            <div class="grade-entry-header">
+              <h3 class="form-title">
+                Not Girişi
+                @if (gradeEntryData()) {
+                  — {{ gradeEntryData()!.examType }} / {{ gradeEntryData()!.examMethod }}
                 }
-              </tbody>
-            </table>
+              </h3>
+              <button class="btn-secondary" (click)="closeGradeEntry()">← Geri Dön</button>
+            </div>
+
+            @if (gradeEntryError()) {
+              <div class="error-banner">{{ gradeEntryError() }}</div>
+            }
+
+            @if (gradeValidationErrors().length > 0) {
+              <div class="error-banner">
+                <ul class="error-list">
+                  @for (e of gradeValidationErrors(); track e) {
+                    <li>{{ e }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (gradeEntryLoading()) {
+              <div class="loading-panel"><p>Yükleniyor…</p></div>
+            }
+
+            @if (!gradeEntryLoading() && gradeEntryData()) {
+              @if (gradeEntryData()!.students.length === 0) {
+                <div class="empty-panel"><p>Bu derse kayıtlı öğrenci bulunmuyor.</p></div>
+              } @else {
+                <div class="grade-table-wrapper">
+                  <table class="grade-table">
+                    <thead>
+                      <tr>
+                        <th class="grade-th-sticky">Öğrenci No</th>
+                        <th class="grade-th-sticky">Ad Soyad</th>
+                        @for (q of gradeEntryData()!.questions; track q.id) {
+                          <th class="grade-th-question">S{{ q.questionNumber }}<br><small>/ {{ q.maxScore }}</small></th>
+                        }
+                        <th class="grade-th-total">Toplam</th>
+                        <th>Durum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of gradeRows(); track row.studentId; let i = $index) {
+                        <tr>
+                          <td class="grade-td-sticky">{{ row.studentNumber }}</td>
+                          <td class="grade-td-sticky">{{ row.fullName }}</td>
+                          @for (q of gradeEntryData()!.questions; track q.id) {
+                            <td>
+                              <input
+                                class="grade-input"
+                                [class.grade-input-over]="isScoreOver(row.scores[q.id], q.maxScore)"
+                                type="number"
+                                min="0"
+                                [max]="q.maxScore"
+                                [value]="row.scores[q.id] ?? ''"
+                                (input)="updateGradeScore(i, q.id, $any($event.target).value)"
+                              />
+                            </td>
+                          }
+                          <td class="grade-td-total" [class]="getRowTotalClass(i)">
+                            <strong>{{ getRowTotal(i) }}</strong>
+                          </td>
+                          <td>
+                            @if (isRowComplete(i)) {
+                              <span class="status-chip status-complete">Tamamlandı</span>
+                            } @else {
+                              <span class="status-chip status-partial">Eksik</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="form-actions">
+                  <button class="btn-secondary" (click)="closeGradeEntry()">İptal</button>
+                  <button class="btn-primary" [disabled]="gradeEntrySaving()" (click)="saveGradeEntry()">
+                    {{ gradeEntrySaving() ? 'Kaydediliyor…' : 'Notları Kaydet' }}
+                  </button>
+                </div>
+              }
+            }
           </div>
         }
       </div>
@@ -272,8 +650,9 @@
               </div>
               <div class="field-row">
                 <div class="field">
-                  <label class="field-label">Ağırlık (%) *</label>
-                  <input type="number" class="field-input" formControlName="weight" placeholder="örn. 20" min="0" max="100" />
+                  <label class="field-label">Maksimum Puan *</label>
+                  <input type="number" class="field-input" formControlName="maxScore" placeholder="100" min="1" />
+                  <span class="field-hint">100 dışında bir değer girilirse notlar otomatik normalize edilir.</span>
                 </div>
                 <div class="field">
                   <label class="field-label">Tarih</label>
@@ -281,9 +660,58 @@
                 </div>
               </div>
               <div class="field">
+                <label class="field-label">Ortalamaya Dahil</label>
+                <label class="toggle-row">
+                  <input type="checkbox" formControlName="isIncludedInAverage" />
+                  <span>Evet, ağırlıklı ortalamaya dahil et</span>
+                </label>
+              </div>
+
+              @if (componentForm.controls.isIncludedInAverage.value) {
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">Not Grubu *</label>
+                    <select class="field-input" formControlName="gradeGroup">
+                      <option value="">Seçiniz</option>
+                      @for (g of gradeGroups; track g.value) {
+                        <option [value]="g.value">{{ g.label }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Grup İçi Ağırlık (%) *</label>
+                    <input type="number" class="field-input" formControlName="groupWeightPercentage"
+                      placeholder="örn. 20" min="0" max="100" />
+                    <span class="field-hint">Sınavın kalan ağırlığı otomatik hesaplanır.</span>
+                  </div>
+                </div>
+              }
+
+              <div class="field">
                 <label class="field-label">Açıklama</label>
                 <textarea class="field-input" formControlName="description" rows="2" placeholder="İsteğe bağlı…"></textarea>
               </div>
+
+              <!-- ÖÇ Çoklu Seçim -->
+              <div class="field">
+                <label class="field-label">İlişkili Öğrenme Çıktıları</label>
+                @if (learningOutcomes().length === 0) {
+                  <p class="lo-empty-note">Bu ders için öğrenme çıktısı tanımlanmamış.</p>
+                } @else {
+                  <div class="lo-checkbox-list">
+                    @for (lo of learningOutcomes(); track lo.id) {
+                      <label class="lo-checkbox-item" [class.lo-checked]="selectedLoIds().includes(lo.id)">
+                        <input type="checkbox"
+                          [checked]="selectedLoIds().includes(lo.id)"
+                          (change)="toggleLoSelection(lo.id)" />
+                        <span class="lo-info-code">{{ lo.code }}</span>
+                        <span class="lo-checkbox-desc">{{ lo.description }}</span>
+                      </label>
+                    }
+                  </div>
+                }
+              </div>
+
               <div class="form-actions">
                 <button type="button" class="btn-ghost" (click)="cancelComponentForm()">İptal</button>
                 <button type="submit" class="btn-primary" [disabled]="componentSaving()">
@@ -294,33 +722,62 @@
           </div>
         }
 
-        @if (components().length === 0 && !componentFormVisible()) {
+        @if (components().length === 0 && !componentFormVisible() && !compGradeVisible()) {
           <div class="empty-panel"><p>Henüz ölçme bileşeni eklenmemiş.</p></div>
-        } @else {
+        }
+
+        @if (!componentFormVisible() && !compGradeVisible() && components().length > 0) {
           <div class="table-wrapper">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Bileşen Adı</th>
                   <th>Tür</th>
-                  <th class="num-col">Ağırlık %</th>
+                  <th class="num-col">Maks. Puan</th>
+                  <th>Not Grubu</th>
+                  <th class="num-col">Grup Ağırlık %</th>
+                  <th>İlişkili ÖÇ</th>
                   <th>Tarih</th>
-                  <th>Açıklama</th>
                   <th>İşlemler</th>
                 </tr>
               </thead>
               <tbody>
                 @for (c of components(); track c.id) {
                   <tr>
-                    <td class="component-name">{{ c.name }}</td>
+                    <td class="component-name">
+                      {{ c.name }}
+                      @if (c.isIncludedInAverage) {
+                        <span class="badge-avg">Ortalamada</span>
+                      }
+                    </td>
                     <td><span class="type-badge">{{ c.type }}</span></td>
-                    <td class="num-col"><strong>%{{ c.weight }}</strong></td>
+                    <td class="num-col">{{ c.maxScore }}</td>
+                    <td>
+                      @if (c.gradeGroup === 'Midterm') { Vize }
+                      @else if (c.gradeGroup === 'Final') { Final }
+                      @else if (c.gradeGroup === 'Makeup') { Bütünleme }
+                      @else { — }
+                    </td>
+                    <td class="num-col">
+                      {{ c.isIncludedInAverage ? '%' + c.groupWeightPercentage : '—' }}
+                    </td>
+                    <td>
+                      @if (c.learningOutcomeIds.length > 0) {
+                        <div class="lo-tags">
+                          @for (loId of c.learningOutcomeIds; track loId) {
+                            <span class="lo-tag">{{ getLoCode(loId) }}</span>
+                          }
+                        </div>
+                      } @else { — }
+                    </td>
                     <td>{{ c.date ? (c.date | slice:0:10) : '—' }}</td>
-                    <td class="desc-cell">{{ c.description || '—' }}</td>
                     <td>
                       <div class="list-actions">
                         <button class="icon-btn" title="Düzenle" (click)="openComponentForm(c)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="icon-btn accent" title="Not Girişi" (click)="openCompGradeEntry(c)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         </button>
                         <button class="icon-btn danger" title="Sil" (click)="deleteComponent(c.id)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -330,14 +787,69 @@
                   </tr>
                 }
               </tbody>
-              <tfoot>
-                <tr>
-                  <td colspan="2"><strong>Toplam</strong></td>
-                  <td class="num-col" [class.over-weight]="totalWeight > 100"><strong>%{{ totalWeight }}</strong></td>
-                  <td colspan="3"></td>
-                </tr>
-              </tfoot>
             </table>
+          </div>
+        }
+
+        <!-- ── Bileşen Not Girişi Paneli ────────────────────────────────── -->
+        @if (compGradeVisible()) {
+          <div class="grade-entry-panel">
+            <div class="grade-entry-header">
+              <h3 class="form-title">
+                Not Girişi
+                @if (compGradeData()) { — {{ compGradeData()!.name }} ({{ compGradeData()!.type }}) }
+              </h3>
+              <button class="btn-secondary" (click)="closeCompGradeEntry()">← Geri Dön</button>
+            </div>
+
+            @if (compGradeError()) {
+              <div class="error-banner">{{ compGradeError() }}</div>
+            }
+
+            @if (compGradeLoading()) {
+              <div class="loading-panel"><p>Yükleniyor…</p></div>
+            }
+
+            @if (!compGradeLoading() && compGradeData()) {
+              @if (compGradeData()!.students.length === 0) {
+                <div class="empty-panel"><p>Bu derse kayıtlı öğrenci bulunmuyor.</p></div>
+              } @else {
+                <div class="grade-table-wrapper">
+                  <table class="grade-table">
+                    <thead>
+                      <tr>
+                        <th>Öğrenci No</th>
+                        <th>Ad Soyad</th>
+                        <th>Puan <small>/ {{ compGradeData()!.maxScore }}</small></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (s of compGradeData()!.students; track s.studentId) {
+                        <tr>
+                          <td>{{ s.studentNumber }}</td>
+                          <td>{{ s.fullName }}</td>
+                          <td>
+                            <input
+                              class="grade-input"
+                              [class.grade-input-over]="isCompScoreOver(s.studentId)"
+                              type="number" min="0" [max]="compGradeData()!.maxScore"
+                              [value]="compGradeScores()[s.studentId] ?? ''"
+                              (input)="updateCompScore(s.studentId, $any($event.target).value)"
+                            />
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <div class="form-actions">
+                  <button class="btn-secondary" (click)="closeCompGradeEntry()">İptal</button>
+                  <button class="btn-primary" [disabled]="compGradeSaving()" (click)="saveCompGradeEntry()">
+                    {{ compGradeSaving() ? 'Kaydediliyor…' : 'Notları Kaydet' }}
+                  </button>
+                </div>
+              }
+            }
           </div>
         }
       </div>
@@ -382,10 +894,20 @@
               </thead>
               <tbody>
                 @for (r of riskData(); track r.studentId) {
-                  <tr>
+                  <tr [class.row-missing]="r.hasMissingGrades">
                     <td><span class="student-no">{{ r.studentNo }}</span></td>
-                    <td>{{ r.fullName }}</td>
-                    <td class="num-col">{{ r.gradeAverage !== null ? (r.gradeAverage | number:'1.1-1') : '—' }}</td>
+                    <td>
+                      {{ r.fullName }}
+                      @if (r.hasMissingGrades) {
+                        <span class="missing-badge" title="Bazı bileşen notları eksik">Eksik Not</span>
+                      }
+                    </td>
+                    <td class="num-col">
+                      {{ r.gradeAverage !== null ? (r.gradeAverage | number:'1.2-2') : '—' }}
+                      @if (r.hasMissingGrades && r.gradeAverage !== null) {
+                        <div class="missing-hint">eksik not 0 sayıldı</div>
+                      }
+                    </td>
                     <td><span class="risk-badge" [class]="riskClass(r.riskLevel)">{{ r.riskLevel }}</span></td>
                     <td class="desc-cell">{{ r.suggestion }}</td>
                   </tr>
@@ -402,11 +924,76 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">ÖÇ Durum Tablosu</h2>
+          <button class="btn-secondary" (click)="loadLoStatus()">Yenile</button>
         </div>
-        <div class="dev-notice">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Bu bölüm geliştirme aşamasındadır. Öğrenme çıktılarının başarı durumu ve ölçme araçlarıyla ilişkilendirme yakında eklenecektir.
-        </div>
+
+        <p class="lo-status-hint">
+          Her öğrenme çıktısı için ilişkili sınav soruları ve ölçme bileşenlerinden hesaplanan ortalama başarı oranı gösterilmektedir.
+          Satıra tıklayarak kaynak detaylarını genişletebilirsiniz.
+        </p>
+
+        @if (loStatusLoading()) {
+          <div class="loading-small">Hesaplanıyor…</div>
+        } @else if (loStatus().length === 0) {
+          <div class="empty-panel">
+            <p>Bu ders için öğrenme çıktısı tanımlanmamış ya da henüz not girişi yapılmamış.</p>
+          </div>
+        } @else {
+          <div class="table-wrapper">
+            <table class="data-table lo-status-table">
+              <thead>
+                <tr>
+                  <th style="width:80px">Kod</th>
+                  <th>Öğrenme Çıktısı</th>
+                  <th class="num-col" style="width:80px">Kaynak</th>
+                  <th class="num-col" style="width:120px">Ort. Başarı %</th>
+                  <th class="num-col" style="width:40px"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (lo of loStatus(); track lo.learningOutcomeId) {
+                  <tr class="lo-row" (click)="toggleLoExpand(lo.learningOutcomeId)">
+                    <td><span class="lo-code">{{ lo.code }}</span></td>
+                    <td class="lo-desc-cell">{{ lo.description }}</td>
+                    <td class="num-col">
+                      @if (lo.sourceCount === 0) { <span class="grade-empty">—</span> }
+                      @else { {{ lo.sourceCount }} }
+                    </td>
+                    <td class="num-col">
+                      <span [class]="successClass(lo.averageSuccess)">
+                        {{ lo.averageSuccess !== null ? (lo.averageSuccess | number:'1.1-1') + '%' : '—' }}
+                      </span>
+                    </td>
+                    <td class="num-col" style="font-size:0.75rem;color:#6b7280">
+                      {{ lo.sourceCount > 0 ? (expandedLoId() === lo.learningOutcomeId ? '▲' : '▼') : '' }}
+                    </td>
+                  </tr>
+                  @if (expandedLoId() === lo.learningOutcomeId && lo.sources.length > 0) {
+                    @for (src of lo.sources; track src.sourceName) {
+                      <tr class="lo-source-row">
+                        <td></td>
+                        <td class="lo-desc-cell">
+                          <span class="source-type-badge" [class.source-exam]="src.sourceType === 'ExamQuestion'" [class.source-comp]="src.sourceType === 'Component'">
+                            {{ src.sourceType === 'ExamQuestion' ? src.examType + ' Sorusu' : src.examType }}
+                          </span>
+                          {{ src.sourceName }}
+                        </td>
+                        <td class="num-col" style="font-size:0.72rem;color:#6b7280">{{ src.studentCount }} öğ.</td>
+                        <td class="num-col">
+                          <span [class]="successClass(src.averageNormalized)">
+                            {{ src.averageNormalized !== null ? (src.averageNormalized | number:'1.1-1') + '%' : '—' }}
+                          </span>
+                        </td>
+                        <td></td>
+                      </tr>
+                    }
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="table-footer">Toplam {{ loStatus().length }} öğrenme çıktısı</p>
+        }
       </div>
     }
 
@@ -500,6 +1087,56 @@
               </div>
             }
           </div>
+
+          <!-- Kart 3 — Ölçme Bileşenleri Özeti -->
+          @if (componentReportLoading()) {
+            <div class="loading-small">Bileşen raporu hesaplanıyor…</div>
+          } @else if (componentReport().length > 0) {
+            <div class="report-section">
+              <h3 class="report-section-title">📐 Ölçme Bileşenleri Özeti</h3>
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Bileşen Adı</th>
+                      <th>Tür</th>
+                      <th>Not Grubu</th>
+                      <th class="num-col">Grup Ağırlık</th>
+                      <th class="num-col">Maks. Puan</th>
+                      <th class="num-col">Not Girilen</th>
+                      <th class="num-col">Ort. Puan</th>
+                      <th class="num-col">Ort. %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (c of componentReport(); track c.componentId) {
+                      <tr>
+                        <td>
+                          {{ c.name }}
+                          @if (c.isIncludedInAverage) { <span class="badge-avg">Ortalamada</span> }
+                        </td>
+                        <td><span class="type-badge">{{ c.type }}</span></td>
+                        <td>{{ gradeGroupLabel(c.gradeGroup) }}</td>
+                        <td class="num-col">{{ c.isIncludedInAverage ? '%' + c.groupWeightPercentage : '—' }}</td>
+                        <td class="num-col">{{ c.maxScore }}</td>
+                        <td class="num-col">{{ c.gradedCount }} / {{ c.totalStudents }}</td>
+                        <td class="num-col">
+                          <span [class]="c.averageScore !== null ? gradeClass(c.averageScore!) : 'grade-empty'">
+                            {{ c.averageScore !== null ? (c.averageScore | number:'1.1-1') : '—' }}
+                          </span>
+                        </td>
+                        <td class="num-col">
+                          <span [class]="successClass(c.averageNormalized)">
+                            {{ c.averageNormalized !== null ? (c.averageNormalized | number:'1.1-1') + '%' : '—' }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
 
           <div class="dev-notice">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>

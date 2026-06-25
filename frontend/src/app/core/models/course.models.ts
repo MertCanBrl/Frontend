@@ -120,6 +120,40 @@ export interface ExamDto {
   date: string | null;
   questionCount: number | null;
   description: string | null;
+  totalScore: number;
+  weightPercentage: number | null;
+  hasGrades: boolean;
+  gradedStudentCount: number;
+  totalStudentCount: number;
+}
+
+export interface ExamQuestionDto {
+  id: number;
+  questionNumber: number;
+  description: string;
+  score: number;
+  difficulty: string;
+  bookletAQuestionNumber: number | null;
+  bookletBQuestionNumber: number | null;
+  bookletCQuestionNumber: number | null;
+  bookletDQuestionNumber: number | null;
+  learningOutcomeIds: number[];
+}
+
+export interface ExamDetailDto extends ExamDto {
+  questions: ExamQuestionDto[];
+}
+
+export interface SaveExamQuestionRequest {
+  questionNumber: number;
+  description: string;
+  score: number;
+  difficulty: string;
+  bookletAQuestionNumber: number | null;
+  bookletBQuestionNumber: number | null;
+  bookletCQuestionNumber: number | null;
+  bookletDQuestionNumber: number | null;
+  learningOutcomeIds: number[];
 }
 
 export interface SaveExamRequest {
@@ -128,6 +162,8 @@ export interface SaveExamRequest {
   date: string | null;
   questionCount: number | null;
   description: string | null;
+  weightPercentage: number | null;
+  questions: SaveExamQuestionRequest[];
 }
 
 // Assessment Components
@@ -138,6 +174,11 @@ export interface AssessmentComponentDto {
   weight: number;
   date: string | null;
   description: string | null;
+  maxScore: number;
+  isIncludedInAverage: boolean;
+  gradeGroup: string | null;
+  groupWeightPercentage: number;
+  learningOutcomeIds: number[];
 }
 
 export interface SaveAssessmentComponentRequest {
@@ -146,9 +187,40 @@ export interface SaveAssessmentComponentRequest {
   weight: number;
   date: string | null;
   description: string | null;
+  maxScore: number;
+  isIncludedInAverage: boolean;
+  gradeGroup: string | null;
+  groupWeightPercentage: number;
+  learningOutcomeIds: number[];
+}
+
+export interface ComponentGradeEntryDto {
+  componentId: number;
+  name: string;
+  type: string;
+  maxScore: number;
+  students: ComponentStudentGradeDto[];
+}
+
+export interface ComponentStudentGradeDto {
+  studentId: number;
+  studentNumber: string;
+  fullName: string;
+  score: number | null;
+}
+
+export interface SaveComponentGradeEntryRequest {
+  students: Array<{ studentId: number; score: number | null; }>;
 }
 
 // Students
+export interface StudentComponentScoreDto {
+  componentId: number;
+  componentName: string;
+  score: number | null;
+  maxScore: number;
+}
+
 export interface StudentCourseResultDto {
   studentId: number;
   studentNo: string;
@@ -157,6 +229,10 @@ export interface StudentCourseResultDto {
   midterm: number | null;
   final: number | null;
   makeUp: number | null;
+  weightedAverage: number | null;
+  componentScores: StudentComponentScoreDto[];
+  hasMissingGrades: boolean;
+  missingComponentNames: string[];
 }
 
 // Risk Analysis
@@ -167,6 +243,7 @@ export interface RiskAnalysisDto {
   gradeAverage: number | null;
   riskLevel: string;
   suggestion: string;
+  hasMissingGrades: boolean;
 }
 
 // Statistics (Dönem Sonu Raporları)
@@ -183,9 +260,86 @@ export interface CourseStatisticsDto {
   distribution: GradeBucketDto[];
 }
 
+// LO Status
+export interface LoSourceDto {
+  sourceType: string;
+  sourceName: string;
+  examType: string;
+  averageNormalized: number | null;
+  studentCount: number;
+}
+
+export interface LearningOutcomeStatusDto {
+  learningOutcomeId: number;
+  code: string;
+  description: string;
+  averageSuccess: number | null;
+  sourceCount: number;
+  sources: LoSourceDto[];
+}
+
+// Component Report
+export interface ComponentReportItemDto {
+  componentId: number;
+  name: string;
+  type: string;
+  gradeGroup: string | null;
+  groupWeightPercentage: number;
+  maxScore: number;
+  isIncludedInAverage: boolean;
+  learningOutcomeIds: number[];
+  totalStudents: number;
+  gradedCount: number;
+  averageScore: number | null;
+  averageNormalized: number | null;
+}
+
 // Grades
 export interface SaveGradesRequest {
   midterm: number | null;
   final: number | null;
   makeUp: number | null;
+}
+
+// Exam Grade Entry
+export interface GradeEntryQuestionDto {
+  id: number;
+  questionNumber: number;
+  description: string;
+  maxScore: number;
+}
+
+export interface GradeEntryQuestionScoreDto {
+  questionId: number;
+  score: number | null;
+}
+
+export interface GradeEntryStudentDto {
+  studentId: number;
+  studentNumber: string;
+  fullName: string;
+  totalScore: number;
+  isCompleted: boolean;
+  questionScores: GradeEntryQuestionScoreDto[];
+}
+
+export interface ExamGradeEntryDto {
+  examId: number;
+  courseId: number;
+  examType: string;
+  examMethod: string;
+  date: string | null;
+  description: string | null;
+  questions: GradeEntryQuestionDto[];
+  students: GradeEntryStudentDto[];
+}
+
+export interface SaveExamGradeEntryRequest {
+  students: Array<{
+    studentId: number;
+    questionScores: Array<{
+      questionId: number;
+      score: number;
+    }>;
+  }>;
 }

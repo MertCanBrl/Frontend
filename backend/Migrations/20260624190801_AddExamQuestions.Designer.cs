@@ -3,6 +3,7 @@ using System;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260624190801_AddExamQuestions")]
+    partial class AddExamQuestions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,18 +42,6 @@ namespace Backend.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<string>("GradeGroup")
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("GroupWeightPercentage")
-                        .HasColumnType("numeric");
-
-                    b.Property<bool>("IsIncludedInAverage")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal>("MaxScore")
-                        .HasColumnType("numeric");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -67,54 +58,6 @@ namespace Backend.Migrations
                     b.HasIndex("CourseId");
 
                     b.ToTable("AssessmentComponents");
-                });
-
-            modelBuilder.Entity("Backend.Models.AssessmentComponentLearningOutcome", b =>
-                {
-                    b.Property<int>("AssessmentComponentId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("LearningOutcomeId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("AssessmentComponentId", "LearningOutcomeId");
-
-                    b.HasIndex("LearningOutcomeId");
-
-                    b.ToTable("AssessmentComponentLearningOutcomes");
-                });
-
-            modelBuilder.Entity("Backend.Models.AssessmentComponentStudentGrade", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AssessmentComponentId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("Score")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StudentId");
-
-                    b.HasIndex("AssessmentComponentId", "StudentId")
-                        .IsUnique();
-
-                    b.ToTable("AssessmentComponentStudentGrades");
                 });
 
             modelBuilder.Entity("Backend.Models.Course", b =>
@@ -396,9 +339,6 @@ namespace Backend.Migrations
                     b.Property<int?>("QuestionCount")
                         .HasColumnType("integer");
 
-                    b.Property<decimal?>("WeightPercentage")
-                        .HasColumnType("numeric");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
@@ -463,75 +403,6 @@ namespace Backend.Migrations
                     b.HasIndex("LearningOutcomeId");
 
                     b.ToTable("ExamQuestionLearningOutcomes");
-                });
-
-            modelBuilder.Entity("Backend.Models.ExamQuestionStudentScore", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ExamQuestionId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ExamStudentGradeId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("Score")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExamQuestionId");
-
-                    b.HasIndex("ExamStudentGradeId", "ExamQuestionId")
-                        .IsUnique();
-
-                    b.ToTable("ExamQuestionStudentScores");
-                });
-
-            modelBuilder.Entity("Backend.Models.ExamStudentGrade", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ExamId")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("TotalScore")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StudentId");
-
-                    b.HasIndex("ExamId", "StudentId")
-                        .IsUnique();
-
-                    b.ToTable("ExamStudentGrades");
                 });
 
             modelBuilder.Entity("Backend.Models.LOPOMapping", b =>
@@ -864,44 +735,6 @@ namespace Backend.Migrations
                     b.Navigation("Course");
                 });
 
-            modelBuilder.Entity("Backend.Models.AssessmentComponentLearningOutcome", b =>
-                {
-                    b.HasOne("Backend.Models.AssessmentComponent", "AssessmentComponent")
-                        .WithMany("LearningOutcomeMappings")
-                        .HasForeignKey("AssessmentComponentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Backend.Models.LearningOutcome", "LearningOutcome")
-                        .WithMany()
-                        .HasForeignKey("LearningOutcomeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AssessmentComponent");
-
-                    b.Navigation("LearningOutcome");
-                });
-
-            modelBuilder.Entity("Backend.Models.AssessmentComponentStudentGrade", b =>
-                {
-                    b.HasOne("Backend.Models.AssessmentComponent", "AssessmentComponent")
-                        .WithMany("StudentGrades")
-                        .HasForeignKey("AssessmentComponentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Backend.Models.Student", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AssessmentComponent");
-
-                    b.Navigation("Student");
-                });
-
             modelBuilder.Entity("Backend.Models.Course", b =>
                 {
                     b.HasOne("Backend.Models.User", "Instructor")
@@ -1007,44 +840,6 @@ namespace Backend.Migrations
                     b.Navigation("LearningOutcome");
                 });
 
-            modelBuilder.Entity("Backend.Models.ExamQuestionStudentScore", b =>
-                {
-                    b.HasOne("Backend.Models.ExamQuestion", "ExamQuestion")
-                        .WithMany()
-                        .HasForeignKey("ExamQuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Backend.Models.ExamStudentGrade", "ExamStudentGrade")
-                        .WithMany("QuestionScores")
-                        .HasForeignKey("ExamStudentGradeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ExamQuestion");
-
-                    b.Navigation("ExamStudentGrade");
-                });
-
-            modelBuilder.Entity("Backend.Models.ExamStudentGrade", b =>
-                {
-                    b.HasOne("Backend.Models.Exam", "Exam")
-                        .WithMany()
-                        .HasForeignKey("ExamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Backend.Models.Student", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Exam");
-
-                    b.Navigation("Student");
-                });
-
             modelBuilder.Entity("Backend.Models.LOPOMapping", b =>
                 {
                     b.HasOne("Backend.Models.LearningOutcome", "LearningOutcome")
@@ -1084,13 +879,6 @@ namespace Backend.Migrations
                     b.Navigation("Group");
                 });
 
-            modelBuilder.Entity("Backend.Models.AssessmentComponent", b =>
-                {
-                    b.Navigation("LearningOutcomeMappings");
-
-                    b.Navigation("StudentGrades");
-                });
-
             modelBuilder.Entity("Backend.Models.Course", b =>
                 {
                     b.Navigation("AssessmentComponents");
@@ -1114,11 +902,6 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Models.ExamQuestion", b =>
                 {
                     b.Navigation("LearningOutcomeMappings");
-                });
-
-            modelBuilder.Entity("Backend.Models.ExamStudentGrade", b =>
-                {
-                    b.Navigation("QuestionScores");
                 });
 
             modelBuilder.Entity("Backend.Models.LearningOutcome", b =>

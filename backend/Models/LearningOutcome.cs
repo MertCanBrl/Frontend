@@ -21,4 +21,5 @@ public class LearningOutcome
     public string? Component { get; set; }
 
     public ICollection<LOPOMapping> LOPOMappings { get; set; } = new List<LOPOMapping>();
+    public List<ExamQuestionLearningOutcome> ExamQuestionMappings { get; set; } = [];
 }

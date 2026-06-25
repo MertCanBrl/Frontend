@@ -9,10 +9,13 @@ import {
   ProgramOutcomeDto, SaveProgramOutcomeRequest,
   MappingMatrixDto, MappingCellDto,
   SurveyQuestionDto, SaveSurveyQuestionRequest,
-  ExamDto, SaveExamRequest,
+  ExamDto, ExamDetailDto, SaveExamRequest,
+  ExamGradeEntryDto, SaveExamGradeEntryRequest,
   AssessmentComponentDto, SaveAssessmentComponentRequest,
+  ComponentGradeEntryDto, SaveComponentGradeEntryRequest,
   StudentCourseResultDto, RiskAnalysisDto,
-  CourseStatisticsDto, SaveGradesRequest
+  CourseStatisticsDto, SaveGradesRequest,
+  LearningOutcomeStatusDto, ComponentReportItemDto
 } from '../models/course.models';
 
 @Injectable({ providedIn: 'root' })
@@ -157,16 +160,28 @@ export class InstructorService {
     return this.http.get<ExamDto[]>(`${this.base}/instructor/term-courses/${courseId}/exams`);
   }
 
-  addExam(courseId: number, req: SaveExamRequest): Observable<ExamDto> {
-    return this.http.post<ExamDto>(`${this.base}/instructor/term-courses/${courseId}/exams`, req);
+  getExamDetail(courseId: number, examId: number): Observable<ExamDetailDto> {
+    return this.http.get<ExamDetailDto>(`${this.base}/instructor/term-courses/${courseId}/exams/${examId}`);
   }
 
-  updateExam(courseId: number, id: number, req: SaveExamRequest): Observable<void> {
-    return this.http.put<void>(`${this.base}/instructor/term-courses/${courseId}/exams/${id}`, req);
+  addExam(courseId: number, req: SaveExamRequest): Observable<ExamDetailDto> {
+    return this.http.post<ExamDetailDto>(`${this.base}/instructor/term-courses/${courseId}/exams`, req);
+  }
+
+  updateExam(courseId: number, id: number, req: SaveExamRequest): Observable<ExamDetailDto> {
+    return this.http.put<ExamDetailDto>(`${this.base}/instructor/term-courses/${courseId}/exams/${id}`, req);
   }
 
   deleteExam(courseId: number, id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/instructor/term-courses/${courseId}/exams/${id}`);
+  }
+
+  getExamGradeEntry(courseId: number, examId: number): Observable<ExamGradeEntryDto> {
+    return this.http.get<ExamGradeEntryDto>(`${this.base}/instructor/term-courses/${courseId}/exams/${examId}/grade-entry`);
+  }
+
+  saveExamGradeEntry(courseId: number, examId: number, req: SaveExamGradeEntryRequest): Observable<{ message: string; gradedStudentCount: number }> {
+    return this.http.put<{ message: string; gradedStudentCount: number }>(`${this.base}/instructor/term-courses/${courseId}/exams/${examId}/grade-entry`, req);
   }
 
   // Assessment Components
@@ -186,6 +201,14 @@ export class InstructorService {
     return this.http.delete<void>(`${this.base}/instructor/term-courses/${courseId}/assessment-components/${id}`);
   }
 
+  getComponentGradeEntry(courseId: number, componentId: number): Observable<ComponentGradeEntryDto> {
+    return this.http.get<ComponentGradeEntryDto>(`${this.base}/instructor/term-courses/${courseId}/assessment-components/${componentId}/grade-entry`);
+  }
+
+  saveComponentGradeEntry(courseId: number, componentId: number, req: SaveComponentGradeEntryRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/instructor/term-courses/${courseId}/assessment-components/${componentId}/grade-entry`, req);
+  }
+
   // Risk Analysis
   getRiskAnalysis(courseId: number): Observable<RiskAnalysisDto[]> {
     return this.http.get<RiskAnalysisDto[]>(`${this.base}/instructor/term-courses/${courseId}/risk-analysis`);
@@ -194,5 +217,15 @@ export class InstructorService {
   // Statistics
   getStatistics(courseId: number): Observable<CourseStatisticsDto> {
     return this.http.get<CourseStatisticsDto>(`${this.base}/instructor/term-courses/${courseId}/statistics`);
+  }
+
+  // LO Status
+  getLearningOutcomeStatus(courseId: number): Observable<LearningOutcomeStatusDto[]> {
+    return this.http.get<LearningOutcomeStatusDto[]>(`${this.base}/instructor/term-courses/${courseId}/learning-outcome-status`);
+  }
+
+  // Component Report
+  getComponentReport(courseId: number): Observable<ComponentReportItemDto[]> {
+    return this.http.get<ComponentReportItemDto[]>(`${this.base}/instructor/term-courses/${courseId}/component-report`);
   }
 }
