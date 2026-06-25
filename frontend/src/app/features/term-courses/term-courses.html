@@ -46,7 +46,7 @@
     </div>
     <div class="course-grid">
       @for (course of courses(); track course.id) {
-        <div class="course-card">
+        <div class="course-card" [class.card-inactive]="!isApproved(course)">
           <div class="card-top">
             <span class="course-code">{{ course.code }}</span>
             <span class="year-badge">{{ course.classYear }}. Sınıf</span>
@@ -60,13 +60,28 @@
             <span class="badge" [class.badge-mandatory]="course.isMandatory" [class.badge-elective]="!course.isMandatory">
               {{ course.isMandatory ? 'Zorunlu' : 'Seçmeli' }}
             </span>
+            <span class="badge" [class]="statusClass(course.contentStatus)">
+              {{ statusLabel(course.contentStatus) }}
+            </span>
           </div>
-          <a class="detail-link" [routerLink]="['/instructor/term-courses', course.id]">
-            Detayları Gör
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </a>
+          @if (isApproved(course)) {
+            <a class="detail-link" [routerLink]="['/instructor/term-courses', course.id]">
+              Detayları Gör
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </a>
+          } @else {
+            <span class="detail-link detail-link-disabled">
+              @if (course.contentStatus === 'PendingApproval') {
+                Onay bekleniyor…
+              } @else if (course.contentStatus === 'RevisionRequested') {
+                Revizyon gerekli — İçerikleri düzenleyin
+              } @else {
+                İçerik onaylanmamış
+              }
+            </span>
+          }
         </div>
       }
     </div>

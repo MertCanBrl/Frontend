@@ -21,7 +21,13 @@ public class AppDbContext : DbContext
     public DbSet<LOPOMapping> LOPOMappings => Set<LOPOMapping>();
     public DbSet<CourseSurveyQuestion> CourseSurveyQuestions => Set<CourseSurveyQuestion>();
     public DbSet<Exam> Exams => Set<Exam>();
+    public DbSet<ExamQuestion> ExamQuestions => Set<ExamQuestion>();
+    public DbSet<ExamQuestionLearningOutcome> ExamQuestionLearningOutcomes => Set<ExamQuestionLearningOutcome>();
+    public DbSet<ExamStudentGrade> ExamStudentGrades => Set<ExamStudentGrade>();
+    public DbSet<ExamQuestionStudentScore> ExamQuestionStudentScores => Set<ExamQuestionStudentScore>();
     public DbSet<AssessmentComponent> AssessmentComponents => Set<AssessmentComponent>();
+    public DbSet<AssessmentComponentLearningOutcome> AssessmentComponentLearningOutcomes => Set<AssessmentComponentLearningOutcome>();
+    public DbSet<AssessmentComponentStudentGrade> AssessmentComponentStudentGrades => Set<AssessmentComponentStudentGrade>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -62,6 +68,91 @@ public class AppDbContext : DbContext
             .WithMany(po => po.LOPOMappings)
             .HasForeignKey(m => m.ProgramOutcomeId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ExamQuestion>()
+            .HasOne(q => q.Exam)
+            .WithMany(e => e.Questions)
+            .HasForeignKey(q => q.ExamId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ExamQuestionLearningOutcome>()
+            .HasKey(m => new { m.ExamQuestionId, m.LearningOutcomeId });
+
+        modelBuilder.Entity<ExamQuestionLearningOutcome>()
+            .HasOne(m => m.ExamQuestion)
+            .WithMany(q => q.LearningOutcomeMappings)
+            .HasForeignKey(m => m.ExamQuestionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ExamQuestionLearningOutcome>()
+            .HasOne(m => m.LearningOutcome)
+            .WithMany(lo => lo.ExamQuestionMappings)
+            .HasForeignKey(m => m.LearningOutcomeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ExamStudentGrade>()
+            .HasOne(g => g.Exam)
+            .WithMany()
+            .HasForeignKey(g => g.ExamId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ExamStudentGrade>()
+            .HasOne(g => g.Student)
+            .WithMany()
+            .HasForeignKey(g => g.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ExamStudentGrade>()
+            .HasIndex(g => new { g.ExamId, g.StudentId })
+            .IsUnique();
+
+        modelBuilder.Entity<ExamQuestionStudentScore>()
+            .HasOne(s => s.ExamStudentGrade)
+            .WithMany(g => g.QuestionScores)
+            .HasForeignKey(s => s.ExamStudentGradeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ExamQuestionStudentScore>()
+            .HasOne(s => s.ExamQuestion)
+            .WithMany()
+            .HasForeignKey(s => s.ExamQuestionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ExamQuestionStudentScore>()
+            .HasIndex(s => new { s.ExamStudentGradeId, s.ExamQuestionId })
+            .IsUnique();
+
+        // ── AssessmentComponent ilişkileri ───────────────────
+        modelBuilder.Entity<AssessmentComponentLearningOutcome>()
+            .HasKey(m => new { m.AssessmentComponentId, m.LearningOutcomeId });
+
+        modelBuilder.Entity<AssessmentComponentLearningOutcome>()
+            .HasOne(m => m.AssessmentComponent)
+            .WithMany(c => c.LearningOutcomeMappings)
+            .HasForeignKey(m => m.AssessmentComponentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AssessmentComponentLearningOutcome>()
+            .HasOne(m => m.LearningOutcome)
+            .WithMany()
+            .HasForeignKey(m => m.LearningOutcomeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AssessmentComponentStudentGrade>()
+            .HasOne(g => g.AssessmentComponent)
+            .WithMany(c => c.StudentGrades)
+            .HasForeignKey(g => g.AssessmentComponentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AssessmentComponentStudentGrade>()
+            .HasOne(g => g.Student)
+            .WithMany()
+            .HasForeignKey(g => g.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AssessmentComponentStudentGrade>()
+            .HasIndex(g => new { g.AssessmentComponentId, g.StudentId })
+            .IsUnique();
 
         // ── Seed Data ────────────────────────────────────────
         // TODO: Bu seed verileri EF migration ile production DB'ye de eklenir.

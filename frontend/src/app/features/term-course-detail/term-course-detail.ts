@@ -4,13 +4,35 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DecimalPipe, SlicePipe } from '@angular/common';
 import { InstructorService } from '../../core/services/instructor.service';
 import {
-  CourseDetailDto, StudentCourseResultDto,
-  ExamDto, SaveExamRequest,
+  CourseDetailDto, StudentCourseResultDto, StudentComponentScoreDto, LearningOutcomeDto,
+  ExamDto, ExamDetailDto, ExamQuestionDto, SaveExamRequest, SaveExamQuestionRequest,
+  ExamGradeEntryDto, SaveExamGradeEntryRequest,
   AssessmentComponentDto, SaveAssessmentComponentRequest,
-  RiskAnalysisDto, CourseStatisticsDto
+  ComponentGradeEntryDto, SaveComponentGradeEntryRequest,
+  RiskAnalysisDto, CourseStatisticsDto,
+  LearningOutcomeStatusDto, ComponentReportItemDto
 } from '../../core/models/course.models';
 
 type Tab = 'info' | 'students' | 'exams' | 'components' | 'attendance' | 'risk' | 'outcomes' | 'reports';
+
+interface GradeRow {
+  studentId: number;
+  studentNumber: string;
+  fullName: string;
+  scores: Record<number, number | null>; // questionId -> score
+}
+
+interface QuestionRow {
+  questionNumber: number;
+  description: string;
+  score: number | null;
+  difficulty: string;
+  bookletA: number | null;
+  bookletB: number | null;
+  bookletC: number | null;
+  bookletD: number | null;
+  learningOutcomeIds: number[];
+}
 
 @Component({
   selector: 'app-term-course-detail',
@@ -33,20 +55,61 @@ export class TermCourseDetail implements OnInit {
   students = signal<StudentCourseResultDto[]>([]);
   studentsLoading = signal(false);
 
+  // Learning Outcomes (for exam question LO selection)
+  learningOutcomes = signal<LearningOutcomeDto[]>([]);
+  learningOutcomesLoaded = signal(false);
+
   // Exams
   exams = signal<ExamDto[]>([]);
   examFormVisible = signal(false);
   editingExamId = signal<number | null>(null);
   examSaving = signal(false);
+  examLoadError = signal<string | null>(null);
+  examValidationErrors = signal<string[]>([]);
+
   examTypes = ['Vize', 'Final', 'Bütünleme', 'Quiz'];
   examMethods = ['Klasik', 'Test', 'Karma'];
+  difficulties = ['Kolay', 'Orta', 'Zor'];
+
   examForm = this.fb.group({
     examType: ['', Validators.required],
     examMethod: ['', Validators.required],
     date: [''],
-    questionCount: [null as number | null],
+    questionCount: [null as number | null, [Validators.min(1), Validators.max(200)]],
     description: [''],
+    weightPercentage: [null as number | null, [Validators.min(0), Validators.max(100)]],
   });
+
+  questionRows = signal<QuestionRow[]>([]);
+
+  get totalScore(): number {
+    return this.questionRows().reduce((sum, r) => sum + (Number(r.score) || 0), 0);
+  }
+
+  get totalScoreClass(): string {
+    const t = this.totalScore;
+    if (t === 100) return 'score-ok';
+    if (t > 100) return 'score-over';
+    return 'score-under';
+  }
+
+  get difficultyCounts(): { kolay: number; orta: number; zor: number } {
+    const rows = this.questionRows();
+    return {
+      kolay: rows.filter(r => r.difficulty === 'Kolay').length,
+      orta:  rows.filter(r => r.difficulty === 'Orta').length,
+      zor:   rows.filter(r => r.difficulty === 'Zor').length,
+    };
+  }
+
+  // Grade Entry
+  gradeEntryVisible = signal(false);
+  gradeEntryLoading = signal(false);
+  gradeEntrySaving = signal(false);
+  gradeEntryData = signal<ExamGradeEntryDto | null>(null);
+  gradeEntryError = signal<string | null>(null);
+  gradeValidationErrors = signal<string[]>([]);
+  gradeRows = signal<GradeRow[]>([]);
 
   // Assessment Components
   components = signal<AssessmentComponentDto[]>([]);
@@ -54,21 +117,48 @@ export class TermCourseDetail implements OnInit {
   editingComponentId = signal<number | null>(null);
   componentSaving = signal(false);
   componentTypes = ['Ödev', 'Proje', 'Sunum', 'Laboratuvar', 'Kısa Sınav', 'Katılım'];
+  gradeGroups = [
+    { value: 'Midterm', label: 'Vize Grubu' },
+    { value: 'Final', label: 'Final Grubu' },
+    { value: 'Makeup', label: 'Bütünleme Grubu' },
+  ];
+  selectedLoIds = signal<number[]>([]);   // çoklu ÖÇ seçimi
   componentForm = this.fb.group({
     name: ['', Validators.required],
     type: ['', Validators.required],
-    weight: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+    weight: [0, [Validators.min(0), Validators.max(100)]],
     date: [''],
     description: [''],
+    maxScore: [100, [Validators.required, Validators.min(1)]],
+    isIncludedInAverage: [false],
+    gradeGroup: [''],
+    groupWeightPercentage: [0, [Validators.min(0), Validators.max(100)]],
   });
+
+  // Component Grade Entry
+  compGradeVisible = signal(false);
+  compGradeLoading = signal(false);
+  compGradeSaving = signal(false);
+  compGradeData = signal<ComponentGradeEntryDto | null>(null);
+  compGradeScores = signal<Record<number, number | null>>({});   // studentId -> score
+  compGradeError = signal<string | null>(null);
 
   // Risk Analysis
   riskData = signal<RiskAnalysisDto[]>([]);
   riskLoading = signal(false);
 
-  // Statistics (Dönem Sonu Raporları)
+  // Statistics
   stats = signal<CourseStatisticsDto | null>(null);
   statsLoading = signal(false);
+
+  // LO Status (ÖÇ Durum Tablosu)
+  loStatus = signal<LearningOutcomeStatusDto[]>([]);
+  loStatusLoading = signal(false);
+  expandedLoId = signal<number | null>(null);
+
+  // Component Report (Dönem Sonu)
+  componentReport = signal<ComponentReportItemDto[]>([]);
+  componentReportLoading = signal(false);
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('courseId'));
@@ -86,11 +176,25 @@ export class TermCourseDetail implements OnInit {
 
   setTab(tab: Tab): void {
     this.activeTab.set(tab);
-    if (tab === 'students' && this.students().length === 0) this.loadStudents();
-    if (tab === 'exams' && this.exams().length === 0) this.loadExams();
-    if (tab === 'components' && this.components().length === 0) this.loadComponents();
+    if (tab === 'students') {
+      if (this.students().length === 0) this.loadStudents();
+      if (this.components().length === 0) this.loadComponents();
+    }
+    if (tab === 'exams') {
+      if (this.exams().length === 0) this.loadExams();
+      if (!this.learningOutcomesLoaded()) this.loadLearningOutcomes();
+      if (this.components().length === 0) this.loadComponents();
+    }
+    if (tab === 'components') {
+      if (this.components().length === 0) this.loadComponents();
+      if (!this.learningOutcomesLoaded()) this.loadLearningOutcomes();
+    }
     if (tab === 'risk' && this.riskData().length === 0) this.loadRisk();
-    if (tab === 'reports' && this.stats() === null) this.loadStatistics();
+    if (tab === 'outcomes' && this.loStatus().length === 0) this.loadLoStatus();
+    if (tab === 'reports') {
+      if (this.stats() === null) this.loadStatistics();
+      if (this.componentReport().length === 0) this.loadComponentReport();
+    }
   }
 
   // ── Students ──────────────────────────────────────────────────────────────
@@ -103,28 +207,175 @@ export class TermCourseDetail implements OnInit {
     });
   }
 
+  // ── Learning Outcomes ─────────────────────────────────────────────────────
+
+  loadLearningOutcomes(): void {
+    this.svc.getLearningOutcomes(this.courseId()).subscribe({
+      next: (los) => { this.learningOutcomes.set(los); this.learningOutcomesLoaded.set(true); },
+      error: () => this.learningOutcomesLoaded.set(true),
+    });
+  }
+
   // ── Exams ─────────────────────────────────────────────────────────────────
 
   loadExams(): void {
-    this.svc.getExams(this.courseId()).subscribe(e => this.exams.set(e));
+    this.svc.getExams(this.courseId()).subscribe({
+      next: (e) => this.exams.set(e),
+      error: () => {},
+    });
   }
 
   openExamForm(exam?: ExamDto): void {
-    this.editingExamId.set(exam?.id ?? null);
-    this.examForm.reset({
-      examType: exam?.examType ?? '',
-      examMethod: exam?.examMethod ?? '',
-      date: exam?.date ? exam.date.substring(0, 10) : '',
-      questionCount: exam?.questionCount ?? null,
-      description: exam?.description ?? '',
-    });
-    this.examFormVisible.set(true);
+    this.examLoadError.set(null);
+    this.examValidationErrors.set([]);
+    if (exam) {
+      this.editingExamId.set(exam.id);
+      this.examForm.reset({
+        examType: exam.examType,
+        examMethod: exam.examMethod,
+        date: exam.date ? exam.date.substring(0, 10) : '',
+        questionCount: exam.questionCount ?? null,
+        description: exam.description ?? '',
+        weightPercentage: exam.weightPercentage ?? null,
+      });
+      this.examFormVisible.set(true);
+      this.svc.getExamDetail(this.courseId(), exam.id).subscribe({
+        next: (detail) => {
+          this.questionRows.set(detail.questions.map(q => this.questionDtoToRow(q)));
+        },
+        error: () => this.questionRows.set([]),
+      });
+    } else {
+      this.editingExamId.set(null);
+      this.examForm.reset({ examType: '', examMethod: '', date: '', questionCount: null, description: '', weightPercentage: null });
+      this.questionRows.set([]);
+      this.examFormVisible.set(true);
+    }
   }
 
-  cancelExamForm(): void { this.examFormVisible.set(false); this.editingExamId.set(null); }
+  cancelExamForm(): void {
+    this.examFormVisible.set(false);
+    this.editingExamId.set(null);
+    this.questionRows.set([]);
+    this.examLoadError.set(null);
+    this.examValidationErrors.set([]);
+  }
+
+  onQuestionCountChange(): void {
+    const count = this.examForm.get('questionCount')?.value;
+    if (!count || count < 1) return;
+    const current = this.questionRows();
+    if (count > current.length) {
+      const toAdd = count - current.length;
+      const newRows: QuestionRow[] = Array.from({ length: toAdd }, (_, i) => ({
+        questionNumber: current.length + i + 1,
+        description: '',
+        score: null,
+        difficulty: '',
+        bookletA: current.length + i + 1,
+        bookletB: null,
+        bookletC: null,
+        bookletD: null,
+        learningOutcomeIds: [],
+      }));
+      this.questionRows.set([...current, ...newRows]);
+    } else if (count < current.length) {
+      if (confirm(`Son ${current.length - count} soru silinecek. Devam edilsin mi?`)) {
+        this.questionRows.set(current.slice(0, count));
+      } else {
+        this.examForm.get('questionCount')?.setValue(current.length);
+      }
+    }
+  }
+
+  addQuestionRow(): void {
+    const rows = this.questionRows();
+    const newRow: QuestionRow = {
+      questionNumber: rows.length + 1,
+      description: '',
+      score: null,
+      difficulty: '',
+      bookletA: rows.length + 1,
+      bookletB: null,
+      bookletC: null,
+      bookletD: null,
+      learningOutcomeIds: [],
+    };
+    this.questionRows.set([...rows, newRow]);
+    this.examForm.get('questionCount')?.setValue(rows.length + 1);
+  }
+
+  removeQuestionRow(index: number): void {
+    if (!confirm('Bu soruyu silmek istiyor musunuz?')) return;
+    const rows = [...this.questionRows()];
+    rows.splice(index, 1);
+    rows.forEach((r, i) => { r.questionNumber = i + 1; });
+    this.questionRows.set(rows);
+    this.examForm.get('questionCount')?.setValue(rows.length || null);
+  }
+
+  updateQuestionField(index: number, field: keyof QuestionRow, value: unknown): void {
+    const rows = [...this.questionRows()];
+    rows[index] = { ...rows[index], [field]: value };
+    this.questionRows.set(rows);
+  }
+
+  toggleLO(rowIndex: number, loId: number): void {
+    const rows = [...this.questionRows()];
+    const row = { ...rows[rowIndex] };
+    const ids = [...row.learningOutcomeIds];
+    const idx = ids.indexOf(loId);
+    if (idx >= 0) ids.splice(idx, 1);
+    else ids.push(loId);
+    row.learningOutcomeIds = ids;
+    rows[rowIndex] = row;
+    this.questionRows.set(rows);
+  }
+
+  isLOSelected(rowIndex: number, loId: number): boolean {
+    return this.questionRows()[rowIndex]?.learningOutcomeIds.includes(loId) ?? false;
+  }
+
+  private validateQuestions(): string[] {
+    const errors: string[] = [];
+    const rows = this.questionRows();
+
+    if (rows.length === 0) return errors;
+
+    rows.forEach((r, i) => {
+      const num = i + 1;
+      if (!r.description?.trim()) errors.push(`${num}. soru için açıklama girilmelidir.`);
+      if (r.score === null || r.score === undefined || isNaN(Number(r.score))) {
+        errors.push(`${num}. soru için puan girilmelidir.`);
+      }
+      if (!r.difficulty) errors.push(`${num}. soru için zorluk seviyesi seçilmelidir.`);
+      if (r.learningOutcomeIds.length === 0 && this.learningOutcomes().length > 0) {
+        errors.push(`${num}. soru için en az bir öğrenme çıktısı seçilmelidir.`);
+      }
+    });
+
+    if (rows.length > 0 && this.totalScore !== 100) {
+      errors.push(`Toplam puan 100 olmalıdır. Şu an toplam: ${this.totalScore}.`);
+    }
+
+    return errors;
+  }
 
   saveExamForm(): void {
-    if (this.examForm.invalid) { this.examForm.markAllAsTouched(); return; }
+    this.examValidationErrors.set([]);
+    this.examLoadError.set(null);
+
+    if (this.examForm.invalid) {
+      this.examForm.markAllAsTouched();
+      return;
+    }
+
+    const validationErrors = this.validateQuestions();
+    if (validationErrors.length > 0) {
+      this.examValidationErrors.set(validationErrors);
+      return;
+    }
+
     this.examSaving.set(true);
     const raw = this.examForm.getRawValue();
     const req: SaveExamRequest = {
@@ -133,25 +384,256 @@ export class TermCourseDetail implements OnInit {
       date: raw.date || null,
       questionCount: raw.questionCount ?? null,
       description: raw.description || null,
+      weightPercentage: raw.weightPercentage ?? null,
+      questions: this.questionRows().map(r => ({
+        questionNumber: r.questionNumber,
+        description: r.description,
+        score: Number(r.score) || 0,
+        difficulty: r.difficulty,
+        bookletAQuestionNumber: r.bookletA ?? null,
+        bookletBQuestionNumber: r.bookletB ?? null,
+        bookletCQuestionNumber: r.bookletC ?? null,
+        bookletDQuestionNumber: r.bookletD ?? null,
+        learningOutcomeIds: r.learningOutcomeIds,
+      } satisfies SaveExamQuestionRequest)),
     };
+
     const id = this.editingExamId();
-    if (id) {
-      this.svc.updateExam(this.courseId(), id, req).subscribe({
-        next: () => { this.exams.update(es => es.map(e => e.id === id ? { ...e, ...req } : e)); this.cancelExamForm(); this.examSaving.set(false); },
-        error: () => this.examSaving.set(false),
-      });
-    } else {
-      this.svc.addExam(this.courseId(), req).subscribe({
-        next: (e) => { this.exams.update(es => [...es, e]); this.cancelExamForm(); this.examSaving.set(false); },
-        error: () => this.examSaving.set(false),
-      });
+    const obs = id
+      ? this.svc.updateExam(this.courseId(), id, req)
+      : this.svc.addExam(this.courseId(), req);
+
+    obs.subscribe({
+      next: (detail) => {
+        this.exams.update(es => {
+          const existing = id ? es.find(e => e.id === id) : undefined;
+          const summaryDto: ExamDto = {
+            id: detail.id,
+            examType: detail.examType,
+            examMethod: detail.examMethod,
+            date: detail.date,
+            questionCount: detail.questionCount,
+            description: detail.description,
+            totalScore: detail.totalScore,
+            weightPercentage: detail.weightPercentage ?? null,
+            hasGrades: existing?.hasGrades ?? false,
+            gradedStudentCount: existing?.gradedStudentCount ?? 0,
+            totalStudentCount: existing?.totalStudentCount ?? 0,
+          };
+          if (id) return es.map(e => e.id === id ? summaryDto : e);
+          return [...es, summaryDto];
+        });
+        this.cancelExamForm();
+        this.examSaving.set(false);
+      },
+      error: (err) => {
+        this.examLoadError.set(this.getErrorMessage(err));
+        this.examSaving.set(false);
+      },
+    });
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (!error) return 'Bilinmeyen bir hata oluştu.';
+    if (typeof error === 'string') return error;
+
+    const err = error as Record<string, unknown>;
+
+    if (err['error']) {
+      const inner = err['error'];
+      if (typeof inner === 'string') return inner;
+
+      const innerObj = inner as Record<string, unknown>;
+      if (typeof innerObj['message'] === 'string') return innerObj['message'];
+      if (typeof innerObj['status'] === 'number' && (innerObj['status'] as number) >= 500)
+        return 'Sunucu hatası oluştu. Lütfen tekrar deneyin.';
+      if (typeof innerObj['title'] === 'string') {
+        let msg = innerObj['title'] as string;
+        if (innerObj['errors'] && typeof innerObj['errors'] === 'object') {
+          const vals = Object.values(innerObj['errors'] as Record<string, unknown[]>)
+            .flat()
+            .filter((v): v is string => typeof v === 'string');
+          if (vals.length) msg += ' ' + vals.join(' ');
+        }
+        return msg;
+      }
+      if (innerObj['errors'] && typeof innerObj['errors'] === 'object') {
+        const vals = Object.values(innerObj['errors'] as Record<string, unknown[]>)
+          .flat()
+          .filter((v): v is string => typeof v === 'string');
+        if (vals.length) return vals.join(' ');
+      }
     }
+
+    if (typeof err['message'] === 'string') return err['message'];
+    if (typeof err['status'] === 'number') {
+      if (err['status'] === 403) return 'Bu işlem için yetkiniz yok veya ders henüz onaylanmamış.';
+      if (err['status'] === 404) return 'İlgili kayıt bulunamadı.';
+      if (err['status'] === 400) return 'Gönderilen veriler geçersiz. Alanları kontrol edin.';
+      if ((err['status'] as number) >= 500) return 'Sunucu hatası oluştu. Lütfen tekrar deneyin.';
+    }
+
+    return 'İşlem sırasında bir hata oluştu.';
+  }
+
+  private questionDtoToRow(q: ExamQuestionDto): QuestionRow {
+    return {
+      questionNumber: q.questionNumber,
+      description: q.description,
+      score: q.score,
+      difficulty: q.difficulty,
+      bookletA: q.bookletAQuestionNumber,
+      bookletB: q.bookletBQuestionNumber,
+      bookletC: q.bookletCQuestionNumber,
+      bookletD: q.bookletDQuestionNumber,
+      learningOutcomeIds: [...q.learningOutcomeIds],
+    };
   }
 
   deleteExam(id: number): void {
     if (!confirm('Bu sınavı silmek istiyor musunuz?')) return;
     this.svc.deleteExam(this.courseId(), id).subscribe(() =>
       this.exams.update(es => es.filter(e => e.id !== id)));
+  }
+
+  // ── Grade Entry ───────────────────────────────────────────────────────────
+
+  openGradeEntry(exam: ExamDto): void {
+    this.gradeEntryVisible.set(true);
+    this.gradeEntryLoading.set(true);
+    this.gradeEntryData.set(null);
+    this.gradeRows.set([]);
+    this.gradeEntryError.set(null);
+    this.gradeValidationErrors.set([]);
+
+    this.svc.getExamGradeEntry(this.courseId(), exam.id).subscribe({
+      next: (data) => {
+        this.gradeEntryData.set(data);
+        this.gradeRows.set(data.students.map(s => ({
+          studentId: s.studentId,
+          studentNumber: s.studentNumber,
+          fullName: s.fullName,
+          scores: data.questions.reduce<Record<number, number | null>>((acc, q) => {
+            const existing = s.questionScores.find(qs => qs.questionId === q.id);
+            acc[q.id] = existing?.score ?? null;
+            return acc;
+          }, {}),
+        })));
+        this.gradeEntryLoading.set(false);
+      },
+      error: (err) => {
+        this.gradeEntryError.set(this.getErrorMessage(err));
+        this.gradeEntryLoading.set(false);
+      },
+    });
+  }
+
+  closeGradeEntry(): void {
+    this.gradeEntryVisible.set(false);
+    this.gradeEntryData.set(null);
+    this.gradeRows.set([]);
+    this.gradeEntryError.set(null);
+    this.gradeValidationErrors.set([]);
+  }
+
+  updateGradeScore(studentIdx: number, questionId: number, value: string): void {
+    const rows = [...this.gradeRows()];
+    const row = { ...rows[studentIdx] };
+    row.scores = { ...row.scores, [questionId]: value === '' ? null : Number(value) };
+    rows[studentIdx] = row;
+    this.gradeRows.set(rows);
+  }
+
+  getRowTotal(studentIdx: number): number {
+    const row = this.gradeRows()[studentIdx];
+    if (!row) return 0;
+    return Object.values(row.scores).reduce((sum: number, s) => sum + (Number(s) || 0), 0);
+  }
+
+  isRowComplete(studentIdx: number): boolean {
+    const row = this.gradeRows()[studentIdx];
+    const data = this.gradeEntryData();
+    if (!row || !data || data.questions.length === 0) return false;
+    return data.questions.every(q => typeof row.scores[q.id] === 'number');
+  }
+
+  isScoreOver(score: number | null | undefined, maxScore: number): boolean {
+    return score !== null && score !== undefined && Number(score) > maxScore;
+  }
+
+  getRowTotalClass(studentIdx: number): string {
+    const total = this.getRowTotal(studentIdx);
+    if (total >= 70) return 'grade-pass';
+    if (total >= 50) return 'grade-mid';
+    if (total > 0) return 'grade-fail';
+    return '';
+  }
+
+  private validateGrades(): string[] {
+    const errors: string[] = [];
+    const data = this.gradeEntryData();
+    if (!data) return ['Not girişi verisi yüklenemedi.'];
+
+    this.gradeRows().forEach((row) => {
+      data.questions.forEach((q) => {
+        const score = row.scores[q.id];
+        if (score !== null && score !== undefined) {
+          if (Number(score) < 0)
+            errors.push(`${row.fullName} için ${q.questionNumber}. soru puanı negatif olamaz.`);
+          else if (Number(score) > q.maxScore)
+            errors.push(`${row.fullName} için ${q.questionNumber}. soru puanı ${q.maxScore} puanı geçemez.`);
+        }
+      });
+    });
+
+    return errors;
+  }
+
+  saveGradeEntry(): void {
+    this.gradeValidationErrors.set([]);
+    this.gradeEntryError.set(null);
+
+    const data = this.gradeEntryData();
+    if (!data) return;
+
+    const errors = this.validateGrades();
+    if (errors.length > 0) {
+      this.gradeValidationErrors.set(errors);
+      return;
+    }
+
+    this.gradeEntrySaving.set(true);
+    const req: SaveExamGradeEntryRequest = {
+      students: this.gradeRows().map(row => ({
+        studentId: row.studentId,
+        questionScores: data.questions.map(q => ({
+          questionId: q.id,
+          score: Number(row.scores[q.id]) || 0,
+        })),
+      })),
+    };
+
+    this.svc.saveExamGradeEntry(this.courseId(), data.examId, req).subscribe({
+      next: (result) => {
+        this.exams.update(es => es.map(e =>
+          e.id === data.examId
+            ? { ...e, hasGrades: true, gradedStudentCount: result.gradedStudentCount }
+            : e
+        ));
+        // Öğrenci listesi zaten yüklenmişse güncel notları çek
+        if (this.students().length > 0) this.loadStudents();
+        this.gradeEntrySaving.set(false);
+        this.closeGradeEntry();
+      },
+      error: (err) => {
+        this.gradeEntryError.set(this.getErrorMessage(err));
+        this.gradeEntrySaving.set(false);
+      },
+    });
+  }
+
+  onPlaceholderAction(label: string): void {
+    alert(`"${label}" özelliği daha sonra eklenecektir.`);
   }
 
   // ── Assessment Components ─────────────────────────────────────────────────
@@ -166,17 +648,36 @@ export class TermCourseDetail implements OnInit {
 
   openComponentForm(component?: AssessmentComponentDto): void {
     this.editingComponentId.set(component?.id ?? null);
+    this.selectedLoIds.set(component?.learningOutcomeIds ?? []);
     this.componentForm.reset({
       name: component?.name ?? '',
       type: component?.type ?? '',
       weight: component?.weight ?? 0,
       date: component?.date ? component.date.substring(0, 10) : '',
       description: component?.description ?? '',
+      maxScore: component?.maxScore ?? 100,
+      isIncludedInAverage: component?.isIncludedInAverage ?? false,
+      gradeGroup: component?.gradeGroup ?? '',
+      groupWeightPercentage: component?.groupWeightPercentage ?? 0,
     });
+    if (this.learningOutcomes().length === 0) this.loadLearningOutcomes();
     this.componentFormVisible.set(true);
   }
 
-  cancelComponentForm(): void { this.componentFormVisible.set(false); this.editingComponentId.set(null); }
+  cancelComponentForm(): void {
+    this.componentFormVisible.set(false);
+    this.editingComponentId.set(null);
+    this.selectedLoIds.set([]);
+  }
+
+  toggleLoSelection(loId: number): void {
+    const current = this.selectedLoIds();
+    if (current.includes(loId)) {
+      this.selectedLoIds.set(current.filter(id => id !== loId));
+    } else {
+      this.selectedLoIds.set([...current, loId]);
+    }
+  }
 
   saveComponentForm(): void {
     if (this.componentForm.invalid) { this.componentForm.markAllAsTouched(); return; }
@@ -188,11 +689,20 @@ export class TermCourseDetail implements OnInit {
       weight: raw.weight ?? 0,
       date: raw.date || null,
       description: raw.description || null,
+      maxScore: raw.maxScore ?? 100,
+      isIncludedInAverage: raw.isIncludedInAverage ?? false,
+      gradeGroup: raw.gradeGroup || null,
+      groupWeightPercentage: raw.groupWeightPercentage ?? 0,
+      learningOutcomeIds: this.selectedLoIds(),
     };
     const id = this.editingComponentId();
     if (id) {
       this.svc.updateAssessmentComponent(this.courseId(), id, req).subscribe({
-        next: () => { this.components.update(cs => cs.map(c => c.id === id ? { ...c, ...req } : c)); this.cancelComponentForm(); this.componentSaving.set(false); },
+        next: () => {
+          this.components.update(cs => cs.map(c => c.id === id ? { ...c, ...req, learningOutcomeIds: req.learningOutcomeIds } : c));
+          this.cancelComponentForm();
+          this.componentSaving.set(false);
+        },
         error: () => this.componentSaving.set(false),
       });
     } else {
@@ -207,6 +717,83 @@ export class TermCourseDetail implements OnInit {
     if (!confirm('Bu bileşeni silmek istiyor musunuz?')) return;
     this.svc.deleteAssessmentComponent(this.courseId(), id).subscribe(() =>
       this.components.update(cs => cs.filter(c => c.id !== id)));
+  }
+
+  // ── Component Grade Entry ─────────────────────────────────────────────────
+
+  openCompGradeEntryFromExams(component: AssessmentComponentDto): void {
+    this.setTab('components');
+    this.openCompGradeEntry(component);
+  }
+
+  openCompGradeEntry(component: AssessmentComponentDto): void {
+    this.compGradeVisible.set(true);
+    this.compGradeLoading.set(true);
+    this.compGradeData.set(null);
+    this.compGradeScores.set({});
+    this.compGradeError.set(null);
+
+    this.svc.getComponentGradeEntry(this.courseId(), component.id).subscribe({
+      next: (data) => {
+        this.compGradeData.set(data);
+        const scores: Record<number, number | null> = {};
+        data.students.forEach(s => { scores[s.studentId] = s.score; });
+        this.compGradeScores.set(scores);
+        this.compGradeLoading.set(false);
+      },
+      error: (err) => {
+        this.compGradeError.set(this.getErrorMessage(err));
+        this.compGradeLoading.set(false);
+      },
+    });
+  }
+
+  closeCompGradeEntry(): void {
+    this.compGradeVisible.set(false);
+    this.compGradeData.set(null);
+    this.compGradeScores.set({});
+    this.compGradeError.set(null);
+  }
+
+  updateCompScore(studentId: number, value: string): void {
+    this.compGradeScores.update(s => ({ ...s, [studentId]: value === '' ? null : Number(value) }));
+  }
+
+  isCompScoreOver(studentId: number): boolean {
+    const data = this.compGradeData();
+    if (!data) return false;
+    const score = this.compGradeScores()[studentId];
+    return score !== null && score !== undefined && score > data.maxScore;
+  }
+
+  saveCompGradeEntry(): void {
+    this.compGradeError.set(null);
+    const data = this.compGradeData();
+    if (!data) return;
+
+    const scores = this.compGradeScores();
+    const hasOver = data.students.some(s => this.isCompScoreOver(s.studentId));
+    if (hasOver) {
+      this.compGradeError.set(`Puan ${data.maxScore} değerini geçemez.`);
+      return;
+    }
+
+    this.compGradeSaving.set(true);
+    const req: SaveComponentGradeEntryRequest = {
+      students: data.students.map(s => ({ studentId: s.studentId, score: scores[s.studentId] ?? null })),
+    };
+
+    this.svc.saveComponentGradeEntry(this.courseId(), data.componentId, req).subscribe({
+      next: () => {
+        if (this.students().length > 0) this.loadStudents();
+        this.compGradeSaving.set(false);
+        this.closeCompGradeEntry();
+      },
+      error: (err) => {
+        this.compGradeError.set(this.getErrorMessage(err));
+        this.compGradeSaving.set(false);
+      },
+    });
   }
 
   // ── Risk ─────────────────────────────────────────────────────────────────
@@ -224,13 +811,21 @@ export class TermCourseDetail implements OnInit {
     return map[level] ?? '';
   }
 
+  getLoCode(loId: number): string {
+    return this.learningOutcomes().find(lo => lo.id === loId)?.code ?? `ÖÇ${loId}`;
+  }
+
+  getComponentScore(student: StudentCourseResultDto, componentId: number): number | null {
+    return student.componentScores?.find(cs => cs.componentId === componentId)?.score ?? null;
+  }
+
   gradeClass(grade: number): string {
     if (grade >= 70) return 'grade-pass';
     if (grade >= 50) return 'grade-mid';
     return 'grade-fail';
   }
 
-  // ── Statistics (Dönem Sonu Raporları) ─────────────────────────────────────
+  // ── Statistics ─────────────────────────────────────────────────────────────
 
   loadStatistics(): void {
     this.statsLoading.set(true);
@@ -240,10 +835,47 @@ export class TermCourseDetail implements OnInit {
     });
   }
 
-  // Çubuk grafik için: en yüksek kova değerine göre yüzde (CSS bar yüksekliği)
   bucketPercent(count: number): number {
     const max = Math.max(...this.stats()!.distribution.map(d => d.count), 1);
     return Math.round((count / max) * 100);
+  }
+
+  // ── LO Status ─────────────────────────────────────────────────────────────
+
+  loadLoStatus(): void {
+    this.loStatusLoading.set(true);
+    this.svc.getLearningOutcomeStatus(this.courseId()).subscribe({
+      next: (data) => { this.loStatus.set(data); this.loStatusLoading.set(false); },
+      error: () => this.loStatusLoading.set(false),
+    });
+  }
+
+  toggleLoExpand(loId: number): void {
+    this.expandedLoId.update(curr => curr === loId ? null : loId);
+  }
+
+  successClass(pct: number | null): string {
+    if (pct === null) return 'grade-empty';
+    if (pct >= 70) return 'grade-pass';
+    if (pct >= 50) return 'grade-mid';
+    return 'grade-fail';
+  }
+
+  // ── Component Report ───────────────────────────────────────────────────────
+
+  loadComponentReport(): void {
+    this.componentReportLoading.set(true);
+    this.svc.getComponentReport(this.courseId()).subscribe({
+      next: (data) => { this.componentReport.set(data); this.componentReportLoading.set(false); },
+      error: () => this.componentReportLoading.set(false),
+    });
+  }
+
+  gradeGroupLabel(gradeGroup: string | null): string {
+    if (gradeGroup === 'Midterm') return 'Vize';
+    if (gradeGroup === 'Final') return 'Final';
+    if (gradeGroup === 'Makeup') return 'Bütünleme';
+    return '—';
   }
 
   readonly reportCards = [

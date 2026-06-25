@@ -10,4 +10,6 @@ public class Exam
     public DateTime? Date { get; set; }
     public int? QuestionCount { get; set; }
     public string? Description { get; set; }
+    public decimal? WeightPercentage { get; set; }   // Genel ortalamaya etkisi (%)
+    public List<ExamQuestion> Questions { get; set; } = [];
 }
