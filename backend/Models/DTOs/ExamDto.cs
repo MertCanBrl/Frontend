@@ -1,5 +1,17 @@
 namespace Backend.Models.DTOs;
 
+public class LearningOutcomeWeightDto
+{
+    public int LearningOutcomeId { get; set; }
+    public decimal WeightPercentage { get; set; }
+}
+
+public class SaveLearningOutcomeWeightRequest
+{
+    public int LearningOutcomeId { get; set; }
+    public decimal WeightPercentage { get; set; }
+}
+
 public class ExamDto
 {
     public int Id { get; set; }
@@ -39,7 +51,7 @@ public class ExamQuestionDto
     public int? BookletBQuestionNumber { get; set; }
     public int? BookletCQuestionNumber { get; set; }
     public int? BookletDQuestionNumber { get; set; }
-    public List<int> LearningOutcomeIds { get; set; } = [];
+    public List<LearningOutcomeWeightDto> LearningOutcomeWeights { get; set; } = [];
 }
 
 public class SaveExamRequest
@@ -63,7 +75,7 @@ public class SaveExamQuestionRequest
     public int? BookletBQuestionNumber { get; set; }
     public int? BookletCQuestionNumber { get; set; }
     public int? BookletDQuestionNumber { get; set; }
-    public List<int> LearningOutcomeIds { get; set; } = [];
+    public List<SaveLearningOutcomeWeightRequest> LearningOutcomeWeights { get; set; } = [];
 }
 
 // ── Grade Entry ───────────────────────────────────────────────────────────────

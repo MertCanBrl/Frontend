@@ -480,7 +480,11 @@ public class InstructorController : ControllerBase
                     BookletBQuestionNumber = q.BookletBQuestionNumber,
                     BookletCQuestionNumber = q.BookletCQuestionNumber,
                     BookletDQuestionNumber = q.BookletDQuestionNumber,
-                    LearningOutcomeIds = q.LearningOutcomeMappings.Select(m => m.LearningOutcomeId).ToList()
+                    LearningOutcomeWeights = q.LearningOutcomeMappings.Select(m => new LearningOutcomeWeightDto
+                    {
+                        LearningOutcomeId = m.LearningOutcomeId,
+                        WeightPercentage = m.WeightPercentage
+                    }).ToList()
                 }).ToList()
         });
     }
@@ -511,7 +515,10 @@ public class InstructorController : ControllerBase
         await _context.SaveChangesAsync();
 
         if (request.Questions?.Count > 0)
-            await SaveExamQuestions(exam.Id, courseId, request.Questions);
+        {
+            var err = await SaveExamQuestions(exam.Id, courseId, request.Questions);
+            if (err != null) return BadRequest(new { message = err });
+        }
 
         await _context.SaveChangesAsync();
 
@@ -571,7 +578,10 @@ public class InstructorController : ControllerBase
             await _context.SaveChangesAsync();
 
             if (request.Questions?.Count > 0)
-                await SaveExamQuestions(exam.Id, courseId, request.Questions);
+            {
+                var err = await SaveExamQuestions(exam.Id, courseId, request.Questions);
+                if (err != null) return BadRequest(new { message = err });
+            }
 
             await _context.SaveChangesAsync();
         }
@@ -747,13 +757,21 @@ public class InstructorController : ControllerBase
         return NoContent();
     }
 
-    private async Task SaveExamQuestions(int examId, int courseId, List<SaveExamQuestionRequest> questionRequests)
+    private async Task<string?> SaveExamQuestions(int examId, int courseId, List<SaveExamQuestionRequest> questionRequests)
     {
-        // Dersin geçerli öğrenme çıktısı id'lerini al (yetki kontrolü için)
         var validLoIds = await _context.LearningOutcomes
             .Where(lo => lo.CourseId == courseId)
             .Select(lo => lo.Id)
             .ToHashSetAsync();
+
+        // Validate all questions before writing anything
+        foreach (var qr in questionRequests)
+        {
+            if (qr.LearningOutcomeWeights.Count == 0)
+                return $"Soru {qr.QuestionNumber}: Her sınav sorusu en az bir Öğrenme Çıktısı ile eşleştirilmelidir.";
+            var err = ValidateLearningOutcomeWeights(qr.LearningOutcomeWeights, validLoIds);
+            if (err != null) return $"Soru {qr.QuestionNumber}: {err}";
+        }
 
         foreach (var qr in questionRequests)
         {
@@ -772,15 +790,43 @@ public class InstructorController : ControllerBase
             _context.ExamQuestions.Add(question);
             await _context.SaveChangesAsync();
 
-            foreach (var loId in qr.LearningOutcomeIds.Where(id => validLoIds.Contains(id)).Distinct())
+            foreach (var w in qr.LearningOutcomeWeights)
             {
                 _context.ExamQuestionLearningOutcomes.Add(new ExamQuestionLearningOutcome
                 {
                     ExamQuestionId = question.Id,
-                    LearningOutcomeId = loId
+                    LearningOutcomeId = w.LearningOutcomeId,
+                    WeightPercentage = w.WeightPercentage
                 });
             }
         }
+        return null;
+    }
+
+    private static string? ValidateLearningOutcomeWeights(
+        List<SaveLearningOutcomeWeightRequest> weights,
+        IEnumerable<int> validLoIds)
+    {
+        if (weights.Count == 0) return null;
+
+        var validSet = validLoIds.ToHashSet();
+        var seenIds = new HashSet<int>();
+
+        foreach (var w in weights)
+        {
+            if (!validSet.Contains(w.LearningOutcomeId))
+                return $"Öğrenme çıktısı ID {w.LearningOutcomeId} bu derse ait değil.";
+            if (!seenIds.Add(w.LearningOutcomeId))
+                return $"Öğrenme çıktısı ID {w.LearningOutcomeId} birden fazla kez belirtilmiş.";
+            if (w.WeightPercentage <= 0 || w.WeightPercentage > 100)
+                return "Öğrenme çıktısı ağırlığı 0'dan büyük, 100'den küçük veya eşit olmalıdır.";
+        }
+
+        var total = weights.Sum(w => w.WeightPercentage);
+        if (Math.Abs(total - 100m) > 0.01m)
+            return $"Öğrenme çıktıları ağırlıkları toplamı 100 olmalıdır (şu an: {total:F2}).";
+
+        return null;
     }
 
     private static ExamDetailDto MapToExamDetailDto(Exam exam) => new()
@@ -806,7 +852,11 @@ public class InstructorController : ControllerBase
                 BookletBQuestionNumber = q.BookletBQuestionNumber,
                 BookletCQuestionNumber = q.BookletCQuestionNumber,
                 BookletDQuestionNumber = q.BookletDQuestionNumber,
-                LearningOutcomeIds = q.LearningOutcomeMappings.Select(m => m.LearningOutcomeId).ToList()
+                LearningOutcomeWeights = q.LearningOutcomeMappings.Select(m => new LearningOutcomeWeightDto
+                {
+                    LearningOutcomeId = m.LearningOutcomeId,
+                    WeightPercentage = m.WeightPercentage
+                }).ToList()
             }).ToList()
     };
 
@@ -831,7 +881,11 @@ public class InstructorController : ControllerBase
             IsIncludedInAverage = a.IsIncludedInAverage,
             GradeGroup = a.GradeGroup,
             GroupWeightPercentage = a.GroupWeightPercentage,
-            LearningOutcomeIds = a.LearningOutcomeMappings.Select(m => m.LearningOutcomeId).ToList()
+            LearningOutcomeWeights = a.LearningOutcomeMappings.Select(m => new LearningOutcomeWeightDto
+            {
+                LearningOutcomeId = m.LearningOutcomeId,
+                WeightPercentage = m.WeightPercentage
+            }).ToList()
         }));
     }
 
@@ -857,6 +911,16 @@ public class InstructorController : ControllerBase
                 return BadRequest(new { message = $"'{request.GradeGroup}' grubunun toplam bileşen ağırlığı 100%'ü aşıyor (mevcut: {existingGroupWeight}%, eklenecek: {request.GroupWeightPercentage}%)." });
         }
 
+        // Validate LO weights before any DB write
+        if (request.IsIncludedInAverage && request.LearningOutcomeWeights.Count == 0)
+            return BadRequest(new { message = "Ortalamaya dahil edilen ölçme bileşeni en az bir Öğrenme Çıktısı ile eşleştirilmelidir." });
+        var validLoIds = await _context.LearningOutcomes
+            .Where(lo => lo.CourseId == courseId)
+            .Select(lo => lo.Id)
+            .ToHashSetAsync();
+        var loErr = ValidateLearningOutcomeWeights(request.LearningOutcomeWeights, validLoIds);
+        if (loErr != null) return BadRequest(new { message = loErr });
+
         var component = new AssessmentComponent
         {
             CourseId = courseId, Name = request.Name, Type = request.Type,
@@ -869,7 +933,7 @@ public class InstructorController : ControllerBase
         _context.AssessmentComponents.Add(component);
         await _context.SaveChangesAsync();
 
-        await SyncComponentLearningOutcomes(component.Id, request.LearningOutcomeIds);
+        await SyncComponentLearningOutcomes(component.Id, request.LearningOutcomeWeights);
 
         return Ok(new AssessmentComponentDto
         {
@@ -879,7 +943,11 @@ public class InstructorController : ControllerBase
             IsIncludedInAverage = component.IsIncludedInAverage,
             GradeGroup = component.GradeGroup,
             GroupWeightPercentage = component.GroupWeightPercentage,
-            LearningOutcomeIds = request.LearningOutcomeIds
+            LearningOutcomeWeights = request.LearningOutcomeWeights.Select(w => new LearningOutcomeWeightDto
+            {
+                LearningOutcomeId = w.LearningOutcomeId,
+                WeightPercentage = w.WeightPercentage
+            }).ToList()
         });
     }
 
@@ -905,6 +973,16 @@ public class InstructorController : ControllerBase
                 return BadRequest(new { message = $"'{request.GradeGroup}' grubunun toplam bileşen ağırlığı 100%'ü aşıyor (mevcut: {existingGroupWeight}%, bu bileşen: {request.GroupWeightPercentage}%)." });
         }
 
+        // Validate LO weights before any DB write
+        if (request.IsIncludedInAverage && request.LearningOutcomeWeights.Count == 0)
+            return BadRequest(new { message = "Ortalamaya dahil edilen ölçme bileşeni en az bir Öğrenme Çıktısı ile eşleştirilmelidir." });
+        var validLoIds2 = await _context.LearningOutcomes
+            .Where(lo => lo.CourseId == courseId)
+            .Select(lo => lo.Id)
+            .ToHashSetAsync();
+        var loErr2 = ValidateLearningOutcomeWeights(request.LearningOutcomeWeights, validLoIds2);
+        if (loErr2 != null) return BadRequest(new { message = loErr2 });
+
         var component = await _context.AssessmentComponents
             .Include(a => a.LearningOutcomeMappings)
             .FirstOrDefaultAsync(a => a.Id == componentId && a.CourseId == courseId);
@@ -921,7 +999,7 @@ public class InstructorController : ControllerBase
         component.GroupWeightPercentage = request.GroupWeightPercentage;
         await _context.SaveChangesAsync();
 
-        await SyncComponentLearningOutcomes(componentId, request.LearningOutcomeIds);
+        await SyncComponentLearningOutcomes(componentId, request.LearningOutcomeWeights);
 
         return NoContent();
     }
@@ -1086,8 +1164,9 @@ public class InstructorController : ControllerBase
                 if (!qScores.Any()) continue;
 
                 var maxScore = qm.ExamQuestion.Score;
+                var avgRaw = qScores.Average(s => s.Score);
                 var avgNorm = maxScore > 0
-                    ? Math.Round(qScores.Average(s => s.Score / maxScore * 100m), 1)
+                    ? Math.Round(avgRaw / maxScore * 100m, 1)
                     : null as decimal?;
 
                 var desc = qm.ExamQuestion.Description;
@@ -1097,7 +1176,10 @@ public class InstructorController : ControllerBase
                     SourceType = "ExamQuestion",
                     SourceName = $"S{qm.ExamQuestion.QuestionNumber}: {label}",
                     ExamType = qm.ExamQuestion.Exam.ExamType,
+                    MaxRawScore = maxScore,
+                    AverageRawScore = Math.Round(avgRaw, 2),
                     AverageNormalized = avgNorm,
+                    LoWeightPercentage = qm.WeightPercentage,
                     StudentCount = qScores.Count
                 });
             }
@@ -1108,8 +1190,9 @@ public class InstructorController : ControllerBase
                 if (!cGrades.Any()) continue;
 
                 var maxScore = cm.AssessmentComponent.MaxScore;
+                var avgRaw = cGrades.Average(g => g.Score);
                 var avgNorm = maxScore > 0
-                    ? Math.Round(cGrades.Average(g => g.Score / maxScore * 100m), 1)
+                    ? Math.Round(avgRaw / maxScore * 100m, 1)
                     : null as decimal?;
 
                 sources.Add(new LoSourceDto
@@ -1117,13 +1200,24 @@ public class InstructorController : ControllerBase
                     SourceType = "Component",
                     SourceName = cm.AssessmentComponent.Name,
                     ExamType = cm.AssessmentComponent.Type,
+                    MaxRawScore = maxScore,
+                    AverageRawScore = Math.Round(avgRaw, 2),
                     AverageNormalized = avgNorm,
+                    LoWeightPercentage = cm.WeightPercentage,
                     StudentCount = cGrades.Count
                 });
             }
 
-            var overallAvg = sources.Any(s => s.AverageNormalized.HasValue)
-                ? Math.Round(sources.Where(s => s.AverageNormalized.HasValue).Average(s => s.AverageNormalized!.Value), 1)
+            // Weighted success: Σ(avgRaw * loWeight) / Σ(maxRaw * loWeight) * 100
+            decimal totalWeightedScore = 0m;
+            decimal totalWeightedMax = 0m;
+            foreach (var src in sources.Where(s => s.AverageRawScore.HasValue))
+            {
+                totalWeightedScore += src.AverageRawScore!.Value * src.LoWeightPercentage / 100m;
+                totalWeightedMax += src.MaxRawScore * src.LoWeightPercentage / 100m;
+            }
+            var overallAvg = totalWeightedMax > 0
+                ? Math.Round(totalWeightedScore / totalWeightedMax * 100m, 1)
                 : null as decimal?;
 
             return new LearningOutcomeStatusDto
@@ -1184,7 +1278,11 @@ public class InstructorController : ControllerBase
                 GroupWeightPercentage = c.GroupWeightPercentage,
                 MaxScore = c.MaxScore,
                 IsIncludedInAverage = c.IsIncludedInAverage,
-                LearningOutcomeIds = c.LearningOutcomeMappings.Select(m => m.LearningOutcomeId).ToList(),
+                LearningOutcomeWeights = c.LearningOutcomeMappings.Select(m => new LearningOutcomeWeightDto
+                {
+                    LearningOutcomeId = m.LearningOutcomeId,
+                    WeightPercentage = m.WeightPercentage
+                }).ToList(),
                 TotalStudents = totalStudents,
                 GradedCount = scores.Count,
                 AverageScore = avgScore,
@@ -1193,18 +1291,19 @@ public class InstructorController : ControllerBase
         }));
     }
 
-    private async Task SyncComponentLearningOutcomes(int componentId, List<int> loIds)
+    private async Task SyncComponentLearningOutcomes(int componentId, List<SaveLearningOutcomeWeightRequest> loWeights)
     {
         var existing = await _context.AssessmentComponentLearningOutcomes
             .Where(m => m.AssessmentComponentId == componentId)
             .ToListAsync();
         _context.AssessmentComponentLearningOutcomes.RemoveRange(existing);
 
-        foreach (var loId in loIds.Distinct())
+        foreach (var w in loWeights)
             _context.AssessmentComponentLearningOutcomes.Add(new AssessmentComponentLearningOutcome
             {
                 AssessmentComponentId = componentId,
-                LearningOutcomeId = loId
+                LearningOutcomeId = w.LearningOutcomeId,
+                WeightPercentage = w.WeightPercentage
             });
 
         await _context.SaveChangesAsync();

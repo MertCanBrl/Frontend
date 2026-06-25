@@ -12,7 +12,7 @@ public class AssessmentComponentDto
     public bool IsIncludedInAverage { get; set; }
     public string? GradeGroup { get; set; }
     public decimal GroupWeightPercentage { get; set; }
-    public List<int> LearningOutcomeIds { get; set; } = [];
+    public List<LearningOutcomeWeightDto> LearningOutcomeWeights { get; set; } = [];
 }
 
 public class SaveAssessmentComponentRequest
@@ -26,7 +26,7 @@ public class SaveAssessmentComponentRequest
     public bool IsIncludedInAverage { get; set; } = false;
     public string? GradeGroup { get; set; }
     public decimal GroupWeightPercentage { get; set; } = 0;
-    public List<int> LearningOutcomeIds { get; set; } = [];
+    public List<SaveLearningOutcomeWeightRequest> LearningOutcomeWeights { get; set; } = [];
 }
 
 // ── Component Grade Entry ─────────────────────────────────────────────────────

@@ -134,6 +134,11 @@ export interface ExamDto {
   totalStudentCount: number;
 }
 
+export interface LearningOutcomeWeight {
+  learningOutcomeId: number;
+  weightPercentage: number;
+}
+
 export interface ExamQuestionDto {
   id: number;
   questionNumber: number;
@@ -144,7 +149,7 @@ export interface ExamQuestionDto {
   bookletBQuestionNumber: number | null;
   bookletCQuestionNumber: number | null;
   bookletDQuestionNumber: number | null;
-  learningOutcomeIds: number[];
+  learningOutcomeWeights: LearningOutcomeWeight[];
 }
 
 export interface ExamDetailDto extends ExamDto {
@@ -160,7 +165,7 @@ export interface SaveExamQuestionRequest {
   bookletBQuestionNumber: number | null;
   bookletCQuestionNumber: number | null;
   bookletDQuestionNumber: number | null;
-  learningOutcomeIds: number[];
+  learningOutcomeWeights: LearningOutcomeWeight[];
 }
 
 export interface SaveExamRequest {
@@ -185,7 +190,7 @@ export interface AssessmentComponentDto {
   isIncludedInAverage: boolean;
   gradeGroup: string | null;
   groupWeightPercentage: number;
-  learningOutcomeIds: number[];
+  learningOutcomeWeights: LearningOutcomeWeight[];
 }
 
 export interface SaveAssessmentComponentRequest {
@@ -198,7 +203,7 @@ export interface SaveAssessmentComponentRequest {
   isIncludedInAverage: boolean;
   gradeGroup: string | null;
   groupWeightPercentage: number;
-  learningOutcomeIds: number[];
+  learningOutcomeWeights: LearningOutcomeWeight[];
 }
 
 export interface ComponentGradeEntryDto {
@@ -272,7 +277,10 @@ export interface LoSourceDto {
   sourceType: string;
   sourceName: string;
   examType: string;
+  maxRawScore: number;
+  averageRawScore: number | null;
   averageNormalized: number | null;
+  loWeightPercentage: number;
   studentCount: number;
 }
 
@@ -294,7 +302,7 @@ export interface ComponentReportItemDto {
   groupWeightPercentage: number;
   maxScore: number;
   isIncludedInAverage: boolean;
-  learningOutcomeIds: number[];
+  learningOutcomeWeights: LearningOutcomeWeight[];
   totalStudents: number;
   gradedCount: number;
   averageScore: number | null;

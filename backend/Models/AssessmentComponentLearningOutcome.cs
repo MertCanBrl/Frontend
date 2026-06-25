@@ -6,4 +6,5 @@ public class AssessmentComponentLearningOutcome
     public AssessmentComponent AssessmentComponent { get; set; } = null!;
     public int LearningOutcomeId { get; set; }
     public LearningOutcome LearningOutcome { get; set; } = null!;
+    public decimal WeightPercentage { get; set; } = 100m;
 }
