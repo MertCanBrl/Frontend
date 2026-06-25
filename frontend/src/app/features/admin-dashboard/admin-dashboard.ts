@@ -160,6 +160,17 @@ export class AdminDashboard implements OnInit {
   approvalsSuccess = signal('');
   approvalsError = signal('');
 
+  // Sol menü rozeti: filtreden bağımsız, yalnızca onay bekleyenleri sayar.
+  pendingApprovalCount = computed(() => this.approvals().filter((a) => a.contentStatus === 'PendingApproval').length);
+
+  // Liste üstü durum filtresi (Tümü / Onay Bekliyor / Onaylandı / Revize İstendi).
+  statusFilter = signal<'all' | 'PendingApproval' | 'Approved' | 'RevisionRequested'>('all');
+  filteredApprovals = computed(() => {
+    const filter = this.statusFilter();
+    const list = this.approvals();
+    return filter === 'all' ? list : list.filter((a) => a.contentStatus === filter);
+  });
+
   revisionModalVisible = signal(false);
   revisionTargetId = signal<number | null>(null);
   revisionTargetName = signal('');
@@ -508,7 +519,7 @@ export class AdminDashboard implements OnInit {
     if (!confirm(`"${courseName}" dersini onaylamak istiyor musunuz?`)) return;
     this.adminService.approveCourseContent(courseId).subscribe({
       next: () => {
-        this.approvals.update(list => list.filter(a => a.courseId !== courseId));
+        this.loadApprovals();
         this.approvalsSuccess.set(`"${courseName}" başarıyla onaylandı.`);
         setTimeout(() => this.approvalsSuccess.set(''), 3500);
       },
@@ -532,7 +543,7 @@ export class AdminDashboard implements OnInit {
     this.adminService.requestCourseRevision(id, note).subscribe({
       next: () => {
         this.revisionLoading.set(false);
-        this.approvals.update(list => list.filter(a => a.courseId !== id));
+        this.loadApprovals();
         this.closeRevisionModal();
         this.approvalsSuccess.set('Revizyon isteği öğretim üyesine iletildi.');
         setTimeout(() => this.approvalsSuccess.set(''), 3500);
@@ -557,6 +568,24 @@ export class AdminDashboard implements OnInit {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit',
     });
+  }
+
+  statusLabel(status: string): string {
+    switch (status) {
+      case 'PendingApproval': return 'Onay Bekliyor';
+      case 'Approved': return 'Onaylandı';
+      case 'RevisionRequested': return 'Revize İstendi';
+      default: return status;
+    }
+  }
+
+  statusBadgeClass(status: string): string {
+    switch (status) {
+      case 'PendingApproval': return 'badge-pending';
+      case 'Approved': return 'badge-approved';
+      case 'RevisionRequested': return 'badge-revision';
+      default: return 'badge-pending';
+    }
   }
 
   logout(): void {

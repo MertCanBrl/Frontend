@@ -34,8 +34,8 @@
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
         </svg>
         Onay Yönetimi
-        @if (approvals().length > 0) {
-          <span class="nav-badge">{{ approvals().length }}</span>
+        @if (pendingApprovalCount() > 0) {
+          <span class="nav-badge">{{ pendingApprovalCount() }}</span>
         }
       </button>
     </nav>
@@ -481,11 +481,22 @@
         <div class="alert alert-error">{{ approvalsError() }}</div>
       }
 
+      @if (approvals().length > 0) {
+        <div class="filter-bar">
+          <button class="filter-chip" [class.active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">Tümü</button>
+          <button class="filter-chip" [class.active]="statusFilter() === 'PendingApproval'" (click)="statusFilter.set('PendingApproval')">Onay Bekliyor</button>
+          <button class="filter-chip" [class.active]="statusFilter() === 'Approved'" (click)="statusFilter.set('Approved')">Onaylandı</button>
+          <button class="filter-chip" [class.active]="statusFilter() === 'RevisionRequested'" (click)="statusFilter.set('RevisionRequested')">Revize İstendi</button>
+        </div>
+      }
+
       <div class="card">
         @if (approvalsLoading()) {
           <div class="loading-state">Yükleniyor…</div>
         } @else if (approvals().length === 0) {
-          <div class="empty-state">Onay bekleyen ders içeriği bulunmuyor.</div>
+          <div class="empty-state">Henüz onaya gönderilmiş ders içeriği bulunmuyor.</div>
+        } @else if (filteredApprovals().length === 0) {
+          <div class="empty-state">Bu duruma uygun ders içeriği bulunmuyor.</div>
         } @else {
           <table class="table">
             <thead>
@@ -499,13 +510,13 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of approvals(); track item.courseId) {
+              @for (item of filteredApprovals(); track item.courseId) {
                 <tr>
                   <td><span class="code-tag">{{ item.courseCode }}</span></td>
                   <td class="td-name">{{ item.courseName }}</td>
                   <td class="td-muted">{{ item.instructorName ?? '—' }}</td>
                   <td class="td-muted">{{ formatDate(item.submittedAt) }}</td>
-                  <td><span class="badge badge-pending">Onay Bekliyor</span></td>
+                  <td><span class="badge" [class]="statusBadgeClass(item.contentStatus)">{{ statusLabel(item.contentStatus) }}</span></td>
                   <td>
                     <div class="approval-actions">
                       <button class="btn-view-sm" (click)="openPreview(item.courseId)">
@@ -516,12 +527,14 @@
                         @if (pdfDownloading() === item.courseId) { <span class="spinner spinner-dark"></span> }
                         PDF İndir
                       </button>
-                      <button class="btn-approve-sm" (click)="approveCourse(item.courseId, item.courseName)">
-                        Onayla
-                      </button>
-                      <button class="btn-revise-sm" (click)="openRevisionModal(item)">
-                        Revize İste
-                      </button>
+                      @if (item.contentStatus === 'PendingApproval') {
+                        <button class="btn-approve-sm" (click)="approveCourse(item.courseId, item.courseName)">
+                          Onayla
+                        </button>
+                        <button class="btn-revise-sm" (click)="openRevisionModal(item)">
+                          Revize İste
+                        </button>
+                      }
                     </div>
                   </td>
                 </tr>

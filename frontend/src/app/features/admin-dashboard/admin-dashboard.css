@@ -491,6 +491,21 @@
 
 /* ── Onay durumu rozeti ───────────────────────────────────────────────────── */
 .badge-pending { background: #fff8e0; color: #b45309; }
+.badge-approved { background: #edf7f1; color: #1a7a4a; }
+.badge-revision { background: #fdecea; color: #c0392b; }
+
+/* ── Durum filtresi çubuğu ────────────────────────────────────────────────── */
+.filter-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+
+.filter-chip {
+  padding: 0.35rem 0.85rem; border-radius: 100px;
+  border: 1px solid #d9dbe4; background: #fff; color: var(--c-navy-soft);
+  font-size: 0.82rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.filter-chip:hover { background: #f4f5f9; }
+.filter-chip.active { background: var(--c-navy); border-color: var(--c-navy); color: #fff; }
 
 /* ── İşlem butonları ─────────────────────────────────────────────────────── */
 .approval-actions { display: flex; align-items: center; gap: 0.4rem; }

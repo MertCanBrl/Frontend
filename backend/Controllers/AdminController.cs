@@ -346,8 +346,8 @@ public class AdminController : ControllerBase
     {
         var items = await _context.Courses
             .Include(c => c.Instructor)
-            .Where(c => c.ContentStatus == "PendingApproval")
-            .OrderBy(c => c.SubmittedAt)
+            .Where(c => c.ContentStatus != "Draft")
+            .OrderByDescending(c => c.SubmittedAt)
             .Select(c => new ApprovalListItemDto
             {
                 CourseId = c.Id,
