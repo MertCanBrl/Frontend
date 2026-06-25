@@ -336,6 +336,17 @@ public class InstructorController : ControllerBase
             .Where(e => e.CourseId == courseId)
             .ToListAsync();
 
+        // Devam (devamsızlık) — Devam sekmesiyle aynı ayarlar ve aynı hesaplama
+        var attendanceSettings = await _context.Courses
+            .Where(c => c.Id == courseId)
+            .Select(c => new { c.AttendanceTotalWeeks, c.AttendanceLimitPercent })
+            .FirstAsync();
+        var absenceCountByStudent = await _context.AttendanceRecords
+            .Where(a => a.CourseId == courseId)
+            .GroupBy(a => a.StudentId)
+            .Select(g => new { StudentId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.StudentId, x => x.Count);
+
         var students = enrollments.Select(e =>
         {
             var sg = examGrades.Where(g => g.StudentId == e.StudentId).ToList();
@@ -371,6 +382,8 @@ public class InstructorController : ControllerBase
                 e.StudentId, vizeGrade, finalGrade, makeupGrade,
                 allComponentGrades, courseExams, avgComponents);
 
+            var absentCount = absenceCountByStudent.TryGetValue(e.StudentId, out var ac) ? ac : 0;
+
             return new StudentCourseResultDto
             {
                 StudentId    = e.StudentId,
@@ -384,6 +397,8 @@ public class InstructorController : ControllerBase
                 ComponentScores      = componentScores,
                 HasMissingGrades     = missingNames.Any(),
                 MissingComponentNames = missingNames,
+                AbsenceRate          = AttendanceCalculator.AbsenceRate(absentCount, attendanceSettings.AttendanceTotalWeeks),
+                AttendanceStatus     = AttendanceCalculator.Status(absentCount, attendanceSettings.AttendanceTotalWeeks, attendanceSettings.AttendanceLimitPercent),
             };
         }).ToList();
 

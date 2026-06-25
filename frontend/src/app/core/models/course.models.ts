@@ -245,6 +245,9 @@ export interface StudentCourseResultDto {
   componentScores: StudentComponentScoreDto[];
   hasMissingGrades: boolean;
   missingComponentNames: string[];
+  // Devam durumu — Devam sekmesiyle aynı kaynaktan gelir
+  absenceRate: number;
+  attendanceStatus: AttendanceStatus;
 }
 
 // Risk Analysis

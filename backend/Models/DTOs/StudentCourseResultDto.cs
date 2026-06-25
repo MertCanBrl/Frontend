@@ -21,6 +21,10 @@ public class StudentCourseResultDto
     public List<StudentComponentScoreDto> ComponentScores { get; set; } = [];
     public bool HasMissingGrades { get; set; }
     public List<string> MissingComponentNames { get; set; } = [];
+
+    // Devam durumu — Devam sekmesiyle aynı kaynaktan (AttendanceCalculator) hesaplanır.
+    public decimal AbsenceRate { get; set; }
+    public string AttendanceStatus { get; set; } = "Safe";   // Failed | Risk | Safe
 }
 
 public class RiskAnalysisDto

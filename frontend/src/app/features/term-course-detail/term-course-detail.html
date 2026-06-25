@@ -114,6 +114,7 @@
                   <th class="num-col">Final</th>
                   <th class="num-col">Bütünleme</th>
                   <th class="num-col">Ağ. Ortalama</th>
+                  <th>Devam Durumu</th>
                 </tr>
               </thead>
               <tbody>
@@ -157,6 +158,12 @@
                       @if (s.hasMissingGrades) {
                         <div class="missing-hint">eksik not 0 sayıldı</div>
                       }
+                    </td>
+                    <td>
+                      <span class="att-badge" [class]="attendanceStatusClass(s.attendanceStatus)"
+                            [title]="'Devamsızlık: %' + (s.absenceRate | number:'1.1-1')">
+                        {{ attendanceStatusLabel(s.attendanceStatus) }}
+                      </span>
                     </td>
                   </tr>
                 }
