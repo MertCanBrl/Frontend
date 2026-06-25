@@ -14,13 +14,13 @@ public class EmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task SendCredentialsAsync(string toEmail, string fullName, string password)
+    public async Task SendCredentialsAsync(string toEmail, string fullName, string password,
+        string senderName, string senderEmail)
     {
         var host = _config["Email:SmtpHost"];
 
         if (string.IsNullOrWhiteSpace(host))
         {
-            // Parola asla loglanmaz; yalnızca yapılandırma eksikliği uyarısı verilir
             _logger.LogWarning("SMTP yapılandırılmamış. Kimlik bilgileri e-posta ile gönderilemedi: {Email}", toEmail);
             return;
         }
@@ -29,12 +29,14 @@ public class EmailService : IEmailService
         var username = _config["Email:Username"] ?? "";
         var smtpPassword = _config["Email:Password"] ?? "";
         var fromEmail = _config["Email:From"] ?? username;
-        var fromName = _config["Email:FromName"] ?? "MÜDEK Sistemi";
 
         using var message = new MailMessage();
-        message.From = new MailAddress(fromEmail, fromName);
+        // From: adminin adı görünür, ama SMTP auth hesabından gönderilir
+        message.From = new MailAddress(fromEmail, senderName);
+        // Reply-To: alıcı yanıtlarsa adminin gerçek mailine gider
+        message.ReplyToList.Add(new MailAddress(senderEmail, senderName));
         message.To.Add(new MailAddress(toEmail, fullName));
-        message.Subject = "MÜDEK Sistemi — Giriş Bilgileriniz";
+        message.Subject = $"{senderName} — MÜDEK Sistemi Giriş Bilgileriniz";
         message.IsBodyHtml = true;
         message.Body = $"""
             <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;">
@@ -46,6 +48,8 @@ public class EmailService : IEmailService
                 <p style="margin:0;"><strong>Şifre:</strong> {password}</p>
               </div>
               <p style="color:#888;font-size:13px;">Güvenliğiniz için ilk girişten sonra şifrenizi değiştirmenizi öneririz.</p>
+              <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+              <p style="color:#555;font-size:13px;">Gönderen: <strong>{senderName}</strong> ({senderEmail})</p>
             </div>
             """;
 
