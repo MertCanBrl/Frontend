@@ -6,7 +6,7 @@ import {
   InstructorCourseDto, CourseDetailDto, UpdateCourseRequest, UpdateCourseContentRequest,
   CourseTopicDto, SaveCourseTopicRequest,
   LearningOutcomeDto, SaveLearningOutcomeRequest,
-  ProgramOutcomeDto, SaveProgramOutcomeRequest,
+  ProgramOutcomeDto, SaveProgramOutcomeRequest, UpdateProgramOutcomeRequest,
   MappingMatrixDto, MappingCellDto,
   SurveyQuestionDto, SaveSurveyQuestionRequest,
   ExamDto, ExamDetailDto, SaveExamRequest,
@@ -87,6 +87,10 @@ export class InstructorService {
 
   addProgramOutcome(req: SaveProgramOutcomeRequest): Observable<ProgramOutcomeDto> {
     return this.http.post<ProgramOutcomeDto>(`${this.base}/program-outcomes`, req);
+  }
+
+  updateProgramOutcome(id: number, req: UpdateProgramOutcomeRequest): Observable<ProgramOutcomeDto> {
+    return this.http.put<ProgramOutcomeDto>(`${this.base}/program-outcomes/${id}`, req);
   }
 
   deleteProgramOutcome(id: number): Observable<void> {

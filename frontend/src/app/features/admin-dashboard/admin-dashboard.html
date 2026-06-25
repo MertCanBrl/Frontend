@@ -81,11 +81,14 @@
           {{ userFormSuccess() }}
         </div>
       }
+      @if (!userFormVisible() && userFormError()) {
+        <div class="alert alert-error">{{ userFormError() }}</div>
+      }
 
       @if (userFormVisible()) {
         <div class="form-card">
           <div class="form-card-header">
-            <h2>Yeni Kullanıcı Tanımla</h2>
+            <h2>{{ editingUserId() ? 'Kullanıcıyı Düzenle' : 'Yeni Kullanıcı Tanımla' }}</h2>
             <button class="btn-ghost" (click)="cancelUserForm()">İptal</button>
           </div>
 
@@ -94,14 +97,16 @@
           }
 
           <form [formGroup]="userForm" (ngSubmit)="submitUserForm()" class="form-grid">
-            <div class="field">
-              <label>Ünvan</label>
-              <select formControlName="title">
-                @for (t of titles; track t) {
-                  <option [value]="t">{{ t }}</option>
-                }
-              </select>
-            </div>
+            @if (!editingUserId()) {
+              <div class="field">
+                <label>Ünvan</label>
+                <select formControlName="title">
+                  @for (t of titles; track t) {
+                    <option [value]="t">{{ t }}</option>
+                  }
+                </select>
+              </div>
+            }
 
             <div class="field field-wide">
               <label>Ad Soyad</label>
@@ -122,10 +127,15 @@
               }
             </div>
 
+            <div class="field">
+              <label>Telefon <span class="field-optional">(isteğe bağlı)</span></label>
+              <input type="tel" formControlName="phoneNumber" placeholder="0312 555 12 34" />
+            </div>
+
             <div class="form-actions">
               <button type="submit" class="btn-primary" [disabled]="userFormLoading()">
                 @if (userFormLoading()) { <span class="spinner"></span> Kaydediliyor... }
-                @else { Tanımla ve E-posta Gönder }
+                @else { {{ editingUserId() ? 'Değişiklikleri Kaydet' : 'Tanımla ve E-posta Gönder' }} }
               </button>
             </div>
           </form>
@@ -143,6 +153,8 @@
               <tr>
                 <th>Ad Soyad</th>
                 <th>E-posta</th>
+                <th>Telefon</th>
+                <th>İşlemler</th>
               </tr>
             </thead>
             <tbody>
@@ -153,6 +165,22 @@
                     {{ user.fullName }}
                   </td>
                   <td class="td-muted">{{ user.email }}</td>
+                  <td class="td-muted">{{ user.phoneNumber ?? '—' }}</td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="btn-view-sm" (click)="viewUserCourses(user)" title="Dersleri Gör">Dersleri Gör</button>
+                      <button class="btn-edit-sm" (click)="editUser(user)" title="Düzenle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button class="btn-danger-sm" [disabled]="deletingUserId() === user.id" (click)="deleteUser(user)" title="Sil">
+                        @if (deletingUserId() === user.id) {
+                          <span class="spinner spinner-dark"></span>
+                        } @else {
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        }
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -182,11 +210,14 @@
           {{ courseFormSuccess() }}
         </div>
       }
+      @if (!courseFormVisible() && courseFormError()) {
+        <div class="alert alert-error">{{ courseFormError() }}</div>
+      }
 
       @if (courseFormVisible()) {
         <div class="form-card">
           <div class="form-card-header">
-            <h2>Yeni Ders Tanımla</h2>
+            <h2>{{ editingCourseId() ? 'Dersi Düzenle' : 'Yeni Ders Tanımla' }}</h2>
             <button class="btn-ghost" (click)="cancelCourseForm()">İptal</button>
           </div>
 
@@ -261,7 +292,7 @@
             <div class="form-actions">
               <button type="submit" class="btn-primary" [disabled]="courseFormLoading()">
                 @if (courseFormLoading()) { <span class="spinner"></span> Kaydediliyor... }
-                @else { Dersi Tanımla }
+                @else { {{ editingCourseId() ? 'Değişiklikleri Kaydet' : 'Dersi Tanımla' }} }
               </button>
             </div>
           </form>
@@ -284,6 +315,7 @@
                 <th>Kredi</th>
                 <th>Tür</th>
                 <th>Öğretim Üyesi</th>
+                <th>İşlemler</th>
               </tr>
             </thead>
             <tbody>
@@ -300,6 +332,20 @@
                     </span>
                   </td>
                   <td class="td-muted">{{ course.instructorName ?? '—' }}</td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="btn-edit-sm" (click)="editCourse(course)" title="Düzenle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button class="btn-danger-sm" [disabled]="deletingCourseId() === course.id" (click)="deleteCourse(course)" title="Sil">
+                        @if (deletingCourseId() === course.id) {
+                          <span class="spinner spinner-dark"></span>
+                        } @else {
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        }
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -333,7 +379,7 @@
       @if (outcomeFormVisible()) {
         <div class="form-card">
           <div class="form-card-header">
-            <h2>Yeni Program Çıktısı</h2>
+            <h2>{{ editingOutcomeId() ? 'Program Çıktısını Düzenle' : 'Yeni Program Çıktısı' }}</h2>
             <button class="btn-ghost" (click)="cancelOutcomeForm()">İptal</button>
           </div>
 
@@ -366,7 +412,7 @@
             <div class="form-actions">
               <button type="submit" class="btn-primary" [disabled]="outcomeFormLoading()">
                 @if (outcomeFormLoading()) { <span class="spinner"></span> Kaydediliyor... }
-                @else { Program Çıktısı Ekle }
+                @else { {{ editingOutcomeId() ? 'Değişiklikleri Kaydet' : 'Program Çıktısı Ekle' }} }
               </button>
             </div>
           </form>
@@ -395,9 +441,14 @@
                   <td class="td-name">{{ po.description }}</td>
                   <td class="td-muted">{{ po.details ?? '—' }}</td>
                   <td>
-                    <button class="btn-danger-sm" (click)="deleteProgramOutcome(po.id, po.code)" title="Sil">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                    </button>
+                    <div class="row-actions">
+                      <button class="btn-edit-sm" (click)="editOutcome(po)" title="Düzenle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button class="btn-danger-sm" (click)="deleteProgramOutcome(po.id, po.code)" title="Sil">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               }
@@ -708,6 +759,54 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+<!-- Personelin Dersleri Modal -->
+@if (coursesModalVisible()) {
+  <div class="modal-overlay" (click)="closeCoursesModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Sorumlu Olunan Dersler</h2>
+        <button class="modal-close" (click)="closeCoursesModal()">✕</button>
+      </div>
+      <p class="modal-course-name">{{ coursesModalUserName() }}</p>
+
+      @if (userCoursesLoading()) {
+        <div class="loading-state">Yükleniyor…</div>
+      } @else if (userCoursesError()) {
+        <div class="alert alert-error">{{ userCoursesError() }}</div>
+      } @else if (userCourses().length === 0) {
+        <div class="empty-state">Bu personele atanmış ders bulunmuyor.</div>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Kod</th>
+              <th>Ders Adı</th>
+              <th>Dönem</th>
+              <th>Sınıf</th>
+              <th>Kredi</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (course of userCourses(); track course.id) {
+              <tr>
+                <td><span class="code-tag">{{ course.code }}</span></td>
+                <td class="td-name">{{ course.name }}</td>
+                <td class="td-muted">{{ course.semester }}</td>
+                <td class="td-muted">{{ course.classYear }}. Sınıf</td>
+                <td class="td-muted">{{ course.credit }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" (click)="closeCoursesModal()">Kapat</button>
+      </div>
     </div>
   </div>
 }

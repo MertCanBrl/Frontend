@@ -2,6 +2,7 @@ export interface UserDto {
   id: number;
   fullName: string;
   email: string;
+  phoneNumber: string | null;
   role: string;
 }
 
@@ -21,9 +22,26 @@ export interface CreateUserRequest {
   title: string;
   fullName: string;
   email: string;
+  phoneNumber: string | null;
+}
+
+export interface UpdateUserRequest {
+  fullName: string;
+  email: string;
+  phoneNumber: string | null;
 }
 
 export interface CreateCourseRequest {
+  code: string;
+  name: string;
+  semester: string;
+  credit: number;
+  isMandatory: boolean;
+  classYear: number;
+  instructorId: number | null;
+}
+
+export interface UpdateCourseRequest {
   code: string;
   name: string;
   semester: string;

@@ -2,18 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Models.DTOs;
 
-public class CreateUserRequest
+public class UpdateUserRequest
 {
-    [MaxLength(50)]
-    public string Title { get; set; } = string.Empty;
-
-    [Required]
-    [MaxLength(150)]
+    [Required(ErrorMessage = "Ad Soyad zorunludur.")]
+    [MaxLength(200, ErrorMessage = "Ad Soyad en fazla 200 karakter olabilir.")]
     public string FullName { get; set; } = string.Empty;
 
-    [Required]
-    [EmailAddress]
-    [MaxLength(256)]
+    [Required(ErrorMessage = "E-posta zorunludur.")]
+    [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi giriniz.")]
+    [MaxLength(256, ErrorMessage = "E-posta en fazla 256 karakter olabilir.")]
     public string Email { get; set; } = string.Empty;
 
     [Phone(ErrorMessage = "Geçerli bir telefon numarası giriniz.")]

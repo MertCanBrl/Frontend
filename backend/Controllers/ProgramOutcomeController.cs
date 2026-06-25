@@ -87,6 +87,49 @@ public class ProgramOutcomeController : ControllerBase
         });
     }
 
+    // PUT: api/program-outcomes/{id}  (sadece Admin)
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ProgramOutcomeDto>> Update(int id, UpdateProgramOutcomeRequest request)
+    {
+        // Not: [ApiController] sayesinde model doğrulama hataları (zorunlu alan, MaxLength)
+        // bu noktaya gelmeden 400 ValidationProblemDetails olarak döner.
+        var po = await _context.ProgramOutcomes.FindAsync(id);
+        if (po == null)
+            return NotFound(new { message = "Güncellenmek istenen program çıktısı bulunamadı." });
+
+        po.Code = request.Code.Trim().ToUpperInvariant();
+        po.Description = request.Description.Trim();
+        po.Details = string.IsNullOrWhiteSpace(request.Details) ? null : request.Details.Trim();
+        po.GroupId = request.GroupId;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Console.WriteLine($"UpdateProgramOutcome error (id={id}): {ex.Message}\n{ex.InnerException?.Message}");
+            return StatusCode(500, new
+            {
+                message = "Program çıktısı güncellenirken bir veritabanı hatası oluştu.",
+                detail = ex.InnerException?.Message ?? ex.Message
+            });
+        }
+
+        await _context.Entry(po).Reference(p => p.Group).LoadAsync();
+
+        return Ok(new ProgramOutcomeDto
+        {
+            Id = po.Id,
+            Code = po.Code,
+            Description = po.Description,
+            Details = po.Details,
+            GroupId = po.GroupId,
+            GroupName = po.Group?.Name
+        });
+    }
+
     // DELETE: api/program-outcomes/{id}  (sadece Admin)
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]

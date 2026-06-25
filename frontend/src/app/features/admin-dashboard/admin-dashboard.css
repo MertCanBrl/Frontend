@@ -466,7 +466,21 @@
   border: 1px solid #fecaca; background: #fff0f0; color: #c0392b;
   cursor: pointer; transition: background 0.12s, border-color 0.12s;
 }
-.btn-danger-sm:hover { background: #fecaca; border-color: #c0392b; }
+.btn-danger-sm:hover:not(:disabled) { background: #fecaca; border-color: #c0392b; }
+.btn-danger-sm:disabled { opacity: 0.55; cursor: default; }
+
+/* ── Tablo satır işlemleri (Düzenle / Sil) ────────────────────────────────── */
+.row-actions { display: flex; align-items: center; gap: 0.4rem; }
+
+.field-optional { font-weight: 400; color: var(--c-muted, #8a94a6); font-size: 0.78rem; }
+
+.btn-edit-sm {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid #c4d4f0; background: #eef2fb; color: #2b5fad;
+  cursor: pointer; transition: background 0.12s, border-color 0.12s;
+}
+.btn-edit-sm:hover { background: #dce7f8; border-color: #2b5fad; }
 
 /* ── Sidebar badge (onay sayısı) ──────────────────────────────────────────── */
 .nav-badge {

@@ -84,6 +84,13 @@ export interface SaveProgramOutcomeRequest {
   groupId: number | null;
 }
 
+export interface UpdateProgramOutcomeRequest {
+  code: string;
+  description: string;
+  details: string | null;
+  groupId: number | null;
+}
+
 export interface MappingCellDto {
   learningOutcomeId: number;
   programOutcomeId: number;

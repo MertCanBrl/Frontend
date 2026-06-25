@@ -37,6 +37,7 @@ public class AdminController : ControllerBase
                 Id = u.Id,
                 FullName = u.FullName,
                 Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
                 Role = u.Role
             })
             .ToListAsync();
@@ -61,6 +62,7 @@ public class AdminController : ControllerBase
         {
             FullName = displayName,
             Email = request.Email,
+            PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
             Role = "Instructor"
         };
@@ -77,8 +79,111 @@ public class AdminController : ControllerBase
             Id = user.Id,
             FullName = user.FullName,
             Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
             Role = user.Role
         });
+    }
+
+    // PUT: api/admin/users/{id}
+    [HttpPut("users/{id:int}")]
+    public async Task<ActionResult<UserDto>> UpdateUser(int id, UpdateUserRequest request)
+    {
+        // Not: [ApiController] sayesinde model doğrulama hataları (zorunlu alan, e-posta,
+        // telefon formatı) bu noktaya gelmeden 400 ValidationProblemDetails olarak döner.
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+            return NotFound(new { message = "Güncellenmek istenen kullanıcı bulunamadı." });
+
+        // E-posta başka bir kullanıcıda kullanılıyor mu?
+        var emailExists = await _context.Users.AnyAsync(u => u.Email == request.Email && u.Id != id);
+        if (emailExists)
+            return Conflict(new { message = "Bu e-posta adresi zaten başka bir kullanıcıda kullanılıyor." });
+
+        user.FullName = request.FullName.Trim();
+        user.Email = request.Email.Trim();
+        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Console.WriteLine($"UpdateUser error (id={id}): {ex.Message}\n{ex.InnerException?.Message}");
+            return StatusCode(500, new
+            {
+                message = "Kullanıcı güncellenirken bir veritabanı hatası oluştu.",
+                detail = ex.InnerException?.Message ?? ex.Message
+            });
+        }
+
+        return Ok(new UserDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            Role = user.Role
+        });
+    }
+
+    // DELETE: api/admin/users/{id}
+    [HttpDelete("users/{id:int}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+            return NotFound(new { message = "Silinmek istenen kullanıcı bulunamadı." });
+
+        // Kullanıcı kendi hesabını silemez.
+        if (id == GetUserId())
+            return Conflict(new { message = "Kendi hesabınızı silemezsiniz." });
+
+        // Güvenli silme: atanmış dersi olan öğretim üyesi silinemez (önce ders ataması kaldırılmalı).
+        var hasCourses = await _context.Courses.AnyAsync(c => c.InstructorId == id);
+        if (hasCourses)
+            return Conflict(new { message = "Bu kullanıcının atanmış dersleri bulunduğu için silinemez. Önce dersleri başka bir öğretim üyesine atayın." });
+
+        _context.Users.Remove(user);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Console.WriteLine($"DeleteUser error (id={id}): {ex.Message}\n{ex.InnerException?.Message}");
+            return Conflict(new { message = "Bu kullanıcı başka kayıtlarla ilişkili olduğu için silinemedi." });
+        }
+
+        return NoContent();
+    }
+
+    // GET: api/admin/users/{id}/courses
+    [HttpGet("users/{id:int}/courses")]
+    public async Task<ActionResult<IEnumerable<CourseDto>>> GetUserCourses(int id)
+    {
+        if (!await _context.Users.AnyAsync(u => u.Id == id))
+            return NotFound(new { message = "Kullanıcı bulunamadı." });
+
+        var courses = await _context.Courses
+            .Where(c => c.InstructorId == id)
+            .OrderBy(c => c.Code)
+            .Select(c => new CourseDto
+            {
+                Id = c.Id,
+                Code = c.Code,
+                Name = c.Name,
+                Semester = c.Semester,
+                Credit = c.Credit,
+                IsMandatory = c.IsMandatory,
+                ClassYear = c.ClassYear,
+                InstructorId = c.InstructorId,
+                InstructorName = null
+            })
+            .ToListAsync();
+
+        return Ok(courses);
     }
 
     // GET: api/admin/courses
@@ -144,6 +249,93 @@ public class AdminController : ControllerBase
             InstructorId = course.InstructorId,
             InstructorName = course.Instructor?.FullName
         });
+    }
+
+    // PUT: api/admin/courses/{id}
+    [HttpPut("courses/{id:int}")]
+    public async Task<ActionResult<CourseDto>> UpdateCourse(int id, AdminUpdateCourseRequest request)
+    {
+        // Not: [ApiController] sayesinde model doğrulama hataları (zorunlu alan, Range,
+        // MaxLength) bu noktaya gelmeden 400 ValidationProblemDetails olarak döner.
+        var course = await _context.Courses.FindAsync(id);
+        if (course == null)
+            return NotFound(new { message = "Güncellenmek istenen ders bulunamadı." });
+
+        // Ders kodu başka bir derste kullanılıyor mu?
+        var codeExists = await _context.Courses.AnyAsync(c => c.Code == request.Code && c.Id != id);
+        if (codeExists)
+            return Conflict(new { message = "Bu ders kodu zaten başka bir derste kullanılıyor." });
+
+        // Öğretim üyesi atandıysa gerçekten var mı?
+        if (request.InstructorId.HasValue &&
+            !await _context.Users.AnyAsync(u => u.Id == request.InstructorId && u.Role == "Instructor"))
+            return BadRequest(new { message = "Seçilen öğretim üyesi bulunamadı." });
+
+        course.Code = request.Code;
+        course.Name = request.Name;
+        course.Semester = request.Semester;
+        course.Credit = request.Credit;
+        course.IsMandatory = request.IsMandatory;
+        course.ClassYear = request.ClassYear;
+        course.InstructorId = request.InstructorId;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Console.WriteLine($"UpdateCourse error (id={id}): {ex.Message}\n{ex.InnerException?.Message}");
+            return StatusCode(500, new
+            {
+                message = "Ders güncellenirken bir veritabanı hatası oluştu.",
+                detail = ex.InnerException?.Message ?? ex.Message
+            });
+        }
+
+        await _context.Entry(course).Reference(c => c.Instructor).LoadAsync();
+
+        return Ok(new CourseDto
+        {
+            Id = course.Id,
+            Code = course.Code,
+            Name = course.Name,
+            Semester = course.Semester,
+            Credit = course.Credit,
+            IsMandatory = course.IsMandatory,
+            ClassYear = course.ClassYear,
+            InstructorId = course.InstructorId,
+            InstructorName = course.Instructor?.FullName
+        });
+    }
+
+    // DELETE: api/admin/courses/{id}
+    [HttpDelete("courses/{id:int}")]
+    public async Task<IActionResult> DeleteCourse(int id)
+    {
+        var course = await _context.Courses.FindAsync(id);
+        if (course == null)
+            return NotFound(new { message = "Silinmek istenen ders bulunamadı." });
+
+        // Güvenli silme: derse kayıtlı öğrenci/not verisi varsa silmeyi engelle.
+        var hasEnrollments = await _context.Enrollments.AnyAsync(e => e.CourseId == id);
+        if (hasEnrollments)
+            return Conflict(new { message = "Bu derse kayıtlı öğrenciler bulunduğu için ders silinemez." });
+
+        _context.Courses.Remove(course);
+
+        try
+        {
+            // Derse bağlı içerik (konular, öğrenme çıktıları, sınavlar vb.) cascade ile silinir.
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Console.WriteLine($"DeleteCourse error (id={id}): {ex.Message}\n{ex.InnerException?.Message}");
+            return Conflict(new { message = "Bu ders başka kayıtlarla ilişkili olduğu için silinemedi." });
+        }
+
+        return NoContent();
     }
 
     // ── Onay Yönetimi ────────────────────────────────────────────────────────

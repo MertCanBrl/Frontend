@@ -3,8 +3,9 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminService } from '../../core/services/admin.service';
 import { InstructorService } from '../../core/services/instructor.service';
-import { UserDto, CreateUserRequest, CreateCourseRequest, ApprovalListItemDto, AdminCourseContentDto } from '../../core/models/admin.models';
-import { ProgramOutcomeDto, SaveProgramOutcomeRequest } from '../../core/models/course.models';
+import { UserDto, CreateUserRequest, UpdateUserRequest, CreateCourseRequest, UpdateCourseRequest, CourseDto, ApprovalListItemDto, AdminCourseContentDto } from '../../core/models/admin.models';
+import { ProgramOutcomeDto, SaveProgramOutcomeRequest, UpdateProgramOutcomeRequest } from '../../core/models/course.models';
+import { extractErrorMessage, extractBlobErrorMessage } from '../../core/utils/http-error.util';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -23,13 +24,24 @@ export class AdminDashboard implements OnInit {
   activeTab = signal<'users' | 'courses' | 'outcomes' | 'approvals'>('users');
 
   users = signal<UserDto[]>([]);
-  courses = signal<{ id: number; code: string; name: string; semester: string; credit: number; isMandatory: boolean; classYear: number; instructorId: number | null; instructorName: string | null }[]>([]);
+  courses = signal<CourseDto[]>([]);
 
   usersLoading = signal(false);
   coursesLoading = signal(false);
 
   userFormVisible = signal(false);
+  editingUserId = signal<number | null>(null);
+  deletingUserId = signal<number | null>(null);
   courseFormVisible = signal(false);
+  editingCourseId = signal<number | null>(null);
+  deletingCourseId = signal<number | null>(null);
+
+  // Personelin dersleri modalı
+  coursesModalVisible = signal(false);
+  coursesModalUserName = signal('');
+  userCourses = signal<CourseDto[]>([]);
+  userCoursesLoading = signal(false);
+  userCoursesError = signal('');
 
   userFormLoading = signal(false);
   courseFormLoading = signal(false);
@@ -55,6 +67,7 @@ export class AdminDashboard implements OnInit {
     title: ['Prof. Dr.', [Validators.required]],
     fullName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
+    phoneNumber: [''],
   });
 
   courseForm = this.fb.group({
@@ -74,6 +87,7 @@ export class AdminDashboard implements OnInit {
   outcomeFormLoading = signal(false);
   outcomeFormError = signal('');
   outcomeFormSuccess = signal('');
+  editingOutcomeId = signal<number | null>(null);
 
   outcomeForm = this.fb.group({
     code: ['', [Validators.required]],
@@ -105,9 +119,9 @@ export class AdminDashboard implements OnInit {
         URL.revokeObjectURL(url);
         this.pdfDownloading.set(null);
       },
-      error: () => {
+      error: async (err) => {
         this.pdfDownloading.set(null);
-        this.approvalsError.set('PDF oluşturulamadı. Lütfen tekrar deneyin.');
+        this.approvalsError.set(await extractBlobErrorMessage(err, 'PDF oluşturulamadı. Lütfen tekrar deneyin.'));
       },
     });
   }
@@ -179,7 +193,21 @@ export class AdminDashboard implements OnInit {
   }
 
   openUserForm(): void {
-    this.userForm.reset({ title: 'Prof. Dr.' });
+    this.editingUserId.set(null);
+    this.userForm.reset({ title: 'Prof. Dr.', phoneNumber: '' });
+    this.userFormError.set('');
+    this.userFormSuccess.set('');
+    this.userFormVisible.set(true);
+  }
+
+  editUser(user: UserDto): void {
+    this.editingUserId.set(user.id);
+    this.userForm.reset({
+      title: 'Prof. Dr.', // düzenlemede ünvan kullanılmaz (ad-soyad zaten tam ad)
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber ?? '',
+    });
     this.userFormError.set('');
     this.userFormSuccess.set('');
     this.userFormVisible.set(true);
@@ -187,6 +215,7 @@ export class AdminDashboard implements OnInit {
 
   cancelUserForm(): void {
     this.userFormVisible.set(false);
+    this.editingUserId.set(null);
     this.userFormError.set('');
   }
 
@@ -197,8 +226,29 @@ export class AdminDashboard implements OnInit {
     this.userFormError.set('');
 
     const raw = this.userForm.getRawValue();
-    const req: CreateUserRequest = { title: raw.title!, fullName: raw.fullName!, email: raw.email! };
+    const phoneNumber = raw.phoneNumber?.trim() || null;
 
+    const editingId = this.editingUserId();
+    if (editingId !== null) {
+      const req: UpdateUserRequest = { fullName: raw.fullName!, email: raw.email!, phoneNumber };
+      this.adminService.updateUser(editingId, req).subscribe({
+        next: (user) => {
+          this.userFormLoading.set(false);
+          this.userFormSuccess.set(`${user.fullName} bilgileri güncellendi.`);
+          this.users.update((list) =>
+            list.map((u) => (u.id === user.id ? user : u)).sort((a, b) => a.fullName.localeCompare(b.fullName)));
+          this.userFormVisible.set(false);
+          this.editingUserId.set(null);
+        },
+        error: (err) => {
+          this.userFormLoading.set(false);
+          this.userFormError.set(extractErrorMessage(err, 'Kullanıcı güncellenirken bir hata oluştu, lütfen tekrar deneyin.'));
+        },
+      });
+      return;
+    }
+
+    const req: CreateUserRequest = { title: raw.title!, fullName: raw.fullName!, email: raw.email!, phoneNumber };
     this.adminService.createUser(req).subscribe({
       next: (user) => {
         this.userFormLoading.set(false);
@@ -208,13 +258,73 @@ export class AdminDashboard implements OnInit {
       },
       error: (err) => {
         this.userFormLoading.set(false);
-        this.userFormError.set(err.status === 409 ? 'Bu e-posta adresi zaten kayıtlı.' : 'Bir hata oluştu, lütfen tekrar deneyin.');
+        this.userFormError.set(extractErrorMessage(err, 'Bir hata oluştu, lütfen tekrar deneyin.'));
       },
     });
   }
 
+  deleteUser(user: UserDto): void {
+    if (!confirm(`"${user.fullName}" kullanıcısını silmek istiyor musunuz? Bu işlem geri alınamaz.`)) return;
+
+    this.deletingUserId.set(user.id);
+    this.userFormError.set('');
+    this.adminService.deleteUser(user.id).subscribe({
+      next: () => {
+        this.deletingUserId.set(null);
+        this.users.update((list) => list.filter((u) => u.id !== user.id));
+        this.userFormSuccess.set(`"${user.fullName}" silindi.`);
+      },
+      error: (err) => {
+        this.deletingUserId.set(null);
+        this.userFormSuccess.set('');
+        this.userFormError.set(extractErrorMessage(err, 'Kullanıcı silinemedi, lütfen tekrar deneyin.'));
+      },
+    });
+  }
+
+  viewUserCourses(user: UserDto): void {
+    this.coursesModalUserName.set(user.fullName);
+    this.userCourses.set([]);
+    this.userCoursesError.set('');
+    this.userCoursesLoading.set(true);
+    this.coursesModalVisible.set(true);
+    this.adminService.getUserCourses(user.id).subscribe({
+      next: (courses) => {
+        this.userCourses.set(courses);
+        this.userCoursesLoading.set(false);
+      },
+      error: (err) => {
+        this.userCoursesLoading.set(false);
+        this.userCoursesError.set(extractErrorMessage(err, 'Dersler yüklenirken bir hata oluştu.'));
+      },
+    });
+  }
+
+  closeCoursesModal(): void {
+    this.coursesModalVisible.set(false);
+    this.userCourses.set([]);
+    this.userCoursesError.set('');
+  }
+
   openCourseForm(): void {
+    this.editingCourseId.set(null);
     this.courseForm.reset({ credit: 3, isMandatory: true, classYear: null, instructorId: null });
+    this.courseFormError.set('');
+    this.courseFormSuccess.set('');
+    this.courseFormVisible.set(true);
+  }
+
+  editCourse(course: CourseDto): void {
+    this.editingCourseId.set(course.id);
+    this.courseForm.reset({
+      code: course.code,
+      name: course.name,
+      semester: course.semester,
+      credit: course.credit,
+      classYear: course.classYear,
+      isMandatory: course.isMandatory,
+      instructorId: course.instructorId,
+    });
     this.courseFormError.set('');
     this.courseFormSuccess.set('');
     this.courseFormVisible.set(true);
@@ -222,6 +332,7 @@ export class AdminDashboard implements OnInit {
 
   cancelCourseForm(): void {
     this.courseFormVisible.set(false);
+    this.editingCourseId.set(null);
     this.courseFormError.set('');
   }
 
@@ -232,7 +343,7 @@ export class AdminDashboard implements OnInit {
     this.courseFormError.set('');
 
     const raw = this.courseForm.getRawValue();
-    const req: CreateCourseRequest = {
+    const payload = {
       code: raw.code!,
       name: raw.name!,
       semester: raw.semester!,
@@ -242,7 +353,26 @@ export class AdminDashboard implements OnInit {
       instructorId: raw.instructorId ? Number(raw.instructorId) : null,
     };
 
-    this.adminService.createCourse(req).subscribe({
+    const editingId = this.editingCourseId();
+    if (editingId !== null) {
+      this.adminService.updateCourse(editingId, payload as UpdateCourseRequest).subscribe({
+        next: (course) => {
+          this.courseFormLoading.set(false);
+          this.courseFormSuccess.set(`"${course.name}" dersi başarıyla güncellendi.`);
+          this.courses.update((list) =>
+            list.map((c) => (c.id === course.id ? course : c)).sort((a, b) => a.code.localeCompare(b.code)));
+          this.courseFormVisible.set(false);
+          this.editingCourseId.set(null);
+        },
+        error: (err) => {
+          this.courseFormLoading.set(false);
+          this.courseFormError.set(extractErrorMessage(err, 'Ders güncellenirken bir hata oluştu, lütfen tekrar deneyin.'));
+        },
+      });
+      return;
+    }
+
+    this.adminService.createCourse(payload as CreateCourseRequest).subscribe({
       next: (course) => {
         this.courseFormLoading.set(false);
         this.courseFormSuccess.set(`"${course.name}" dersi başarıyla tanımlandı.`);
@@ -251,7 +381,26 @@ export class AdminDashboard implements OnInit {
       },
       error: (err) => {
         this.courseFormLoading.set(false);
-        this.courseFormError.set(err.status === 409 ? 'Bu ders kodu zaten kullanımda.' : 'Bir hata oluştu, lütfen tekrar deneyin.');
+        this.courseFormError.set(extractErrorMessage(err, 'Ders tanımlanırken bir hata oluştu, lütfen tekrar deneyin.'));
+      },
+    });
+  }
+
+  deleteCourse(course: CourseDto): void {
+    if (!confirm(`"${course.code} – ${course.name}" dersini silmek istiyor musunuz? Bu işlem geri alınamaz.`)) return;
+
+    this.deletingCourseId.set(course.id);
+    this.courseFormError.set('');
+    this.adminService.deleteCourse(course.id).subscribe({
+      next: () => {
+        this.deletingCourseId.set(null);
+        this.courses.update((list) => list.filter((c) => c.id !== course.id));
+        this.courseFormSuccess.set(`"${course.name}" dersi silindi.`);
+      },
+      error: (err) => {
+        this.deletingCourseId.set(null);
+        this.courseFormSuccess.set('');
+        this.courseFormError.set(extractErrorMessage(err, 'Ders silinemedi, lütfen tekrar deneyin.'));
       },
     });
   }
@@ -265,7 +414,16 @@ export class AdminDashboard implements OnInit {
   }
 
   openOutcomeForm(): void {
+    this.editingOutcomeId.set(null);
     this.outcomeForm.reset();
+    this.outcomeFormError.set('');
+    this.outcomeFormSuccess.set('');
+    this.outcomeFormVisible.set(true);
+  }
+
+  editOutcome(po: ProgramOutcomeDto): void {
+    this.editingOutcomeId.set(po.id);
+    this.outcomeForm.reset({ code: po.code, description: po.description, details: po.details ?? '' });
     this.outcomeFormError.set('');
     this.outcomeFormSuccess.set('');
     this.outcomeFormVisible.set(true);
@@ -273,6 +431,7 @@ export class AdminDashboard implements OnInit {
 
   cancelOutcomeForm(): void {
     this.outcomeFormVisible.set(false);
+    this.editingOutcomeId.set(null);
     this.outcomeFormError.set('');
   }
 
@@ -281,6 +440,34 @@ export class AdminDashboard implements OnInit {
     this.outcomeFormLoading.set(true);
     this.outcomeFormError.set('');
     const raw = this.outcomeForm.getRawValue();
+
+    const editingId = this.editingOutcomeId();
+    if (editingId !== null) {
+      // Grup bilgisi formda yer almadığı için mevcut değeri koru.
+      const existing = this.programOutcomes().find(p => p.id === editingId);
+      const req: UpdateProgramOutcomeRequest = {
+        code: raw.code!,
+        description: raw.description!,
+        details: raw.details || null,
+        groupId: existing?.groupId ?? null,
+      };
+      this.instructorService.updateProgramOutcome(editingId, req).subscribe({
+        next: (po) => {
+          this.outcomeFormLoading.set(false);
+          this.outcomeFormSuccess.set(`"${po.code}" program çıktısı güncellendi.`);
+          this.programOutcomes.update(list =>
+            list.map(p => (p.id === po.id ? po : p)).sort((a, b) => a.code.localeCompare(b.code)));
+          this.outcomeFormVisible.set(false);
+          this.editingOutcomeId.set(null);
+        },
+        error: (err) => {
+          this.outcomeFormLoading.set(false);
+          this.outcomeFormError.set(extractErrorMessage(err, 'Program çıktısı güncellenirken bir hata oluştu, lütfen tekrar deneyin.'));
+        },
+      });
+      return;
+    }
+
     const req: SaveProgramOutcomeRequest = { code: raw.code!, description: raw.description!, details: raw.details || null, groupId: null };
     this.instructorService.addProgramOutcome(req).subscribe({
       next: (po) => {
@@ -291,7 +478,7 @@ export class AdminDashboard implements OnInit {
       },
       error: (err) => {
         this.outcomeFormLoading.set(false);
-        this.outcomeFormError.set(err.status === 409 ? 'Bu kod zaten kullanımda.' : 'Bir hata oluştu, lütfen tekrar deneyin.');
+        this.outcomeFormError.set(extractErrorMessage(err, 'Program çıktısı eklenirken bir hata oluştu, lütfen tekrar deneyin.'));
       },
     });
   }
