@@ -29,11 +29,7 @@
         </div>
       </div>
       <div class="header-right">
-        @if (course()!.contentStatus === 'Draft' || course()!.contentStatus === 'RevisionRequested') {
-          <button class="btn-submit-review" [disabled]="submitLoading()" (click)="submitForReview()">
-            {{ submitLoading() ? 'Gönderiliyor…' : (course()!.contentStatus === 'RevisionRequested' ? 'Tekrar Onaya Gönder' : 'Onaya Gönder') }}
-          </button>
-        } @else if (course()!.contentStatus === 'PendingApproval') {
+        @if (course()!.contentStatus === 'PendingApproval') {
           <span class="approval-status-msg pending">⏳ Onay Bekleniyor</span>
         } @else if (course()!.contentStatus === 'Approved') {
           <span class="approval-status-msg approved">✓ Onaylandı</span>
@@ -42,12 +38,6 @@
     </div>
 
     <!-- Bildirim bantları -->
-    @if (submitSuccess()) {
-      <div class="submit-success-banner">İçerik onaya gönderildi. Yönetici inceleme sonucunda bilgilendirileceksiniz.</div>
-    }
-    @if (submitError()) {
-      <div class="submit-error-banner">{{ submitError() }}</div>
-    }
     @if (course()!.contentStatus === 'RevisionRequested' && course()!.reviewNote) {
       <div class="revision-note-banner">
         <strong>Revize İstendi:</strong> {{ course()!.reviewNote }}
@@ -107,11 +97,11 @@
             <h3 class="info-card-title">İçerik Durumu</h3>
             <div class="stat-grid">
               <div class="stat-item">
-                <span class="stat-num">{{ course()!.topicCount }}</span>
+                <span class="stat-num">{{ topicCount() }}</span>
                 <span class="stat-lbl">Konu</span>
               </div>
               <div class="stat-item">
-                <span class="stat-num">{{ course()!.learningOutcomeCount }}</span>
+                <span class="stat-num">{{ outcomeCount() }}</span>
                 <span class="stat-lbl">Öğrenme Çıktısı</span>
               </div>
             </div>
@@ -121,39 +111,35 @@
         @if (infoSuccess()) {
           <div class="success-banner">Bilgiler başarıyla kaydedildi.</div>
         }
+        @if (infoError()) {
+          <div class="submit-error-banner">{{ infoError() }}</div>
+        }
 
-        <!-- Ders Tanımı -->
-        <div class="content-section">
-          <div class="section-header">
-            <h3 class="section-label">Ders Tanımı</h3>
-            <button class="btn-ai" disabled title="Yakında">✦ AI ile Doldur</button>
-          </div>
-          <form (ngSubmit)="saveDescription()">
-            <textarea class="content-textarea" [formControl]="descForm.controls.description" rows="5"
+        <form [formGroup]="infoForm" (ngSubmit)="saveInfo()">
+          <!-- Ders Tanımı -->
+          <div class="content-section">
+            <div class="section-header">
+              <h3 class="section-label">Ders Tanımı</h3>
+            </div>
+            <textarea class="content-textarea" formControlName="description" rows="5"
               placeholder="Bu derste işlenecek konular ve kapsamı hakkında genel bilgi…"></textarea>
-            <div class="section-footer">
-              <button type="submit" class="btn-primary" [disabled]="infoSaving() || !isEditable()">
-                {{ infoSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Ders Amacı -->
-        <div class="content-section">
-          <div class="section-header">
-            <h3 class="section-label">Ders Amacı</h3>
           </div>
-          <form (ngSubmit)="saveObjective()">
-            <textarea class="content-textarea" [formControl]="objForm.controls.objective" rows="4"
-              placeholder="Bu dersin öğrencilere kazandırmayı hedeflediği bilgi ve beceriler…"></textarea>
-            <div class="section-footer">
-              <button type="submit" class="btn-primary" [disabled]="infoSaving() || !isEditable()">
-                {{ infoSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
-              </button>
+
+          <!-- Ders Amacı -->
+          <div class="content-section" style="margin-top: 1rem;">
+            <div class="section-header">
+              <h3 class="section-label">Ders Amacı</h3>
             </div>
-          </form>
-        </div>
+            <textarea class="content-textarea" formControlName="objective" rows="4"
+              placeholder="Bu dersin öğrencilere kazandırmayı hedeflediği bilgi ve beceriler…"></textarea>
+          </div>
+
+          <div class="section-footer" style="margin-top: 0.75rem;">
+            <button type="submit" class="btn-primary" [disabled]="infoSaving() || !isEditable()">
+              {{ infoSaving() ? 'Kaydediliyor…' : 'Genel Bilgileri Kaydet' }}
+            </button>
+          </div>
+        </form>
       </div>
     }
 
@@ -495,6 +481,19 @@
             }
           </div>
         }
+      </div>
+    }
+    @if (course()!.contentStatus === 'Draft' || course()!.contentStatus === 'RevisionRequested') {
+      <div class="sticky-action-bar">
+        @if (submitSuccess()) {
+          <span class="action-bar-msg action-bar-success">✓ Onaya gönderildi</span>
+        }
+        @if (submitError()) {
+          <span class="action-bar-msg action-bar-error">{{ submitError() }}</span>
+        }
+        <button class="btn-submit-review" [disabled]="submitLoading()" (click)="submitForReview()">
+          {{ submitLoading() ? 'Gönderiliyor…' : (course()!.contentStatus === 'RevisionRequested' ? 'Tekrar Onaya Gönder' : 'Onaya Gönder') }}
+        </button>
       </div>
     }
   }

@@ -547,6 +547,8 @@
                         <button class="btn-approve-sm" (click)="approveCourse(item.courseId, item.courseName)">
                           Onayla
                         </button>
+                      }
+                      @if (item.contentStatus === 'PendingApproval' || item.contentStatus === 'Approved') {
                         <button class="btn-revise-sm" (click)="openRevisionModal(item)">
                           Revize İste
                         </button>

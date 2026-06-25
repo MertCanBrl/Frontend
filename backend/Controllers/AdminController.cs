@@ -394,13 +394,14 @@ public class AdminController : ControllerBase
         var course = await _context.Courses.FindAsync(courseId);
         if (course == null) return NotFound();
 
-        if (course.ContentStatus != "PendingApproval")
-            return Conflict("Bu ders onay bekliyor durumunda değil.");
+        if (course.ContentStatus != "PendingApproval" && course.ContentStatus != "Approved")
+            return Conflict("Revizyon yalnızca onay bekleyen veya onaylanmış dersler için istenebilir.");
 
         course.ContentStatus = "RevisionRequested";
         course.IsLocked = false;
         course.ReviewNote = request.Note;
         course.ReviewedByUserId = GetUserId();
+        course.ApprovedAt = null;
         await _context.SaveChangesAsync();
         return NoContent();
     }
