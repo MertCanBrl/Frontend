@@ -68,7 +68,9 @@ public class AdminController : ControllerBase
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        await _emailService.SendCredentialsAsync(user.Email, user.FullName, password);
+        var adminName = User.FindFirst("fullName")?.Value ?? "Bölüm Başkanı";
+        var adminEmail = User.FindFirst(JwtRegisteredClaimNames.Email)?.Value ?? "";
+        await _emailService.SendCredentialsAsync(user.Email, user.FullName, password, adminName, adminEmail);
 
         return Ok(new UserDto
         {

@@ -25,6 +25,11 @@ yarn-error.log*
 *.env
 !.env.example
 
+# ---------- ASP.NET Core üretim sırları ----------
+backend/appsettings.Production.json
+backend/appsettings.Development.json
+backend/appsettings.*.local.json
+
 # ---------- IDE / Editör ----------
 .idea/
 .vscode/*
