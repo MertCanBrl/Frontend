@@ -19,4 +19,7 @@ public class CreateUserRequest
     [Phone(ErrorMessage = "Geçerli bir telefon numarası giriniz.")]
     [MaxLength(20, ErrorMessage = "Telefon numarası en fazla 20 karakter olabilir.")]
     public string? PhoneNumber { get; set; }
+
+    /// <summary>İşaretliyse personele "Admin" rolü, aksi halde "Instructor" rolü atanır.</summary>
+    public bool IsAdmin { get; set; }
 }

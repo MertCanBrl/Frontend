@@ -21,6 +21,7 @@ export class AdminDashboard implements OnInit {
   private fb = inject(FormBuilder);
 
   fullName = this.authService.getFullName();
+  currentUserId = this.authService.getUserId();
   activeTab = signal<'users' | 'courses' | 'outcomes' | 'approvals'>('users');
 
   users = signal<UserDto[]>([]);
@@ -68,6 +69,7 @@ export class AdminDashboard implements OnInit {
     fullName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     phoneNumber: [''],
+    isAdmin: [false],
   });
 
   courseForm = this.fb.group({
@@ -205,7 +207,8 @@ export class AdminDashboard implements OnInit {
 
   openUserForm(): void {
     this.editingUserId.set(null);
-    this.userForm.reset({ title: 'Prof. Dr.', phoneNumber: '' });
+    this.userForm.reset({ title: 'Prof. Dr.', phoneNumber: '', isAdmin: false });
+    this.userForm.get('isAdmin')?.enable();
     this.userFormError.set('');
     this.userFormSuccess.set('');
     this.userFormVisible.set(true);
@@ -218,10 +221,30 @@ export class AdminDashboard implements OnInit {
       fullName: user.fullName,
       email: user.email,
       phoneNumber: user.phoneNumber ?? '',
+      isAdmin: user.role === 'Admin',
     });
+    // Yönetici kendi admin yetkisini kaldıramaz: kendi kaydını düzenliyorsa alanı kilitle.
+    if (this.isSelf(user)) {
+      this.userForm.get('isAdmin')?.disable();
+    } else {
+      this.userForm.get('isAdmin')?.enable();
+    }
     this.userFormError.set('');
     this.userFormSuccess.set('');
     this.userFormVisible.set(true);
+  }
+
+  /** Düzenlenen personel, oturum açmış yöneticinin kendisi mi? */
+  isSelf(user: UserDto): boolean {
+    return this.currentUserId !== null && user.id === this.currentUserId;
+  }
+
+  roleLabel(role: string): string {
+    return role === 'Admin' ? 'Admin' : 'Öğretim Üyesi';
+  }
+
+  roleBadgeClass(role: string): string {
+    return role === 'Admin' ? 'badge-admin' : 'badge-instructor';
   }
 
   cancelUserForm(): void {
@@ -238,10 +261,11 @@ export class AdminDashboard implements OnInit {
 
     const raw = this.userForm.getRawValue();
     const phoneNumber = raw.phoneNumber?.trim() || null;
+    const isAdmin = !!raw.isAdmin;
 
     const editingId = this.editingUserId();
     if (editingId !== null) {
-      const req: UpdateUserRequest = { fullName: raw.fullName!, email: raw.email!, phoneNumber };
+      const req: UpdateUserRequest = { fullName: raw.fullName!, email: raw.email!, phoneNumber, isAdmin };
       this.adminService.updateUser(editingId, req).subscribe({
         next: (user) => {
           this.userFormLoading.set(false);
@@ -259,7 +283,7 @@ export class AdminDashboard implements OnInit {
       return;
     }
 
-    const req: CreateUserRequest = { title: raw.title!, fullName: raw.fullName!, email: raw.email!, phoneNumber };
+    const req: CreateUserRequest = { title: raw.title!, fullName: raw.fullName!, email: raw.email!, phoneNumber, isAdmin };
     this.adminService.createUser(req).subscribe({
       next: (user) => {
         this.userFormLoading.set(false);

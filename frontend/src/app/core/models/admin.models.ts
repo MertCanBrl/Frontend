@@ -23,12 +23,14 @@ export interface CreateUserRequest {
   fullName: string;
   email: string;
   phoneNumber: string | null;
+  isAdmin: boolean;
 }
 
 export interface UpdateUserRequest {
   fullName: string;
   email: string;
   phoneNumber: string | null;
+  isAdmin: boolean;
 }
 
 export interface CreateCourseRequest {

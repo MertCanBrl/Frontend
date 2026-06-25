@@ -12,7 +12,7 @@
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        Kullanıcı Tanımlama
+        Personel Yönetimi
       </button>
 
       <button class="nav-item" [class.active]="activeTab() === 'courses'" (click)="activeTab.set('courses')">
@@ -64,13 +64,13 @@
     @if (activeTab() === 'users') {
       <div class="page-header">
         <div>
-          <h1 class="page-title">Kullanıcı Tanımlama</h1>
-          <p class="page-desc">Öğretim üyesi ve yönetici hesapları tanımlayın</p>
+          <h1 class="page-title">Personel Yönetimi</h1>
+          <p class="page-desc">Öğretim üyesi ve yönetici hesaplarını tanımlayın ve yetkilendirin</p>
         </div>
         @if (!userFormVisible()) {
           <button class="btn-primary" (click)="openUserForm()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Kullanıcı Ekle
+            Personel Ekle
           </button>
         }
       </div>
@@ -88,7 +88,7 @@
       @if (userFormVisible()) {
         <div class="form-card">
           <div class="form-card-header">
-            <h2>{{ editingUserId() ? 'Kullanıcıyı Düzenle' : 'Yeni Kullanıcı Tanımla' }}</h2>
+            <h2>{{ editingUserId() ? 'Personeli Düzenle' : 'Yeni Personel Tanımla' }}</h2>
             <button class="btn-ghost" (click)="cancelUserForm()">İptal</button>
           </div>
 
@@ -132,6 +132,18 @@
               <input type="tel" formControlName="phoneNumber" placeholder="0312 555 12 34" />
             </div>
 
+            <div class="field field-wide field-checkbox">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="isAdmin" />
+                <span>Bu personele yönetici (admin) yetkisi ver</span>
+              </label>
+              @if (editingUserId() && userForm.get('isAdmin')?.disabled) {
+                <span class="field-optional">Kendi yönetici yetkinizi kaldıramazsınız.</span>
+              } @else {
+                <span class="field-optional">Yönetici; personel, ders, program çıktısı ve onay yönetimine erişebilir.</span>
+              }
+            </div>
+
             <div class="form-actions">
               <button type="submit" class="btn-primary" [disabled]="userFormLoading()">
                 @if (userFormLoading()) { <span class="spinner"></span> Kaydediliyor... }
@@ -146,7 +158,7 @@
         @if (usersLoading()) {
           <div class="loading-state">Yükleniyor…</div>
         } @else if (users().length === 0) {
-          <div class="empty-state">Henüz kullanıcı tanımlanmamış.</div>
+          <div class="empty-state">Henüz personel tanımlanmamış.</div>
         } @else {
           <table class="table">
             <thead>
@@ -154,6 +166,7 @@
                 <th>Ad Soyad</th>
                 <th>E-posta</th>
                 <th>Telefon</th>
+                <th>Rol</th>
                 <th>İşlemler</th>
               </tr>
             </thead>
@@ -166,6 +179,9 @@
                   </td>
                   <td class="td-muted">{{ user.email }}</td>
                   <td class="td-muted">{{ user.phoneNumber ?? '—' }}</td>
+                  <td>
+                    <span class="badge" [class]="roleBadgeClass(user.role)">{{ roleLabel(user.role) }}</span>
+                  </td>
                   <td>
                     <div class="row-actions">
                       <button class="btn-view-sm" (click)="viewUserCourses(user)" title="Dersleri Gör">Dersleri Gör</button>

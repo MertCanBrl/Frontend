@@ -64,7 +64,7 @@ public class AdminController : ControllerBase
             Email = request.Email,
             PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            Role = "Instructor"
+            Role = request.IsAdmin ? "Admin" : "Instructor"
         };
 
         _context.Users.Add(user);
@@ -99,9 +99,15 @@ public class AdminController : ControllerBase
         if (emailExists)
             return Conflict(new { message = "Bu e-posta adresi zaten başka bir kullanıcıda kullanılıyor." });
 
+        // Güvenlik kuralı: Yönetici kendi admin yetkisini kaldıramaz (sistemin admin'siz
+        // kalmasını ve yanlışlıkla yetki kaybını önler).
+        if (id == GetUserId() && user.Role == "Admin" && !request.IsAdmin)
+            return Conflict(new { message = "Kendi yönetici (admin) yetkinizi kaldıramazsınız." });
+
         user.FullName = request.FullName.Trim();
         user.Email = request.Email.Trim();
         user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+        user.Role = request.IsAdmin ? "Admin" : "Instructor";
 
         try
         {
