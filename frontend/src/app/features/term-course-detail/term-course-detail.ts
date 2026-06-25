@@ -11,7 +11,8 @@ import {
   ComponentGradeEntryDto, SaveComponentGradeEntryRequest,
   RiskAnalysisDto, CourseStatisticsDto,
   LearningOutcomeStatusDto, ComponentReportItemDto,
-  LearningOutcomeWeight
+  LearningOutcomeWeight,
+  AttendanceMatrixDto, AttendanceStatus, SaveAttendanceRequest
 } from '../../core/models/course.models';
 
 type Tab = 'info' | 'students' | 'exams' | 'components' | 'attendance' | 'risk' | 'outcomes' | 'reports';
@@ -166,6 +167,39 @@ export class TermCourseDetail implements OnInit {
   componentReport = signal<ComponentReportItemDto[]>([]);
   componentReportLoading = signal(false);
 
+  // Attendance (Devam)
+  attendanceData = signal<AttendanceMatrixDto | null>(null);
+  attendanceLoading = signal(false);
+  attendanceSaving = signal(false);
+  attendanceSettingsSaving = signal(false);
+  attendanceError = signal<string | null>(null);
+  // Lokal düzenleme durumu: studentId -> devamsız hafta numaraları kümesi
+  attendanceAbsences = signal<Record<number, Set<number>>>({});
+  // Ayar formu (kaydedilene kadar matris sütunlarını etkilemez)
+  attendanceTotalWeeks = signal(14);
+  attendanceLimitPercent = signal(30);
+
+  // Matris sütunları için hafta dizisi (kaydedilmiş hafta sayısına göre)
+  readonly attendanceWeeks = computed(() => {
+    const n = this.attendanceData()?.totalWeeks ?? 0;
+    return Array.from({ length: n }, (_, i) => i + 1);
+  });
+
+  // Lokal hücre değişikliklerine göre anlık özet (kaç kaldı / kaç risk)
+  readonly attendanceLocalSummary = computed(() => {
+    const data = this.attendanceData();
+    if (!data) return { totalStudents: 0, failedCount: 0, riskCount: 0 };
+    const absences = this.attendanceAbsences();
+    let failedCount = 0, riskCount = 0;
+    for (const s of data.students) {
+      const count = absences[s.studentId]?.size ?? 0;
+      const status = this.computeAttendanceStatus(count, data.totalWeeks, data.limitPercent);
+      if (status === 'Failed') failedCount++;
+      else if (status === 'Risk') riskCount++;
+    }
+    return { totalStudents: data.students.length, failedCount, riskCount };
+  });
+
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('courseId'));
     this.courseId.set(id);
@@ -195,6 +229,7 @@ export class TermCourseDetail implements OnInit {
       if (this.components().length === 0) this.loadComponents();
       if (!this.learningOutcomesLoaded()) this.loadLearningOutcomes();
     }
+    if (tab === 'attendance' && this.attendanceData() === null) this.loadAttendance();
     if (tab === 'risk' && this.riskData().length === 0) this.loadRisk();
     if (tab === 'outcomes' && this.loStatus().length === 0) this.loadLoStatus();
     if (tab === 'reports') {
@@ -954,6 +989,139 @@ export class TermCourseDetail implements OnInit {
     if (gradeGroup === 'Final') return 'Final';
     if (gradeGroup === 'Makeup') return 'Bütünleme';
     return '—';
+  }
+
+  // ── Attendance (Devam) ─────────────────────────────────────────────────────
+
+  loadAttendance(): void {
+    this.attendanceLoading.set(true);
+    this.attendanceError.set(null);
+    this.svc.getAttendance(this.courseId()).subscribe({
+      next: (data) => {
+        this.attendanceData.set(data);
+        const map: Record<number, Set<number>> = {};
+        data.students.forEach(s => { map[s.studentId] = new Set(s.absentWeeks); });
+        this.attendanceAbsences.set(map);
+        this.attendanceTotalWeeks.set(data.totalWeeks);
+        this.attendanceLimitPercent.set(data.limitPercent);
+        this.attendanceLoading.set(false);
+      },
+      error: (err) => {
+        this.attendanceError.set(this.getErrorMessage(err));
+        this.attendanceLoading.set(false);
+      },
+    });
+  }
+
+  isAbsent(studentId: number, week: number): boolean {
+    return this.attendanceAbsences()[studentId]?.has(week) ?? false;
+  }
+
+  toggleAbsent(studentId: number, week: number): void {
+    this.attendanceAbsences.update(map => {
+      const next = { ...map };
+      const set = new Set(next[studentId] ?? []);
+      if (set.has(week)) set.delete(week); else set.add(week);
+      next[studentId] = set;
+      return next;
+    });
+  }
+
+  getAbsentCount(studentId: number): number {
+    return this.attendanceAbsences()[studentId]?.size ?? 0;
+  }
+
+  // Backend AttendanceCalculator ile aynı kural — anlık geri bildirim için.
+  private computeAbsenceRate(absentCount: number, totalWeeks: number): number {
+    if (totalWeeks <= 0) return 0;
+    const clamped = Math.min(Math.max(absentCount, 0), totalWeeks);
+    return Math.round((clamped / totalWeeks) * 100 * 10) / 10;
+  }
+
+  private computeAttendanceStatus(absentCount: number, totalWeeks: number, limitPercent: number): AttendanceStatus {
+    if (totalWeeks <= 0) return 'Safe';
+    const rate = this.computeAbsenceRate(absentCount, totalWeeks);
+    if (rate > limitPercent) return 'Failed';
+    if (rate >= limitPercent * 0.8) return 'Risk';
+    return 'Safe';
+  }
+
+  getAbsenceRate(studentId: number): number {
+    const data = this.attendanceData();
+    if (!data) return 0;
+    return this.computeAbsenceRate(this.getAbsentCount(studentId), data.totalWeeks);
+  }
+
+  getAttendanceStatus(studentId: number): AttendanceStatus {
+    const data = this.attendanceData();
+    if (!data) return 'Safe';
+    return this.computeAttendanceStatus(this.getAbsentCount(studentId), data.totalWeeks, data.limitPercent);
+  }
+
+  attendanceStatusLabel(status: AttendanceStatus): string {
+    if (status === 'Failed') return 'Devamsızlıktan Kaldı';
+    if (status === 'Risk') return 'Risk';
+    return 'Devam Ediyor';
+  }
+
+  attendanceStatusClass(status: AttendanceStatus): string {
+    const map: Record<AttendanceStatus, string> = {
+      Failed: 'att-failed', Risk: 'att-risk', Safe: 'att-safe',
+    };
+    return map[status];
+  }
+
+  setAttendanceTotalWeeks(value: string): void {
+    this.attendanceTotalWeeks.set(Number(value) || 0);
+  }
+
+  setAttendanceLimitPercent(value: string): void {
+    this.attendanceLimitPercent.set(Number(value) || 0);
+  }
+
+  saveAttendanceSettings(): void {
+    this.attendanceError.set(null);
+    const totalWeeks = this.attendanceTotalWeeks();
+    const limitPercent = this.attendanceLimitPercent();
+    if (totalWeeks < 1 || totalWeeks > 30) {
+      this.attendanceError.set('Toplam hafta sayısı 1 ile 30 arasında olmalıdır.');
+      return;
+    }
+    if (limitPercent < 0 || limitPercent > 100) {
+      this.attendanceError.set('Devamsızlık sınırı 0 ile 100 arasında olmalıdır.');
+      return;
+    }
+    this.attendanceSettingsSaving.set(true);
+    this.svc.saveAttendanceSettings(this.courseId(), { totalWeeks, limitPercent }).subscribe({
+      next: () => { this.attendanceSettingsSaving.set(false); this.loadAttendance(); },
+      error: (err) => {
+        this.attendanceError.set(this.getErrorMessage(err));
+        this.attendanceSettingsSaving.set(false);
+      },
+    });
+  }
+
+  saveAttendance(): void {
+    const data = this.attendanceData();
+    if (!data) return;
+    this.attendanceError.set(null);
+    this.attendanceSaving.set(true);
+
+    const absences = this.attendanceAbsences();
+    const req: SaveAttendanceRequest = {
+      students: data.students.map(s => ({
+        studentId: s.studentId,
+        absentWeeks: Array.from(absences[s.studentId] ?? []).sort((a, b) => a - b),
+      })),
+    };
+
+    this.svc.saveAttendance(this.courseId(), req).subscribe({
+      next: () => { this.attendanceSaving.set(false); this.loadAttendance(); },
+      error: (err) => {
+        this.attendanceError.set(this.getErrorMessage(err));
+        this.attendanceSaving.set(false);
+      },
+    });
   }
 
   readonly reportCards = [

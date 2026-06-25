@@ -919,11 +919,113 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Devam Takibi</h2>
+          <button class="btn-secondary" (click)="loadAttendance()">Yenile</button>
         </div>
-        <div class="dev-notice">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Bu bölüm geliştirme aşamasındadır. Yakında devamsızlık kayıtları girilebilecek ve takip edilebilecektir.
-        </div>
+
+        @if (attendanceError()) {
+          <div class="error-banner">{{ attendanceError() }}</div>
+        }
+
+        @if (attendanceLoading()) {
+          <div class="loading-small">Devam bilgileri yükleniyor…</div>
+        } @else if (!attendanceData()) {
+          <div class="empty-panel"><p>Devam bilgileri yüklenemedi.</p></div>
+        } @else {
+          <p class="lo-status-hint">
+            Her öğrenci için hafta hafta devamsızlık işaretleyin (hücreye tıklayın: ✓ geldi / ✗ gelmedi).
+            Devamsızlık oranı <strong>%{{ attendanceData()!.limitPercent }}</strong> sınırını aşan öğrenciler
+            <strong>devamsızlıktan kalır</strong>; sınıra yaklaşanlar risk altındadır.
+          </p>
+
+          <!-- Ayar çubuğu -->
+          <div class="attendance-settings">
+            <div class="att-setting-field">
+              <label>Toplam Hafta</label>
+              <input type="number" class="field-input att-setting-input" min="1" max="30"
+                     [value]="attendanceTotalWeeks()"
+                     (input)="setAttendanceTotalWeeks($any($event.target).value)" />
+            </div>
+            <div class="att-setting-field">
+              <label>Devamsızlık Sınırı (%)</label>
+              <input type="number" class="field-input att-setting-input" min="0" max="100"
+                     [value]="attendanceLimitPercent()"
+                     (input)="setAttendanceLimitPercent($any($event.target).value)" />
+            </div>
+            <button class="btn-secondary" [disabled]="attendanceSettingsSaving()" (click)="saveAttendanceSettings()">
+              {{ attendanceSettingsSaving() ? 'Kaydediliyor…' : 'Ayarları Kaydet' }}
+            </button>
+          </div>
+
+          <!-- Özet kartları -->
+          <div class="stat-grid att-summary">
+            <div class="stat-box">
+              <span class="stat-value">{{ attendanceLocalSummary().totalStudents }}</span>
+              <span class="stat-label">Toplam Öğrenci</span>
+            </div>
+            <div class="stat-box stat-fail">
+              <span class="stat-value">{{ attendanceLocalSummary().failedCount }}</span>
+              <span class="stat-label">Devamsızlıktan Kalan</span>
+            </div>
+            <div class="stat-box stat-risk">
+              <span class="stat-value">{{ attendanceLocalSummary().riskCount }}</span>
+              <span class="stat-label">Risk Altında</span>
+            </div>
+          </div>
+
+          @if (attendanceData()!.students.length === 0) {
+            <div class="empty-panel"><p>Bu derse kayıtlı öğrenci bulunmuyor.</p></div>
+          } @else {
+            <div class="table-wrapper">
+              <table class="data-table attendance-table">
+                <thead>
+                  <tr>
+                    <th class="att-sticky-col">Öğrenci No</th>
+                    <th class="att-sticky-col att-name-col">Ad Soyad</th>
+                    @for (w of attendanceWeeks(); track w) {
+                      <th class="att-week-col" title="{{ w }}. hafta">{{ w }}</th>
+                    }
+                    <th class="num-col">Devamsız</th>
+                    <th class="num-col">%</th>
+                    <th>Durum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of attendanceData()!.students; track s.studentId) {
+                    <tr [class.att-row-failed]="getAttendanceStatus(s.studentId) === 'Failed'"
+                        [class.att-row-risk]="getAttendanceStatus(s.studentId) === 'Risk'">
+                      <td class="att-sticky-col"><span class="student-no">{{ s.studentNumber }}</span></td>
+                      <td class="att-sticky-col att-name-col">{{ s.fullName }}</td>
+                      @for (w of attendanceWeeks(); track w) {
+                        <td class="att-week-col">
+                          <button type="button"
+                                  class="att-cell"
+                                  [class.att-cell-absent]="isAbsent(s.studentId, w)"
+                                  (click)="toggleAbsent(s.studentId, w)"
+                                  title="{{ s.fullName }} — {{ w }}. hafta">
+                            {{ isAbsent(s.studentId, w) ? '✗' : '✓' }}
+                          </button>
+                        </td>
+                      }
+                      <td class="num-col">{{ getAbsentCount(s.studentId) }}</td>
+                      <td class="num-col">{{ getAbsenceRate(s.studentId) | number:'1.1-1' }}</td>
+                      <td>
+                        <span class="att-badge" [class]="attendanceStatusClass(getAttendanceStatus(s.studentId))">
+                          {{ attendanceStatusLabel(getAttendanceStatus(s.studentId)) }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn-primary" [disabled]="attendanceSaving()" (click)="saveAttendance()">
+                {{ attendanceSaving() ? 'Kaydediliyor…' : 'Devamsızlığı Kaydet' }}
+              </button>
+            </div>
+          }
+        }
       </div>
     }
 

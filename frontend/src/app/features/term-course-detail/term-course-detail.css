@@ -478,3 +478,42 @@
   font-size: 0.84rem; line-height: 1.5;
 }
 .missing-grades-banner svg { flex-shrink: 0; margin-top: 1px; color: #c2410c; }
+
+/* ── Devam (Devamsızlık) ──────────────────────────────────────────────────── */
+.stat-risk .stat-value { color: #b45309; }
+.att-summary { margin-bottom: 1.25rem; }
+
+.attendance-settings {
+  display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap;
+  padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+  border: 1px solid var(--c-line); border-radius: 12px; background: #f8fafc;
+}
+.att-setting-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.att-setting-field label { font-size: 0.8rem; font-weight: 600; color: var(--c-slate); }
+.att-setting-input { width: 120px; }
+
+/* Matris: ilk iki sütun yapışkan, hafta sütunları dar */
+.attendance-table th, .attendance-table td { text-align: center; }
+.att-sticky-col { position: sticky; left: 0; background: #fff; text-align: left !important; z-index: 1; }
+.attendance-table thead .att-sticky-col { background: #f5f4f0; }
+.att-name-col { left: 90px; min-width: 150px; }
+.att-week-col { width: 36px; padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
+
+.att-cell {
+  width: 28px; height: 28px; border: 1px solid var(--c-line); border-radius: 6px;
+  background: #e8f5ee; color: #1a7a4a; font-weight: 700; cursor: pointer;
+  line-height: 1; padding: 0; transition: background 0.12s, color 0.12s;
+}
+.att-cell:hover { filter: brightness(0.96); }
+.att-cell-absent { background: #fdecea; color: #c0392b; }
+
+/* Kalan satır kırmızı, risk satırı sarı vurgulu */
+.att-row-failed > td { background: #fff5f5 !important; }
+.att-row-risk > td { background: #fffbeb !important; }
+.att-row-failed .att-sticky-col { background: #fff5f5 !important; }
+.att-row-risk .att-sticky-col { background: #fffbeb !important; }
+
+.att-badge { padding: 0.2rem 0.65rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.att-failed { background: #fdecea; color: #c0392b; }
+.att-risk { background: #fef9e7; color: #b45309; }
+.att-safe { background: #e8f5ee; color: #1a7a4a; }

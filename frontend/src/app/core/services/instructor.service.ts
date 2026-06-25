@@ -15,7 +15,8 @@ import {
   ComponentGradeEntryDto, SaveComponentGradeEntryRequest,
   StudentCourseResultDto, RiskAnalysisDto,
   CourseStatisticsDto, SaveGradesRequest,
-  LearningOutcomeStatusDto, ComponentReportItemDto
+  LearningOutcomeStatusDto, ComponentReportItemDto,
+  AttendanceMatrixDto, SaveAttendanceRequest, SaveAttendanceSettingsRequest
 } from '../models/course.models';
 
 @Injectable({ providedIn: 'root' })
@@ -231,5 +232,18 @@ export class InstructorService {
   // Component Report
   getComponentReport(courseId: number): Observable<ComponentReportItemDto[]> {
     return this.http.get<ComponentReportItemDto[]>(`${this.base}/instructor/term-courses/${courseId}/component-report`);
+  }
+
+  // Attendance (Devam)
+  getAttendance(courseId: number): Observable<AttendanceMatrixDto> {
+    return this.http.get<AttendanceMatrixDto>(`${this.base}/instructor/term-courses/${courseId}/attendance`);
+  }
+
+  saveAttendance(courseId: number, req: SaveAttendanceRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/instructor/term-courses/${courseId}/attendance`, req);
+  }
+
+  saveAttendanceSettings(courseId: number, req: SaveAttendanceSettingsRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/instructor/term-courses/${courseId}/attendance/settings`, req);
   }
 }

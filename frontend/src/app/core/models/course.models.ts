@@ -316,6 +316,42 @@ export interface SaveGradesRequest {
   makeUp: number | null;
 }
 
+// Attendance (Devam / Devamsızlık)
+export type AttendanceStatus = 'Failed' | 'Risk' | 'Safe';
+
+export interface AttendanceStudentRow {
+  studentId: number;
+  studentNumber: string;
+  fullName: string;
+  absentWeeks: number[];
+  absentCount: number;
+  absenceRate: number;
+  status: AttendanceStatus;
+}
+
+export interface AttendanceSummary {
+  totalStudents: number;
+  failedCount: number;
+  riskCount: number;
+}
+
+export interface AttendanceMatrixDto {
+  courseId: number;
+  totalWeeks: number;
+  limitPercent: number;
+  students: AttendanceStudentRow[];
+  summary: AttendanceSummary;
+}
+
+export interface SaveAttendanceRequest {
+  students: Array<{ studentId: number; absentWeeks: number[] }>;
+}
+
+export interface SaveAttendanceSettingsRequest {
+  totalWeeks: number;
+  limitPercent: number;
+}
+
 // Exam Grade Entry
 export interface GradeEntryQuestionDto {
   id: number;
