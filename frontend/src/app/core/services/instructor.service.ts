@@ -8,7 +8,7 @@ import {
   LearningOutcomeDto, SaveLearningOutcomeRequest,
   ProgramOutcomeDto, SaveProgramOutcomeRequest, UpdateProgramOutcomeRequest,
   MappingMatrixDto, MappingCellDto,
-  SurveyQuestionDto, SaveSurveyQuestionRequest,
+  SurveyQuestionDto, SaveSurveyQuestionRequest, GeneralSurveyQuestionDto,
   ExamDto, ExamDetailDto, SaveExamRequest,
   ExamGradeEntryDto, SaveExamGradeEntryRequest,
   AssessmentComponentDto, SaveAssessmentComponentRequest,
@@ -117,6 +117,10 @@ export class InstructorService {
   }
 
   // Survey Questions
+  getGeneralSurveyQuestions(): Observable<GeneralSurveyQuestionDto[]> {
+    return this.http.get<GeneralSurveyQuestionDto[]>(`${this.base}/instructor/general-survey-questions`);
+  }
+
   getSurveyQuestions(courseId: number): Observable<SurveyQuestionDto[]> {
     return this.http.get<SurveyQuestionDto[]>(`${this.base}/instructor/course-contents/${courseId}/survey-questions`);
   }

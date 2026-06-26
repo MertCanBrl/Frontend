@@ -9,13 +9,13 @@ import {
   ExamGradeEntryDto, SaveExamGradeEntryRequest,
   AssessmentComponentDto, SaveAssessmentComponentRequest,
   ComponentGradeEntryDto, SaveComponentGradeEntryRequest,
-  RiskAnalysisDto, CourseStatisticsDto,
+  CourseStatisticsDto,
   LearningOutcomeStatusDto, ComponentReportItemDto,
   LearningOutcomeWeight,
   AttendanceMatrixDto, AttendanceStatus, SaveAttendanceRequest
 } from '../../core/models/course.models';
 
-type Tab = 'info' | 'students' | 'exams' | 'components' | 'attendance' | 'risk' | 'outcomes' | 'reports';
+type Tab = 'info' | 'students' | 'exams' | 'components' | 'attendance' | 'outcomes' | 'reports';
 
 interface GradeRow {
   studentId: number;
@@ -150,10 +150,6 @@ export class TermCourseDetail implements OnInit {
   compGradeScores = signal<Record<number, number | null>>({});   // studentId -> score
   compGradeError = signal<string | null>(null);
 
-  // Risk Analysis
-  riskData = signal<RiskAnalysisDto[]>([]);
-  riskLoading = signal(false);
-
   // Statistics
   stats = signal<CourseStatisticsDto | null>(null);
   statsLoading = signal(false);
@@ -230,7 +226,6 @@ export class TermCourseDetail implements OnInit {
       if (!this.learningOutcomesLoaded()) this.loadLearningOutcomes();
     }
     if (tab === 'attendance' && this.attendanceData() === null) this.loadAttendance();
-    if (tab === 'risk' && this.riskData().length === 0) this.loadRisk();
     if (tab === 'outcomes' && this.loStatus().length === 0) this.loadLoStatus();
     if (tab === 'reports') {
       if (this.stats() === null) this.loadStatistics();
@@ -909,20 +904,6 @@ export class TermCourseDetail implements OnInit {
     });
   }
 
-  // ── Risk ─────────────────────────────────────────────────────────────────
-
-  loadRisk(): void {
-    this.riskLoading.set(true);
-    this.svc.getRiskAnalysis(this.courseId()).subscribe({
-      next: (r) => { this.riskData.set(r); this.riskLoading.set(false); },
-      error: () => this.riskLoading.set(false),
-    });
-  }
-
-  riskClass(level: string): string {
-    const map: Record<string, string> = { 'Yüksek': 'risk-high', 'Orta': 'risk-mid', 'Düşük': 'risk-low' };
-    return map[level] ?? '';
-  }
 
   getLoCode(loId: number): string {
     return this.learningOutcomes().find(lo => lo.id === loId)?.code ?? `ÖÇ${loId}`;

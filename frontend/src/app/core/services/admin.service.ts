@@ -11,6 +11,8 @@ import {
   UpdateCourseRequest,
   ApprovalListItemDto,
   AdminCourseContentDto,
+  GeneralSurveyQuestionDto,
+  SaveGeneralSurveyQuestionRequest,
 } from '../models/admin.models';
 
 @Injectable({ providedIn: 'root' })
@@ -74,5 +76,23 @@ export class AdminService {
 
   downloadCoursePdf(courseId: number): Observable<Blob> {
     return this.http.get(`${this.base}/courses/${courseId}/pdf`, { responseType: 'blob' });
+  }
+
+  // ── Genel Anket Soruları ──────────────────────────────────────────────────
+
+  getGeneralSurveyQuestions(): Observable<GeneralSurveyQuestionDto[]> {
+    return this.http.get<GeneralSurveyQuestionDto[]>(`${this.base}/general-survey-questions`);
+  }
+
+  addGeneralSurveyQuestion(req: SaveGeneralSurveyQuestionRequest): Observable<GeneralSurveyQuestionDto> {
+    return this.http.post<GeneralSurveyQuestionDto>(`${this.base}/general-survey-questions`, req);
+  }
+
+  updateGeneralSurveyQuestion(id: number, req: SaveGeneralSurveyQuestionRequest): Observable<void> {
+    return this.http.put<void>(`${this.base}/general-survey-questions/${id}`, req);
+  }
+
+  deleteGeneralSurveyQuestion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/general-survey-questions/${id}`);
   }
 }

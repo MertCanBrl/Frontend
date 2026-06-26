@@ -1,12 +1,12 @@
 import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
 import { InstructorService } from '../../core/services/instructor.service';
 import {
   CourseDetailDto, CourseTopicDto, LearningOutcomeDto,
   MappingMatrixDto, MappingCellDto,
-  SurveyQuestionDto
+  SurveyQuestionDto, GeneralSurveyQuestionDto
 } from '../../core/models/course.models';
 import { extractErrorMessage } from '../../core/utils/http-error.util';
 
@@ -68,7 +68,6 @@ export class CourseContentDetail implements OnInit {
   infoError = signal<string | null>(null);
   infoForm = this.fb.group({ description: [''], objective: [''] });
 
-  // Computed counters — reflect live list when tab is loaded, fall back to DTO value
   topicsLoaded = signal(false);
   outcomesLoaded = signal(false);
   topicCount = computed(() => this.topicsLoaded() ? this.topics().length : (this.course()?.topicCount ?? 0));
@@ -111,18 +110,34 @@ export class CourseContentDetail implements OnInit {
   readonly contributionLabels = ['—', '1 Çok Düşük', '2 Düşük', '3 Orta', '4 Yüksek', '5 Çok Yüksek'];
 
   // Survey Questions
+  generalSurveyQuestions = signal<GeneralSurveyQuestionDto[]>([]);
   surveyQuestions = signal<SurveyQuestionDto[]>([]);
   surveyFormVisible = signal(false);
   editingSurveyId = signal<number | null>(null);
   surveySaving = signal(false);
+  surveyError = signal<string | null>(null);
   surveyForm = this.fb.group({
     questionText: ['', Validators.required],
-    learningOutcomeId: [null as number | null],
     isActive: [true],
+    loWeights: this.fb.array([]),
   });
 
+  get loWeightsArray(): FormArray {
+    return this.surveyForm.get('loWeights') as FormArray;
+  }
+
+  addLOWeightRow(learningOutcomeId: number | null = null, weightPercentage: number = 0): void {
+    this.loWeightsArray.push(this.fb.group({
+      learningOutcomeId: [learningOutcomeId, Validators.required],
+      weightPercentage: [weightPercentage, [Validators.required, Validators.min(1), Validators.max(100)]],
+    }));
+  }
+
+  removeLOWeightRow(index: number): void {
+    this.loWeightsArray.removeAt(index);
+  }
+
   constructor() {
-    // Ders kilitliyse (PendingApproval / Approved) genel bilgi formunu devre dışı bırak
     effect(() => {
       if (this.isEditable()) {
         this.infoForm.enable();
@@ -155,7 +170,7 @@ export class CourseContentDetail implements OnInit {
     if (tab === 'topics' && this.topics().length === 0) this.loadTopics();
     if (tab === 'outcomes' && this.outcomes().length === 0) this.loadOutcomes();
     if (tab === 'mapping') this.loadMatrix();
-    if (tab === 'survey' && this.surveyQuestions().length === 0) this.loadSurveyQuestions();
+    if (tab === 'survey') this.loadSurveyTab();
   }
 
   // ── Onay akışı ────────────────────────────────────────────────────────────
@@ -319,49 +334,83 @@ export class CourseContentDetail implements OnInit {
 
   // ── Survey Questions ──────────────────────────────────────────────────────
 
-  loadSurveyQuestions(): void {
-    this.svc.getSurveyQuestions(this.courseId()).subscribe(q => this.surveyQuestions.set(q));
+  private surveyTabLoaded = false;
+
+  loadSurveyTab(): void {
+    if (!this.surveyTabLoaded) {
+      this.surveyTabLoaded = true;
+      this.svc.getGeneralSurveyQuestions().subscribe(q => this.generalSurveyQuestions.set(q));
+      this.svc.getSurveyQuestions(this.courseId()).subscribe(q => this.surveyQuestions.set(q));
+      if (this.outcomes().length === 0) this.loadOutcomes();
+    }
   }
 
   openSurveyForm(question?: SurveyQuestionDto): void {
     if (!this.isEditable()) return;
     this.editingSurveyId.set(question?.id ?? null);
-    this.surveyForm.reset({
-      questionText: question?.questionText ?? '',
-      learningOutcomeId: question?.learningOutcomeId ?? null,
-      isActive: question?.isActive ?? true,
-    });
+    this.loWeightsArray.clear();
+    if (question) {
+      this.surveyForm.patchValue({ questionText: question.questionText, isActive: question.isActive });
+      question.loWeights.forEach(w => this.addLOWeightRow(w.learningOutcomeId, w.weightPercentage));
+    } else {
+      this.surveyForm.reset({ questionText: '', isActive: true });
+    }
     this.surveyFormVisible.set(true);
   }
 
-  cancelSurveyForm(): void { this.surveyFormVisible.set(false); this.editingSurveyId.set(null); }
+  cancelSurveyForm(): void {
+    this.surveyFormVisible.set(false);
+    this.editingSurveyId.set(null);
+    this.surveyError.set(null);
+    this.loWeightsArray.clear();
+  }
 
   saveSurveyForm(): void {
+    this.surveyError.set(null);
     if (this.surveyForm.invalid) { this.surveyForm.markAllAsTouched(); return; }
     this.surveySaving.set(true);
     const raw = this.surveyForm.getRawValue();
     const req = {
       questionText: raw.questionText!,
-      learningOutcomeId: raw.learningOutcomeId ?? null,
       isActive: raw.isActive ?? true,
+      loWeights: (raw.loWeights as any[]).map(w => ({
+        learningOutcomeId: Number(w.learningOutcomeId),
+        weightPercentage: Number(w.weightPercentage),
+      })),
     };
     const id = this.editingSurveyId();
     if (id) {
       this.svc.updateSurveyQuestion(this.courseId(), id, req).subscribe({
         next: () => {
-          const lo = this.outcomes().find(o => o.id === req.learningOutcomeId);
-          this.surveyQuestions.update(qs => qs.map(q => q.id === id ? { ...q, ...req, learningOutcomeCode: lo?.code ?? null } : q));
+          const updatedWeights = req.loWeights.map(w => {
+            const lo = this.outcomes().find(o => o.id === w.learningOutcomeId);
+            return { learningOutcomeId: w.learningOutcomeId, learningOutcomeCode: lo?.code ?? '', weightPercentage: w.weightPercentage };
+          });
+          this.surveyQuestions.update(qs => qs.map(q => q.id === id
+            ? { ...q, questionText: req.questionText, isActive: req.isActive, loWeights: updatedWeights }
+            : q));
           this.cancelSurveyForm();
           this.surveySaving.set(false);
         },
-        error: () => this.surveySaving.set(false),
+        error: (err) => {
+          this.surveySaving.set(false);
+          this.surveyError.set(extractErrorMessage(err, 'Anket sorusu kaydedilemedi.'));
+        },
       });
     } else {
       this.svc.addSurveyQuestion(this.courseId(), req).subscribe({
         next: (q) => { this.surveyQuestions.update(qs => [...qs, q]); this.cancelSurveyForm(); this.surveySaving.set(false); },
-        error: () => this.surveySaving.set(false),
+        error: (err) => {
+          this.surveySaving.set(false);
+          this.surveyError.set(extractErrorMessage(err, 'Anket sorusu kaydedilemedi.'));
+        },
       });
     }
+  }
+
+  getOutcomeTooltip(learningOutcomeId: number): string {
+    const o = this.outcomes().find(o => o.id === learningOutcomeId);
+    return o ? `${o.code}: ${o.description}` : '';
   }
 
   deleteSurveyQuestion(id: number): void {

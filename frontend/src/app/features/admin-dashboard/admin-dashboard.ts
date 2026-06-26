@@ -3,7 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { AdminService } from '../../core/services/admin.service';
 import { InstructorService } from '../../core/services/instructor.service';
-import { UserDto, CreateUserRequest, UpdateUserRequest, CreateCourseRequest, UpdateCourseRequest, CourseDto, ApprovalListItemDto, AdminCourseContentDto } from '../../core/models/admin.models';
+import { UserDto, CreateUserRequest, UpdateUserRequest, CreateCourseRequest, UpdateCourseRequest, CourseDto, ApprovalListItemDto, AdminCourseContentDto, GeneralSurveyQuestionDto } from '../../core/models/admin.models';
 import { ProgramOutcomeDto, SaveProgramOutcomeRequest, UpdateProgramOutcomeRequest } from '../../core/models/course.models';
 import { extractErrorMessage, extractBlobErrorMessage } from '../../core/utils/http-error.util';
 
@@ -22,7 +22,7 @@ export class AdminDashboard implements OnInit {
 
   fullName = this.authService.getFullName();
   currentUserId = this.authService.getUserId();
-  activeTab = signal<'users' | 'courses' | 'outcomes' | 'approvals'>('users');
+  activeTab = signal<'users' | 'courses' | 'outcomes' | 'approvals' | 'generalSurvey'>('users');
 
   users = signal<UserDto[]>([]);
   courses = signal<CourseDto[]>([]);
@@ -398,6 +398,8 @@ export class AdminDashboard implements OnInit {
             list.map((c) => (c.id === course.id ? course : c)).sort((a, b) => a.code.localeCompare(b.code)));
           this.courseFormVisible.set(false);
           this.editingCourseId.set(null);
+          // Öğretim üyesi değişmiş olabilir — Onay Yönetimi listesi stale kalmasın
+          this.loadApprovals();
         },
         error: (err) => {
           this.courseFormLoading.set(false);
@@ -614,5 +616,80 @@ export class AdminDashboard implements OnInit {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  // ── Genel Anket Soruları Yönetimi ─────────────────────────────────────────
+
+  generalSurveyQuestions = signal<GeneralSurveyQuestionDto[]>([]);
+  generalSurveyLoading = signal(false);
+  generalSurveyFormVisible = signal(false);
+  editingGeneralSurveyId = signal<number | null>(null);
+  generalSurveySaving = signal(false);
+  generalSurveyError = signal('');
+
+  generalSurveyForm = this.fb.group({
+    questionText: ['', [Validators.required, Validators.minLength(5)]],
+  });
+
+  loadGeneralSurveyQuestions(): void {
+    this.generalSurveyLoading.set(true);
+    this.adminService.getGeneralSurveyQuestions().subscribe({
+      next: (qs) => { this.generalSurveyQuestions.set(qs); this.generalSurveyLoading.set(false); },
+      error: () => this.generalSurveyLoading.set(false),
+    });
+  }
+
+  openGeneralSurveyForm(q?: GeneralSurveyQuestionDto): void {
+    this.editingGeneralSurveyId.set(q?.id ?? null);
+    this.generalSurveyForm.reset({ questionText: q?.questionText ?? '' });
+    this.generalSurveyError.set('');
+    this.generalSurveyFormVisible.set(true);
+  }
+
+  cancelGeneralSurveyForm(): void {
+    this.generalSurveyFormVisible.set(false);
+    this.editingGeneralSurveyId.set(null);
+    this.generalSurveyError.set('');
+  }
+
+  saveGeneralSurveyForm(): void {
+    if (this.generalSurveyForm.invalid) { this.generalSurveyForm.markAllAsTouched(); return; }
+    this.generalSurveySaving.set(true);
+    this.generalSurveyError.set('');
+    const req = { questionText: this.generalSurveyForm.getRawValue().questionText! };
+    const id = this.editingGeneralSurveyId();
+    if (id) {
+      this.adminService.updateGeneralSurveyQuestion(id, req).subscribe({
+        next: () => {
+          this.generalSurveyQuestions.update(qs => qs.map(q => q.id === id ? { ...q, questionText: req.questionText } : q));
+          this.cancelGeneralSurveyForm();
+          this.generalSurveySaving.set(false);
+        },
+        error: (err) => {
+          this.generalSurveySaving.set(false);
+          this.generalSurveyError.set(extractErrorMessage(err, 'Soru kaydedilemedi.'));
+        },
+      });
+    } else {
+      this.adminService.addGeneralSurveyQuestion(req).subscribe({
+        next: (q) => {
+          this.generalSurveyQuestions.update(qs => [...qs, q]);
+          this.cancelGeneralSurveyForm();
+          this.generalSurveySaving.set(false);
+        },
+        error: (err) => {
+          this.generalSurveySaving.set(false);
+          this.generalSurveyError.set(extractErrorMessage(err, 'Soru kaydedilemedi.'));
+        },
+      });
+    }
+  }
+
+  deleteGeneralSurveyQuestion(q: GeneralSurveyQuestionDto): void {
+    if (!confirm(`"${q.questionText.slice(0, 60)}…" sorusunu silmek istiyor musunuz?`)) return;
+    this.adminService.deleteGeneralSurveyQuestion(q.id).subscribe({
+      next: () => this.generalSurveyQuestions.update(qs => qs.filter(x => x.id !== q.id)),
+      error: (err) => this.generalSurveyError.set(extractErrorMessage(err, 'Soru silinemedi.')),
+    });
   }
 }

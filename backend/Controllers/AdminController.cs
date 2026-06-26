@@ -406,6 +406,56 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    // ── Genel Anket Soruları Yönetimi ────────────────────────────────────────
+
+    [HttpGet("general-survey-questions")]
+    public async Task<ActionResult<IEnumerable<GeneralSurveyQuestionDto>>> GetGeneralSurveyQuestions()
+    {
+        var questions = await _context.GeneralSurveyQuestions
+            .OrderBy(q => q.OrderNumber)
+            .Select(q => new GeneralSurveyQuestionDto { Id = q.Id, QuestionText = q.QuestionText, OrderNumber = q.OrderNumber })
+            .ToListAsync();
+        return Ok(questions);
+    }
+
+    [HttpPost("general-survey-questions")]
+    public async Task<ActionResult<GeneralSurveyQuestionDto>> AddGeneralSurveyQuestion([FromBody] SaveGeneralSurveyQuestionRequest request)
+    {
+        var maxOrder = await _context.GeneralSurveyQuestions.AnyAsync()
+            ? await _context.GeneralSurveyQuestions.MaxAsync(q => q.OrderNumber)
+            : 0;
+
+        var question = new GeneralSurveyQuestion
+        {
+            QuestionText = request.QuestionText,
+            OrderNumber = maxOrder + 1,
+            IsActive = true
+        };
+        _context.GeneralSurveyQuestions.Add(question);
+        await _context.SaveChangesAsync();
+        return Ok(new GeneralSurveyQuestionDto { Id = question.Id, QuestionText = question.QuestionText, OrderNumber = question.OrderNumber });
+    }
+
+    [HttpPut("general-survey-questions/{id:int}")]
+    public async Task<IActionResult> UpdateGeneralSurveyQuestion(int id, [FromBody] SaveGeneralSurveyQuestionRequest request)
+    {
+        var question = await _context.GeneralSurveyQuestions.FindAsync(id);
+        if (question == null) return NotFound();
+        question.QuestionText = request.QuestionText;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete("general-survey-questions/{id:int}")]
+    public async Task<IActionResult> DeleteGeneralSurveyQuestion(int id)
+    {
+        var question = await _context.GeneralSurveyQuestions.FindAsync(id);
+        if (question == null) return NotFound();
+        _context.GeneralSurveyQuestions.Remove(question);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     // ── Onay — Ders İçeriği Önizleme ─────────────────────────────────────────
 
     // GET: api/admin/courses/{courseId}/content
@@ -458,16 +508,21 @@ public class AdminController : ControllerBase
             po => po.Code).ToList();
 
         var surveyQuestions = await _context.CourseSurveyQuestions
-            .Include(q => q.LearningOutcome)
+            .Include(q => q.LOWeights)
+            .ThenInclude(w => w.LearningOutcome)
             .Where(q => q.CourseId == courseId)
             .Select(q => new SurveyQuestionDto
             {
                 Id = q.Id,
                 CourseId = q.CourseId,
-                LearningOutcomeId = q.LearningOutcomeId,
-                LearningOutcomeCode = q.LearningOutcome != null ? q.LearningOutcome.Code : null,
                 QuestionText = q.QuestionText,
-                IsActive = q.IsActive
+                IsActive = q.IsActive,
+                LOWeights = q.LOWeights.Select(w => new SurveyQuestionLOWeightDto
+                {
+                    LearningOutcomeId = w.LearningOutcomeId,
+                    LearningOutcomeCode = w.LearningOutcome.Code,
+                    WeightPercentage = w.WeightPercentage
+                }).ToList()
             })
             .ToListAsync();
 

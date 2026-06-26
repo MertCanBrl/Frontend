@@ -29,7 +29,14 @@
         Program Çıktıları
       </button>
 
-      <button class="nav-item" [class.active]="activeTab() === 'approvals'" (click)="activeTab.set('approvals')">
+      <button class="nav-item" [class.active]="activeTab() === 'generalSurvey'" (click)="activeTab.set('generalSurvey'); loadGeneralSurveyQuestions()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Genel Anket Soruları
+      </button>
+
+      <button class="nav-item" [class.active]="activeTab() === 'approvals'" (click)="activeTab.set('approvals'); loadApprovals()">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
         </svg>
@@ -563,6 +570,84 @@
       </div>
     }
 
+    <!-- ===== GENEL ANKET SORULARI TAB ===== -->
+    @if (activeTab() === 'generalSurvey') {
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Genel Anket Soruları</h1>
+          <p class="page-desc">Tüm derslerde ortak olarak görünecek sistem anket sorularını yönetin.</p>
+        </div>
+        @if (!generalSurveyFormVisible()) {
+          <button class="btn-primary" (click)="openGeneralSurveyForm()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Yeni Soru Ekle
+          </button>
+        }
+      </div>
+
+      <div class="gsq-info-banner">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Bu sorular tüm öğretim üyelerinin ders içeriği sayfasında salt okunur olarak görünür. Öğretim üyeleri bu soruları düzenleyemez.
+      </div>
+
+      @if (generalSurveyError()) {
+        <div class="alert alert-error">{{ generalSurveyError() }}</div>
+      }
+
+      @if (generalSurveyFormVisible()) {
+        <div class="form-card gsq-form-card">
+          <div class="form-card-header">
+            <h2>{{ editingGeneralSurveyId() ? 'Soruyu Düzenle' : 'Yeni Soru Ekle' }}</h2>
+            <button class="modal-close" type="button" (click)="cancelGeneralSurveyForm()">✕</button>
+          </div>
+          <form [formGroup]="generalSurveyForm" (ngSubmit)="saveGeneralSurveyForm()" class="form-body">
+            <div class="field">
+              <label class="field-label">Soru Metni <span class="field-optional">* en az 5 karakter</span></label>
+              <textarea class="field-input" formControlName="questionText" rows="3"
+                placeholder="örn. Dersin öğretim üyesi derse iyi hazırlanmış olarak gelmektedir."></textarea>
+              @if (generalSurveyForm.controls.questionText.invalid && generalSurveyForm.controls.questionText.touched) {
+                <span class="field-error">Soru metni en az 5 karakter olmalıdır.</span>
+              }
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn-ghost" (click)="cancelGeneralSurveyForm()">İptal</button>
+              <button type="submit" class="btn-primary" [disabled]="generalSurveySaving()">
+                @if (generalSurveySaving()) { <span class="spinner"></span> }
+                {{ generalSurveySaving() ? 'Kaydediliyor…' : (editingGeneralSurveyId() ? 'Güncelle' : 'Kaydet') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+      @if (generalSurveyLoading()) {
+        <div class="loading-state">Yükleniyor…</div>
+      } @else if (generalSurveyQuestions().length === 0 && !generalSurveyFormVisible()) {
+        <div class="gsq-empty">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <p>Henüz genel anket sorusu eklenmemiş.</p>
+          <button class="btn-primary" (click)="openGeneralSurveyForm()">İlk soruyu ekle</button>
+        </div>
+      } @else if (!generalSurveyFormVisible()) {
+        <div class="gsq-list">
+          @for (q of generalSurveyQuestions(); track q.id) {
+            <div class="gsq-item">
+              <span class="gsq-num">{{ q.orderNumber }}</span>
+              <p class="gsq-text">{{ q.questionText }}</p>
+              <div class="gsq-actions">
+                <button class="btn-edit-sm" title="Düzenle" (click)="openGeneralSurveyForm(q)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="btn-danger-sm" title="Sil" (click)="deleteGeneralSurveyQuestion(q)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
   </main>
 </div>
 
@@ -743,8 +828,8 @@
                     <div class="preview-list-texts">
                       <span class="preview-list-title">{{ q.questionText }}</span>
                       <div class="preview-survey-tags">
-                        @if (q.learningOutcomeCode) {
-                          <span class="preview-survey-tag lo-tag">{{ q.learningOutcomeCode }}</span>
+                        @for (w of (q.loWeights ?? []); track w.learningOutcomeId) {
+                          <span class="preview-survey-tag lo-tag">{{ w.learningOutcomeCode }} (%{{ w.weightPercentage }})</span>
                         }
                         <span class="preview-survey-tag" [class.active-tag]="q.isActive" [class.inactive-tag]="!q.isActive">
                           {{ q.isActive ? 'Aktif' : 'Pasif' }}
@@ -841,3 +926,4 @@
     </div>
   </div>
 }
+

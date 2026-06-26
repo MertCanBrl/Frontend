@@ -160,22 +160,43 @@ public class InstructorController : ControllerBase
 
     // Survey Questions
 
+    [HttpGet("general-survey-questions")]
+    public async Task<ActionResult<IEnumerable<GeneralSurveyQuestionDto>>> GetGeneralSurveyQuestions()
+    {
+        var questions = await _context.GeneralSurveyQuestions
+            .Where(q => q.IsActive)
+            .OrderBy(q => q.OrderNumber)
+            .Select(q => new GeneralSurveyQuestionDto
+            {
+                Id = q.Id,
+                QuestionText = q.QuestionText,
+                OrderNumber = q.OrderNumber
+            })
+            .ToListAsync();
+        return Ok(questions);
+    }
+
     [HttpGet("course-contents/{courseId:int}/survey-questions")]
     public async Task<ActionResult<IEnumerable<SurveyQuestionDto>>> GetSurveyQuestions(int courseId)
     {
         if (!await OwnsCourse(courseId)) return Forbid();
 
         var questions = await _context.CourseSurveyQuestions
-            .Include(q => q.LearningOutcome)
+            .Include(q => q.LOWeights)
+            .ThenInclude(w => w.LearningOutcome)
             .Where(q => q.CourseId == courseId)
             .Select(q => new SurveyQuestionDto
             {
                 Id = q.Id,
                 CourseId = q.CourseId,
-                LearningOutcomeId = q.LearningOutcomeId,
-                LearningOutcomeCode = q.LearningOutcome != null ? q.LearningOutcome.Code : null,
                 QuestionText = q.QuestionText,
-                IsActive = q.IsActive
+                IsActive = q.IsActive,
+                LOWeights = q.LOWeights.Select(w => new SurveyQuestionLOWeightDto
+                {
+                    LearningOutcomeId = w.LearningOutcomeId,
+                    LearningOutcomeCode = w.LearningOutcome.Code,
+                    WeightPercentage = w.WeightPercentage
+                }).ToList()
             })
             .ToListAsync();
         return Ok(questions);
@@ -189,25 +210,40 @@ public class InstructorController : ControllerBase
         var question = new CourseSurveyQuestion
         {
             CourseId = courseId,
-            LearningOutcomeId = request.LearningOutcomeId,
             QuestionText = request.QuestionText,
             IsActive = request.IsActive
         };
         _context.CourseSurveyQuestions.Add(question);
         await _context.SaveChangesAsync();
 
-        string? loCode = null;
-        if (question.LearningOutcomeId.HasValue)
+        foreach (var w in request.LOWeights)
         {
-            var lo = await _context.LearningOutcomes.FindAsync(question.LearningOutcomeId.Value);
-            loCode = lo?.Code;
+            _context.SurveyQuestionLOWeights.Add(new SurveyQuestionLOWeight
+            {
+                SurveyQuestionId = question.Id,
+                LearningOutcomeId = w.LearningOutcomeId,
+                WeightPercentage = w.WeightPercentage
+            });
         }
+        await _context.SaveChangesAsync();
+
+        var loWeights = await _context.SurveyQuestionLOWeights
+            .Include(w => w.LearningOutcome)
+            .Where(w => w.SurveyQuestionId == question.Id)
+            .Select(w => new SurveyQuestionLOWeightDto
+            {
+                LearningOutcomeId = w.LearningOutcomeId,
+                LearningOutcomeCode = w.LearningOutcome.Code,
+                WeightPercentage = w.WeightPercentage
+            }).ToListAsync();
 
         return Ok(new SurveyQuestionDto
         {
-            Id = question.Id, CourseId = question.CourseId,
-            LearningOutcomeId = question.LearningOutcomeId, LearningOutcomeCode = loCode,
-            QuestionText = question.QuestionText, IsActive = question.IsActive
+            Id = question.Id,
+            CourseId = question.CourseId,
+            QuestionText = question.QuestionText,
+            IsActive = question.IsActive,
+            LOWeights = loWeights
         });
     }
 
@@ -217,12 +253,24 @@ public class InstructorController : ControllerBase
         if (!await OwnsUnlockedCourse(courseId)) return Forbid();
 
         var question = await _context.CourseSurveyQuestions
+            .Include(q => q.LOWeights)
             .FirstOrDefaultAsync(q => q.Id == questionId && q.CourseId == courseId);
         if (question == null) return NotFound();
 
-        question.LearningOutcomeId = request.LearningOutcomeId;
         question.QuestionText = request.QuestionText;
         question.IsActive = request.IsActive;
+
+        _context.SurveyQuestionLOWeights.RemoveRange(question.LOWeights);
+        foreach (var w in request.LOWeights)
+        {
+            _context.SurveyQuestionLOWeights.Add(new SurveyQuestionLOWeight
+            {
+                SurveyQuestionId = question.Id,
+                LearningOutcomeId = w.LearningOutcomeId,
+                WeightPercentage = w.WeightPercentage
+            });
+        }
+
         await _context.SaveChangesAsync();
         return NoContent();
     }

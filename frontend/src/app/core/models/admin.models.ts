@@ -66,6 +66,18 @@ export interface RequestRevisionRequest {
   note: string;
 }
 
+// ── Genel Anket Soruları ──────────────────────────────────────────────────
+
+export interface GeneralSurveyQuestionDto {
+  id: number;
+  questionText: string;
+  orderNumber: number;
+}
+
+export interface SaveGeneralSurveyQuestionRequest {
+  questionText: string;
+}
+
 // ── Ders İçeriği Önizleme ─────────────────────────────────────────────────
 
 export interface CourseDetailDto {
@@ -125,13 +137,22 @@ export interface MappingMatrixDto {
   mappings: MappingCellDto[];
 }
 
+export interface SurveyQuestionLOWeightDto {
+  learningOutcomeId: number;
+  learningOutcomeCode: string;
+  weightPercentage: number;
+}
+
 export interface SurveyQuestionDto {
   id: number;
   courseId: number;
-  learningOutcomeId: number | null;
-  learningOutcomeCode: string | null;
   questionText: string;
   isActive: boolean;
+  loWeights: SurveyQuestionLOWeightDto[];
+  /** @deprecated backend artık loWeights kullanıyor */
+  learningOutcomeId?: number | null;
+  /** @deprecated backend artık loWeights kullanıyor */
+  learningOutcomeCode?: string | null;
 }
 
 export interface AdminCourseContentDto {
