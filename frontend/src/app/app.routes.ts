@@ -19,7 +19,11 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: { role: 'Instructor' },
     children: [
-      { path: '', redirectTo: 'course-contents', pathMatch: 'full' },
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
+      {
+        path: 'home',
+        loadComponent: () => import('./features/instructor-home/instructor-home').then(m => m.InstructorHome)
+      },
       {
         path: 'course-contents',
         loadComponent: () => import('./features/course-contents/course-contents').then(m => m.CourseContents)

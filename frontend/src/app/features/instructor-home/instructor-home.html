@@ -1,0 +1,129 @@
+<div class="home-wrap">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Yükleniyor…</p>
+  </div>
+
+  <ng-container *ngIf="!loading && dashboard">
+
+    <!-- rapor100: Son Dönem Ders Başarı Özeti -->
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">Son Dönem Ders Başarı Özeti</h2>
+        <span class="rapor-tag">rapor100</span>
+      </div>
+
+      <div class="course-circles" *ngIf="dashboard.courseSummaries.length; else noCoursesR100">
+        <div class="circle-item" *ngFor="let c of dashboard.courseSummaries">
+          <div class="circle-wrap">
+            <svg viewBox="0 0 100 100" width="88" height="88">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#e8e8e8" stroke-width="9"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#16213e" stroke-width="9"
+                [attr.stroke-dasharray]="circumference"
+                [attr.stroke-dashoffset]="getOffset(c)"
+                stroke-linecap="round"
+                transform="rotate(-90 50 50)"/>
+            </svg>
+            <span class="circle-pct">{{ getSuccessLabel(c) }}</span>
+          </div>
+          <div class="circle-meta">
+            <div class="circle-name">{{ c.name }}</div>
+            <div class="circle-sub">{{ c.semester }}</div>
+            <div class="circle-sub">{{ c.totalStudents }} Öğrenci</div>
+          </div>
+        </div>
+      </div>
+      <ng-template #noCoursesR100>
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" stroke="#ccc" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z" stroke-linecap="round"/><path d="M8 12h8M8 8h8M8 16h4"/></svg>
+          <p>Son dönem için ders verisi bulunmamaktadır.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Orta satır: rapor101 + rapor102 -->
+    <div class="row-2col">
+
+      <!-- rapor101: Program Çıktılarına Katkı Dağılımı -->
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Program Çıktılarına Katkı Dağılımı</h2>
+          <span class="rapor-tag">rapor101</span>
+        </div>
+        <div class="chart-box" *ngIf="dashboard.poContribution.length; else noPo">
+          <canvas #poChart></canvas>
+        </div>
+        <ng-template #noPo>
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" stroke="#ccc" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h4"/></svg>
+            <p>Henüz LÇ–PÇ eşleştirmesi bulunmamaktadır.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- rapor102: Ders Ortalama Trendi -->
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Ders Ortalama Trendi</h2>
+          <span class="rapor-tag">rapor102</span>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn" [class.active]="trendType === 'GÜZ'" (click)="switchTrend('GÜZ')">Güz</button>
+          <button class="tab-btn" [class.active]="trendType === 'BAHAR'" (click)="switchTrend('BAHAR')">Bahar</button>
+        </div>
+        <div class="chart-box">
+          <canvas #trendChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alt satır: rapor103 + rapor104 -->
+    <div class="row-2col">
+
+      <!-- rapor103: Öğrenci Gözünden Öğretim Üyesi Değerlendirmesi -->
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Öğrenci Gözünden Öğretim Üyesi Değerlendirmesi</h2>
+        </div>
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" stroke="#ccc" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <p>Henüz veri bulunmamaktadır.</p>
+        </div>
+      </div>
+
+      <!-- rapor104: Öğrenme Çıktısı Hedef Gerçekleşme Raporu -->
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Öğrenme Çıktısı Hedef Gerçekleşme Raporu</h2>
+          <span class="rapor-tag">rapor104</span>
+        </div>
+        <div class="selector-row">
+          <select [(ngModel)]="selectedLoSemester" class="period-select">
+            <option *ngFor="let sem of availableSemesters" [value]="sem">{{ sem }}</option>
+          </select>
+        </div>
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" stroke="#ccc" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3h18v18H3z" stroke-linecap="round"/><path d="M8 12h8M8 16h4"/></svg>
+          <p *ngIf="selectedLoSemester">"{{ selectedLoSemester }}" döneminde veri bulunamadı.</p>
+          <p *ngIf="!selectedLoSemester">Dönem seçiniz.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- rapor105: Görev Listesi -->
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">Görev Listesi</h2>
+        <span class="rapor-tag">rapor105</span>
+      </div>
+      <div class="empty-state task-empty">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" stroke="#ccc" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <p>Görev bulunamadı.</p>
+        <p class="sub">Farklı bir dönem seçerek geçmiş görevleri görebilirsiniz.</p>
+      </div>
+    </div>
+
+  </ng-container>
+</div>

@@ -16,7 +16,8 @@ import {
   StudentCourseResultDto, RiskAnalysisDto,
   CourseStatisticsDto, SaveGradesRequest,
   LearningOutcomeStatusDto, ComponentReportItemDto,
-  AttendanceMatrixDto, SaveAttendanceRequest, SaveAttendanceSettingsRequest
+  AttendanceMatrixDto, SaveAttendanceRequest, SaveAttendanceSettingsRequest,
+  InstructorDashboardDto
 } from '../models/course.models';
 
 @Injectable({ providedIn: 'root' })
@@ -249,5 +250,9 @@ export class InstructorService {
 
   saveAttendanceSettings(courseId: number, req: SaveAttendanceSettingsRequest): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/instructor/term-courses/${courseId}/attendance/settings`, req);
+  }
+
+  getDashboard(): Observable<InstructorDashboardDto> {
+    return this.http.get<InstructorDashboardDto>(`${this.base}/instructor/dashboard`);
   }
 }

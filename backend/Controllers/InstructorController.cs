@@ -1719,6 +1719,147 @@ public class InstructorController : ControllerBase
             Distribution   = distribution
         });
     }
+    // ── Dashboard ────────────────────────────────────────────────────────────
+
+    [HttpGet("dashboard")]
+    public async Task<ActionResult<InstructorDashboardDto>> GetDashboard()
+    {
+        var userId = GetUserId();
+
+        var courses = await _context.Courses
+            .Where(c => c.InstructorId == userId)
+            .OrderByDescending(c => c.Semester)
+            .ThenBy(c => c.Code)
+            .ToListAsync();
+
+        if (!courses.Any())
+            return Ok(new InstructorDashboardDto());
+
+        var courseIds = courses.Select(c => c.Id).ToList();
+        var latestSemester = courses.First().Semester;
+
+        // Batch-load tüm istatistik verileri
+        var allEnrollments = await _context.Enrollments
+            .Where(e => courseIds.Contains(e.CourseId))
+            .ToListAsync();
+
+        var allExamGrades = await _context.ExamStudentGrades
+            .Include(g => g.Exam)
+            .Where(g => courseIds.Contains(g.Exam.CourseId))
+            .ToListAsync();
+
+        var allComponents = await _context.AssessmentComponents
+            .Where(a => courseIds.Contains(a.CourseId))
+            .ToListAsync();
+
+        var allComponentIds = allComponents.Select(c => c.Id).ToList();
+        var allComponentGrades = allComponentIds.Any()
+            ? await _context.AssessmentComponentStudentGrades
+                .Where(g => allComponentIds.Contains(g.AssessmentComponentId))
+                .ToListAsync()
+            : [];
+
+        var allExams = await _context.Exams
+            .Where(e => courseIds.Contains(e.CourseId))
+            .ToListAsync();
+
+        // Per-course istatistik hesabı
+        var statsMap = new Dictionary<int, (double? ClassAverage, double? PassRate, int Total)>();
+        foreach (var course in courses)
+        {
+            var studentIds = allEnrollments
+                .Where(e => e.CourseId == course.Id)
+                .Select(e => e.StudentId)
+                .ToList();
+
+            var examGrades = allExamGrades.Where(g => g.Exam.CourseId == course.Id).ToList();
+            var courseComps = allComponents.Where(c => c.CourseId == course.Id).ToList();
+            var avgComps = courseComps.Where(c => c.IsIncludedInAverage).ToList();
+            var compIdSet = courseComps.Select(c => c.Id).ToHashSet();
+            var compGrades = allComponentGrades.Where(g => compIdSet.Contains(g.AssessmentComponentId)).ToList();
+            var courseExams = allExams.Where(e => e.CourseId == course.Id).ToList();
+
+            var scores = new List<decimal>();
+            foreach (var studentId in studentIds)
+            {
+                var sg = examGrades.Where(g => g.StudentId == studentId).ToList();
+                var vize = sg.Where(g => g.Exam.ExamType == "Vize").OrderByDescending(g => g.Exam.Date ?? DateTime.MinValue).FirstOrDefault();
+                var final = sg.Where(g => g.Exam.ExamType == "Final").OrderByDescending(g => g.Exam.Date ?? DateTime.MinValue).FirstOrDefault();
+                var makeup = sg.Where(g => g.Exam.ExamType == "Bütünleme").OrderByDescending(g => g.Exam.Date ?? DateTime.MinValue).FirstOrDefault();
+                var score = ComputeWeightedAverage(studentId, vize, final, makeup, compGrades, courseExams, avgComps);
+                if (score.HasValue) scores.Add(score.Value);
+            }
+
+            double? classAvg = scores.Any() ? Math.Round((double)scores.Average(), 1) : null;
+            double? passRate = scores.Any() ? Math.Round((double)scores.Count(s => s >= 50) / scores.Count * 100, 1) : null;
+            statsMap[course.Id] = (classAvg, passRate, studentIds.Count);
+        }
+
+        // rapor100: Son dönem ders özeti
+        var courseSummaries = courses
+            .Where(c => c.Semester == latestSemester)
+            .Select(c =>
+            {
+                var (avg, passRate, total) = statsMap[c.Id];
+                return new CourseSummaryReportDto
+                {
+                    CourseId = c.Id, Code = c.Code, Name = c.Name,
+                    Semester = c.Semester, TotalStudents = total,
+                    ClassAverage = avg, PassRate = passRate
+                };
+            }).ToList();
+
+        // rapor101: PO katkı dağılımı
+        var loIds = await _context.LearningOutcomes
+            .Where(lo => courseIds.Contains(lo.CourseId))
+            .Select(lo => lo.Id)
+            .ToListAsync();
+
+        var mappings = await _context.LOPOMappings
+            .Include(m => m.ProgramOutcome)
+            .Where(m => loIds.Contains(m.LearningOutcomeId) && m.ContributionLevel > 0)
+            .ToListAsync();
+
+        var programOutcomes = await _context.ProgramOutcomes
+            .OrderBy(po => po.Id)
+            .ToListAsync();
+
+        var poContribution = programOutcomes.Select(po =>
+        {
+            var poMappings = mappings.Where(m => m.ProgramOutcomeId == po.Id).ToList();
+            var counts = new int[5];
+            for (int w = 1; w <= 5; w++)
+                counts[w - 1] = poMappings.Count(m => m.ContributionLevel == w);
+            return new PoContributionDto
+            {
+                PoCode = po.Code,
+                PoDescription = po.Description,
+                CountsByWeight = counts
+            };
+        }).ToList();
+
+        // rapor102: Dönem başarı trendi
+        var averageTrend = courses.Select(c =>
+        {
+            var (avg, _, _) = statsMap[c.Id];
+            return new AverageTrendDto
+            {
+                Semester = c.Semester,
+                CourseCode = c.Code,
+                CourseName = c.Name,
+                Average = avg
+            };
+        }).ToList();
+
+        return Ok(new InstructorDashboardDto
+        {
+            LatestSemester = latestSemester,
+            CourseSummaries = courseSummaries,
+            PoContribution = poContribution,
+            AverageTrend = averageTrend
+        });
+    }
+
     // ── Yardımcı metotlar ────────────────────────────────────────────────────
 
     private static bool IsValidGrade(decimal? grade) =>

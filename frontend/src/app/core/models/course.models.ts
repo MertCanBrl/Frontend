@@ -415,3 +415,34 @@ export interface SaveExamGradeEntryRequest {
     }>;
   }>;
 }
+
+// Dashboard
+export interface CourseSummaryReportDto {
+  courseId: number;
+  code: string;
+  name: string;
+  semester: string;
+  totalStudents: number;
+  classAverage: number | null;
+  passRate: number | null;
+}
+
+export interface PoContributionDto {
+  poCode: string;
+  poDescription: string;
+  countsByWeight: number[];
+}
+
+export interface AverageTrendDto {
+  semester: string;
+  courseCode: string;
+  courseName: string;
+  average: number | null;
+}
+
+export interface InstructorDashboardDto {
+  latestSemester: string | null;
+  courseSummaries: CourseSummaryReportDto[];
+  poContribution: PoContributionDto[];
+  averageTrend: AverageTrendDto[];
+}
