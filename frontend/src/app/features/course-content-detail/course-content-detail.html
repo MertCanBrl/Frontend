@@ -404,83 +404,150 @@
     <!-- ── TAB: Anket Soruları ───────────────────────────────────────────── -->
     @if (activeTab() === 'survey') {
       <div class="tab-panel">
-        <div class="section-toolbar">
-          <h2 class="section-title">Anket Soruları</h2>
-          <button class="btn-primary" [disabled]="!isEditable()" (click)="openSurveyForm()">+ Soru Ekle</button>
-        </div>
 
-        @if (surveyFormVisible()) {
-          <div class="form-card">
-            <h3 class="form-title">{{ editingSurveyId() ? 'Soruyu Düzenle' : 'Yeni Anket Sorusu' }}</h3>
-            <form [formGroup]="surveyForm" (ngSubmit)="saveSurveyForm()" class="form-body">
-              <div class="field">
-                <label class="field-label">Soru Metni *</label>
-                <textarea class="field-input" formControlName="questionText" rows="3"
-                  placeholder="örn. Bu ders, program çıktılarına katkı sağlamaktadır."></textarea>
-                @if (surveyForm.controls.questionText.invalid && surveyForm.controls.questionText.touched) {
-                  <span class="field-error">Soru metni gereklidir.</span>
-                }
-              </div>
-              <div class="field-row">
-                <div class="field">
-                  <label class="field-label">İlgili Öğrenme Çıktısı</label>
-                  <select class="field-input" formControlName="learningOutcomeId">
-                    <option [ngValue]="null">Seçiniz (isteğe bağlı)</option>
-                    @for (o of outcomes(); track o.id) {
-                      <option [ngValue]="o.id">{{ o.code }} – {{ o.description | slice:0:60 }}…</option>
-                    }
-                  </select>
-                </div>
-                <div class="field">
-                  <label class="field-label">Durum</label>
-                  <div class="checkbox-row">
-                    <input type="checkbox" id="isActive" formControlName="isActive" />
-                    <label for="isActive" style="font-size:0.875rem; color: var(--c-ink)">Aktif</label>
+        <!-- Genel Anket Soruları -->
+        <div class="survey-section">
+          <div class="survey-section-header">
+            <h2 class="survey-section-title">Genel Anket Soruları</h2>
+            <span class="survey-readonly-badge">Sistem Tanımlı</span>
+          </div>
+          <p class="survey-readonly-note">Bu sorular sistem yöneticisi tarafından tüm dersler için tanımlanmıştır. Öğretim üyesi tarafından düzenlenemez.</p>
+          @if (generalSurveyQuestions().length === 0) {
+            <div class="empty-panel"><p>Genel anket sorusu bulunmamaktadır.</p></div>
+          } @else {
+            <div class="list">
+              @for (q of generalSurveyQuestions(); track q.id) {
+                <div class="list-item list-item--readonly">
+                  <div class="list-item-main">
+                    <span class="list-num">{{ q.orderNumber }}</span>
+                    <span class="list-title">{{ q.questionText }}</span>
                   </div>
                 </div>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="btn-ghost" (click)="cancelSurveyForm()">İptal</button>
-                <button type="submit" class="btn-primary" [disabled]="surveySaving()">
-                  {{ surveySaving() ? 'Kaydediliyor…' : 'Kaydet' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        }
+              }
+            </div>
+          }
+        </div>
 
-        @if (surveyQuestions().length === 0 && !surveyFormVisible()) {
-          <div class="empty-panel"><p>Henüz anket sorusu eklenmemiş.</p></div>
-        } @else {
-          <div class="list">
-            @for (q of surveyQuestions(); track q.id; let i = $index) {
-              <div class="list-item">
-                <div class="list-item-main">
-                  <span class="list-num">{{ i + 1 }}</span>
-                  <div class="list-texts">
-                    <span class="list-title">{{ q.questionText }}</span>
-                    <div class="lo-tags">
-                      @if (q.learningOutcomeCode) {
-                        <span class="lo-tag">{{ q.learningOutcomeCode }}</span>
-                      }
-                      <span class="lo-tag" [class.active-tag]="q.isActive" [class.inactive-tag]="!q.isActive">
-                        {{ q.isActive ? 'Aktif' : 'Pasif' }}
-                      </span>
+        <!-- Derse Özel Anket Soruları -->
+        <div class="survey-section">
+          <div class="section-toolbar">
+            <h2 class="survey-section-title">Derse Özel Anket Soruları</h2>
+            @if (isEditable()) {
+              <button class="btn-primary" (click)="openSurveyForm()">+ Yeni Soru</button>
+            }
+          </div>
+
+          @if (surveyFormVisible()) {
+            <div class="form-card">
+              <h3 class="form-title">{{ editingSurveyId() ? 'Soruyu Düzenle' : 'Yeni Anket Sorusu' }}</h3>
+              <form [formGroup]="surveyForm" (ngSubmit)="saveSurveyForm()" class="form-body">
+                <div class="field">
+                  <label class="field-label">Soru Metni *</label>
+                  <textarea class="field-input" formControlName="questionText" rows="3"
+                    placeholder="örn. Bu ders, program çıktılarına katkı sağlamaktadır."></textarea>
+                  @if (surveyForm.controls.questionText.invalid && surveyForm.controls.questionText.touched) {
+                    <span class="field-error">Soru metni gereklidir.</span>
+                  }
+                </div>
+
+                <!-- ÖÇ Ağırlıkları -->
+                <div class="field">
+                  <div class="lo-weights-header">
+                    <label class="field-label">Öğrenme Çıktısı Ağırlıkları</label>
+                    <button type="button" class="btn-ghost btn-sm" (click)="addLOWeightRow()">+ Ekle</button>
+                  </div>
+                  <div formArrayName="loWeights" class="lo-weights-list">
+                    @for (ctrl of loWeightsArray.controls; track $index; let i = $index) {
+                      <div [formGroupName]="i" class="lo-weight-row-wrap">
+                        <div class="lo-weight-row">
+                          <select class="field-input lo-select" formControlName="learningOutcomeId">
+                            <option [ngValue]="null">Öğrenme Çıktısı Seçin</option>
+                            @for (o of outcomes(); track o.id) {
+                              <option [ngValue]="o.id">{{ o.code }} – {{ o.description | slice:0:50 }}…</option>
+                            }
+                          </select>
+                          <input type="number" class="field-input weight-input" formControlName="weightPercentage"
+                            min="1" max="100" placeholder="%" />
+                          <button type="button" class="icon-btn danger" (click)="removeLOWeightRow(i)" title="Kaldır">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        </div>
+                        @if (ctrl.get('learningOutcomeId')?.invalid && ctrl.get('learningOutcomeId')?.touched) {
+                          <span class="field-error">Öğrenme çıktısı seçiniz.</span>
+                        }
+                        @if (ctrl.get('weightPercentage')?.invalid && ctrl.get('weightPercentage')?.touched) {
+                          <span class="field-error">Ağırlık 1-100 arasında olmalıdır.</span>
+                        }
+                      </div>
+                    }
+                    @if (loWeightsArray.length === 0) {
+                      <p class="lo-weights-empty">Henüz öğrenme çıktısı eklenmedi (isteğe bağlı).</p>
+                    }
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">Durum</label>
+                    <div class="checkbox-row">
+                      <input type="checkbox" id="isActive" formControlName="isActive" />
+                      <label for="isActive" style="font-size:0.875rem; color: var(--c-ink)">Aktif</label>
                     </div>
                   </div>
                 </div>
-                <div class="list-actions">
-                  <button class="icon-btn" title="Düzenle" [disabled]="!isEditable()" (click)="openSurveyForm(q)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                  <button class="icon-btn danger" title="Sil" [disabled]="!isEditable()" (click)="deleteSurveyQuestion(q.id)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                @if (surveyError()) {
+                  <div class="form-error-banner">{{ surveyError() }}</div>
+                }
+                <div class="form-actions">
+                  <button type="button" class="btn-ghost" (click)="cancelSurveyForm()">İptal</button>
+                  <button type="submit" class="btn-primary" [disabled]="surveySaving()">
+                    {{ surveySaving() ? 'Kaydediliyor…' : 'Kaydet' }}
                   </button>
                 </div>
-              </div>
-            }
-          </div>
-        }
+              </form>
+            </div>
+          }
+
+          @if (surveyQuestions().length === 0 && !surveyFormVisible()) {
+            <div class="empty-panel"><p>Henüz derse özel anket sorusu eklenmemiş.</p></div>
+          } @else {
+            <div class="list">
+              @for (q of surveyQuestions(); track q.id; let i = $index) {
+                <div class="list-item">
+                  <div class="list-item-main">
+                    <span class="list-num">{{ generalSurveyQuestions().length + i + 1 }}</span>
+                    <div class="list-texts">
+                      <span class="list-title">{{ q.questionText }}</span>
+                      <div class="lo-tags">
+                        <span class="lo-tag" [class.active-tag]="q.isActive" [class.inactive-tag]="!q.isActive">
+                          {{ q.isActive ? 'Aktif' : 'Pasif' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  @if (q.loWeights?.length) {
+                    <div class="lo-weights-col">
+                      @for (w of q.loWeights; track w.learningOutcomeId) {
+                        <span class="lo-weight-line lo-weight-tip"
+                          [attr.data-tip]="getOutcomeTooltip(w.learningOutcomeId)">
+                          {{ w.learningOutcomeCode }}: {{ w.weightPercentage }}
+                        </span>
+                      }
+                    </div>
+                  }
+                  <div class="list-actions">
+                    <button class="icon-btn" title="Düzenle" [disabled]="!isEditable()" (click)="openSurveyForm(q)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="icon-btn danger" title="Sil" [disabled]="!isEditable()" (click)="deleteSurveyQuestion(q.id)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
     }
     @if (course()!.contentStatus === 'Draft' || course()!.contentStatus === 'RevisionRequested') {

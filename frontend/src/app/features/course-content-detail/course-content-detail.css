@@ -348,3 +348,45 @@
   font-size: 0.78rem;
 }
 .outcome-legend-desc { color: var(--c-ink); }
+
+/* ── Anket Soruları ─────────────────────────────────────────────────────── */
+.survey-section { display: flex; flex-direction: column; gap: 0.75rem; }
+.survey-section + .survey-section { margin-top: 1.5rem; }
+.survey-section-header { display: flex; align-items: center; gap: 0.6rem; }
+.survey-section-title { font-size: 1rem; font-weight: 700; color: var(--c-navy); margin: 0; }
+.survey-readonly-badge { font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 100px; background: #f2f2f5; color: var(--c-slate); }
+.survey-readonly-note { margin: 0; font-size: 0.82rem; color: var(--c-slate); font-style: italic; }
+
+.list-item--readonly { background: #fafaf8; }
+.list-item--readonly .list-title { color: var(--c-slate); }
+
+.lo-weight-tag { background: #eef0f8; color: var(--c-navy); font-family: monospace; }
+.lo-weights-col { display: flex; flex-direction: column; gap: 0.2rem; align-items: flex-end; flex-shrink: 0; }
+.lo-weight-line { font-size: 0.78rem; font-weight: 600; color: var(--c-navy); white-space: nowrap; }
+
+/* ÖÇ hover tooltip */
+.lo-weight-tip { position: relative; cursor: default; }
+.lo-weight-tip::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 8px); right: 0;
+  background: #1e2a3a; color: #fff;
+  font-size: 0.78rem; font-weight: 400; line-height: 1.5;
+  padding: 0.55rem 0.8rem; border-radius: 8px;
+  width: max-content; max-width: 280px; white-space: normal;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 10;
+}
+.lo-weight-tip:hover::after { opacity: 1; }
+
+/* ÖÇ ağırlık form satırları */
+.lo-weights-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.lo-weights-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.lo-weight-row-wrap { display: flex; flex-direction: column; gap: 0.2rem; }
+.lo-weight-row { display: flex; align-items: center; gap: 0.5rem; }
+.lo-select { flex: 1; }
+.weight-input { width: 70px; flex-shrink: 0; }
+.lo-weights-empty { color: var(--c-slate); font-size: 0.82rem; margin: 0; }
+.btn-sm { padding: 0.25rem 0.65rem; font-size: 0.8rem; }
+.form-error-banner { background: #fdecea; color: var(--c-danger); border-radius: 6px; padding: 0.6rem 0.9rem; font-size: 0.85rem; }

@@ -104,19 +104,35 @@ export interface MappingMatrixDto {
 }
 
 // Survey Questions
+export interface SurveyQuestionLOWeightDto {
+  learningOutcomeId: number;
+  learningOutcomeCode: string;
+  weightPercentage: number;
+}
+
 export interface SurveyQuestionDto {
   id: number;
   courseId: number;
-  learningOutcomeId: number | null;
-  learningOutcomeCode: string | null;
   questionText: string;
   isActive: boolean;
+  loWeights: SurveyQuestionLOWeightDto[];
+}
+
+export interface SaveSurveyQuestionLOWeightRequest {
+  learningOutcomeId: number;
+  weightPercentage: number;
 }
 
 export interface SaveSurveyQuestionRequest {
-  learningOutcomeId: number | null;
   questionText: string;
   isActive: boolean;
+  loWeights: SaveSurveyQuestionLOWeightRequest[];
+}
+
+export interface GeneralSurveyQuestionDto {
+  id: number;
+  questionText: string;
+  orderNumber: number;
 }
 
 // Exams

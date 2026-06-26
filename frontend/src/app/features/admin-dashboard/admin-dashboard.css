@@ -166,6 +166,7 @@
 /* ── Main ─────────────────────────────────────────────── */
 .main {
   flex: 1;
+  min-height: 0;
   background: var(--c-paper);
   overflow-y: auto;
   padding: 2.25rem 2.5rem;
@@ -529,6 +530,50 @@
 }
 .btn-revise-sm:hover:not(:disabled) { background: #fef3c0; }
 .btn-revise-sm:disabled { opacity: 0.55; cursor: default; }
+
+/* ── Genel Anket Soruları ────────────────────────────────────────────────── */
+.gsq-info-banner {
+  display: flex; align-items: flex-start; gap: 0.55rem;
+  background: #eef2fb; border: 1px solid #c4d4f0; border-radius: 8px;
+  padding: 0.75rem 1rem; font-size: 0.83rem; color: #2b5fad;
+  margin-bottom: 1.25rem;
+}
+.gsq-info-banner svg { flex-shrink: 0; margin-top: 0.05rem; }
+
+.gsq-form-card { margin-bottom: 1.25rem; }
+
+.gsq-list {
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+
+.gsq-item {
+  display: flex; align-items: center; gap: 1rem;
+  background: #fff; border: 1px solid var(--c-line); border-radius: 10px;
+  padding: 1rem 1.1rem; transition: box-shadow 0.15s, border-color 0.15s;
+}
+.gsq-item:hover { border-color: #c4d4f0; box-shadow: 0 2px 8px rgba(43, 95, 173, 0.07); }
+
+.gsq-num {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--c-navy); color: #fff;
+  font-size: 0.78rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.gsq-text {
+  flex: 1; margin: 0; font-size: 0.9rem; color: var(--c-ink);
+  font-weight: 450; line-height: 1.45;
+}
+
+.gsq-actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+
+.gsq-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.85rem; padding: 3.5rem 2rem; text-align: center;
+  color: var(--c-slate); border: 2px dashed var(--c-line); border-radius: 12px;
+}
+.gsq-empty svg { color: #c0c8d8; }
+.gsq-empty p { margin: 0; font-size: 0.9rem; }
 
 /* ── Revizyon Modalı ─────────────────────────────────────────────────────── */
 .modal-overlay {

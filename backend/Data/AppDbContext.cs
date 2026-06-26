@@ -20,6 +20,8 @@ public class AppDbContext : DbContext
     public DbSet<LearningOutcome> LearningOutcomes => Set<LearningOutcome>();
     public DbSet<LOPOMapping> LOPOMappings => Set<LOPOMapping>();
     public DbSet<CourseSurveyQuestion> CourseSurveyQuestions => Set<CourseSurveyQuestion>();
+    public DbSet<SurveyQuestionLOWeight> SurveyQuestionLOWeights => Set<SurveyQuestionLOWeight>();
+    public DbSet<GeneralSurveyQuestion> GeneralSurveyQuestions => Set<GeneralSurveyQuestion>();
     public DbSet<Exam> Exams => Set<Exam>();
     public DbSet<ExamQuestion> ExamQuestions => Set<ExamQuestion>();
     public DbSet<ExamQuestionLearningOutcome> ExamQuestionLearningOutcomes => Set<ExamQuestionLearningOutcome>();
@@ -155,6 +157,23 @@ public class AppDbContext : DbContext
             .HasIndex(g => new { g.AssessmentComponentId, g.StudentId })
             .IsUnique();
 
+        // ── SurveyQuestionLOWeight ilişkileri ────────────────
+        modelBuilder.Entity<SurveyQuestionLOWeight>()
+            .HasOne(w => w.SurveyQuestion)
+            .WithMany(q => q.LOWeights)
+            .HasForeignKey(w => w.SurveyQuestionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SurveyQuestionLOWeight>()
+            .HasOne(w => w.LearningOutcome)
+            .WithMany()
+            .HasForeignKey(w => w.LearningOutcomeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SurveyQuestionLOWeight>()
+            .HasIndex(w => new { w.SurveyQuestionId, w.LearningOutcomeId })
+            .IsUnique();
+
         // ── AttendanceRecord ilişkileri ──────────────────────
         modelBuilder.Entity<AttendanceRecord>()
             .HasOne(a => a.Course)
@@ -191,6 +210,14 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Course>().HasData(
             new Course { Id = 1, Code = "BIL101", Name = "Programlamaya Giriş", Semester = "2024-Güz", Credit = 4, IsMandatory = true, InstructorId = 2, Akts = 6, WeeklyHours = 4, Department = "Bilgisayar Mühendisliği", ClassYear = 1, CourseType = "Teorik+Lab" },
             new Course { Id = 2, Code = "BIL202", Name = "Veri Yapıları", Semester = "2024-Güz", Credit = 3, IsMandatory = true, InstructorId = 2, Akts = 5, WeeklyHours = 3, Department = "Bilgisayar Mühendisliği", ClassYear = 2, CourseType = "Teorik" }
+        );
+
+        modelBuilder.Entity<GeneralSurveyQuestion>().HasData(
+            new GeneralSurveyQuestion { Id = 1, OrderNumber = 1, IsActive = true, QuestionText = "Dersin öğretim üyesi derse iyi hazırlanmış olarak gelmektedir." },
+            new GeneralSurveyQuestion { Id = 2, OrderNumber = 2, IsActive = true, QuestionText = "Dersin öğretim üyesinin dersi anlatma yeterliliği hakkında ne düşünüyorsunuz?" },
+            new GeneralSurveyQuestion { Id = 3, OrderNumber = 3, IsActive = true, QuestionText = "Dersin öğretim üyesi ders saatlerine uymaktadır." },
+            new GeneralSurveyQuestion { Id = 4, OrderNumber = 4, IsActive = true, QuestionText = "Öğretim üyesi, ders içeriğiyle ilgili araştırma yapmayı teşvik etmekte ve öğrenci katılımını sağlamaktadır." },
+            new GeneralSurveyQuestion { Id = 5, OrderNumber = 5, IsActive = true, QuestionText = "Öğretim üyesi, öğrencilerin öğrenme düzeyini değerlendirme ve ölçmede ne ölçüde başarılıdır?" }
         );
 
         modelBuilder.Entity<Enrollment>().HasData(

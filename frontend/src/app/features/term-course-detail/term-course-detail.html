@@ -34,7 +34,6 @@
       <button class="tab-btn" [class.active]="activeTab()==='exams'" (click)="setTab('exams')">Sınavlar</button>
       <button class="tab-btn" [class.active]="activeTab()==='components'" (click)="setTab('components')">Diğer Ölçme Bileşenleri</button>
       <button class="tab-btn" [class.active]="activeTab()==='attendance'" (click)="setTab('attendance')">Devam</button>
-      <button class="tab-btn" [class.active]="activeTab()==='risk'" (click)="setTab('risk')">Risk Analizi</button>
       <button class="tab-btn" [class.active]="activeTab()==='outcomes'" (click)="setTab('outcomes')">ÖÇ Durum Tablosu</button>
       <button class="tab-btn" [class.active]="activeTab()==='reports'" (click)="setTab('reports')">Dönem Sonu Raporları</button>
     </div>
@@ -1036,56 +1035,6 @@
       </div>
     }
 
-    <!-- ── TAB: Risk Analizi ─────────────────────────────────────────────── -->
-    @if (activeTab() === 'risk') {
-      <div class="tab-panel">
-        <div class="section-toolbar">
-          <h2 class="section-title">Risk Analizi</h2>
-          <button class="btn-secondary" (click)="loadRisk()">Yenile</button>
-        </div>
-
-        @if (riskLoading()) {
-          <div class="loading-small">Analiz yükleniyor…</div>
-        } @else if (riskData().length === 0) {
-          <div class="empty-panel"><p>Risk verisi hesaplanamadı. Öğrenci notlarını kontrol edin.</p></div>
-        } @else {
-          <div class="table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Öğrenci No</th>
-                  <th>Ad Soyad</th>
-                  <th class="num-col">Not Ort.</th>
-                  <th>Risk Seviyesi</th>
-                  <th>Öneri</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (r of riskData(); track r.studentId) {
-                  <tr [class.row-missing]="r.hasMissingGrades">
-                    <td><span class="student-no">{{ r.studentNo }}</span></td>
-                    <td>
-                      {{ r.fullName }}
-                      @if (r.hasMissingGrades) {
-                        <span class="missing-badge" title="Bazı bileşen notları eksik">Eksik Not</span>
-                      }
-                    </td>
-                    <td class="num-col">
-                      {{ r.gradeAverage !== null ? (r.gradeAverage | number:'1.2-2') : '—' }}
-                      @if (r.hasMissingGrades && r.gradeAverage !== null) {
-                        <div class="missing-hint">eksik not 0 sayıldı</div>
-                      }
-                    </td>
-                    <td><span class="risk-badge" [class]="riskClass(r.riskLevel)">{{ r.riskLevel }}</span></td>
-                    <td class="desc-cell">{{ r.suggestion }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      </div>
-    }
 
     <!-- ── TAB: ÖÇ Durum Tablosu ────────────────────────────────────────── -->
     @if (activeTab() === 'outcomes') {
