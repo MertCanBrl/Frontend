@@ -1,15 +1,4 @@
 .login-page {
-  --c-navy: #16213e;
-  --c-navy-soft: #2c3e66;
-  --c-navy-line: rgba(255, 255, 255, 0.12);
-  --c-paper: #f8f6f2;
-  --c-ink: #1c1f26;
-  --c-slate: #7a7f8c;
-  --c-gold: #d4a843;
-  --c-line: #e5e1d8;
-  --c-error: #c0392b;
-  --c-error-bg: #fbeceA;
-
   display: flex;
   min-height: 100vh;
   font-family: 'Inter', system-ui, sans-serif;
@@ -20,17 +9,17 @@
 .brand-panel {
   flex: 0 0 42%;
   background: var(--c-navy);
-  color: #fff;
+  color: var(--color-surface);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 4rem 3.5rem;
+  padding: var(--space-16) var(--space-14);
   position: relative;
 }
 
 .brand-mark {
   font-family: 'Fraunces', serif;
-  font-size: 1.05rem;
+  font-size: var(--fs-base);
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -42,12 +31,12 @@
   font-size: clamp(2.2rem, 4vw, 3.2rem);
   font-weight: 500;
   line-height: 1.15;
-  margin: 1.5rem 0 1.25rem;
+  margin: var(--space-6) 0 var(--space-5);
 }
 
 .brand-text {
   max-width: 26rem;
-  font-size: 0.98rem;
+  font-size: var(--fs-base);
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -56,15 +45,15 @@
 .grid-motif {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  gap: 0.5rem;
+  gap: var(--space-2);
   max-width: 22rem;
-  margin-top: 3rem;
+  margin-top: var(--space-12);
 }
 
 .grid-cell {
   aspect-ratio: 1;
   border: 1px solid var(--c-navy-line);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   opacity: 0;
   transform: scale(0.6);
   animation: cell-in 0.5s ease forwards;
@@ -90,7 +79,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: var(--space-8);
 }
 
 .login-form {
@@ -99,91 +88,91 @@
 }
 
 .form-header {
-  margin-bottom: 2.25rem;
+  margin-bottom: var(--space-9);
 }
 
 .form-eyebrow {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--c-gold);
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--space-2);
 }
 
 .form-header h2 {
   font-family: 'Fraunces', serif;
-  font-size: 1.75rem;
+  font-size: var(--fs-2xl);
   font-weight: 500;
   color: var(--c-ink);
 }
 
 .field {
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--space-5);
   display: flex;
   flex-direction: column;
 }
 
 .field label {
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-2);
 }
 
 .field input {
-  padding: 0.75rem 0.9rem;
-  font-size: 0.95rem;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-base);
   font-family: inherit;
   border: 1px solid var(--c-line);
-  border-radius: 8px;
-  background: #fff;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .field input:focus-visible {
   outline: none;
   border-color: var(--c-navy);
-  box-shadow: 0 0 0 3px rgba(22, 33, 62, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .field input.ng-invalid.ng-touched {
-  border-color: var(--c-error);
+  border-color: var(--c-danger);
 }
 
 .field-error {
-  margin-top: 0.4rem;
-  font-size: 0.8rem;
-  color: var(--c-error);
+  margin-top: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--c-danger);
 }
 
 .server-error {
   background: var(--c-error-bg);
-  color: var(--c-error);
-  border-radius: 8px;
-  padding: 0.7rem 0.9rem;
-  font-size: 0.85rem;
-  margin-bottom: 1.25rem;
+  color: var(--c-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-5);
 }
 
 /* ---------- Buton ---------- */
 .submit-btn {
   width: 100%;
-  padding: 0.8rem;
-  font-size: 0.95rem;
+  padding: var(--space-3);
+  font-size: var(--fs-base);
   font-weight: 600;
   font-family: inherit;
-  color: #fff;
+  color: var(--color-surface);
   background: var(--c-navy);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: var(--space-2);
   transition: background 0.15s ease;
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
 }
 
 .submit-btn:hover:not(:disabled) {
@@ -199,8 +188,8 @@
   width: 1rem;
   height: 1rem;
   border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
+  border-top-color: var(--color-surface);
+  border-radius: var(--radius-full);
   animation: spin 0.6s linear infinite;
 }
 
@@ -218,7 +207,7 @@
 
   .brand-panel {
     flex: none;
-    padding: 2.5rem;
+    padding: var(--space-10);
   }
 
   .grid-motif {
@@ -226,7 +215,7 @@
   }
 
   .form-panel {
-    padding: 2.5rem 1.5rem;
+    padding: var(--space-10) var(--space-6);
   }
 }
 
