@@ -2,11 +2,12 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { InstructorService } from '../../core/services/instructor.service';
 import { InstructorCourseDto } from '../../core/models/course.models';
+import { UiCard } from '../../shared/ui/ui-card';
 
 @Component({
   selector: 'app-my-courses',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, UiCard],
   templateUrl: './my-courses.html',
   styleUrl: './my-courses.css',
 })

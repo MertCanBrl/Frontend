@@ -6,11 +6,12 @@ import { InstructorService } from '../../core/services/instructor.service';
 import { UserDto, CreateUserRequest, UpdateUserRequest, CreateCourseRequest, UpdateCourseRequest, CourseDto, ApprovalListItemDto, AdminCourseContentDto, GeneralSurveyQuestionDto } from '../../core/models/admin.models';
 import { ProgramOutcomeDto, SaveProgramOutcomeRequest, UpdateProgramOutcomeRequest } from '../../core/models/course.models';
 import { extractErrorMessage, extractBlobErrorMessage } from '../../core/utils/http-error.util';
+import { UiBtn } from '../../shared/ui/ui-button.directive';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, UiBtn],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css',
 })

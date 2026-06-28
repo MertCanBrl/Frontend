@@ -2,6 +2,8 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { InstructorService } from '../../core/services/instructor.service';
+import { UiBtn } from '../../shared/ui/ui-button.directive';
+import { UiCard } from '../../shared/ui/ui-card';
 import {
   CourseDetailDto, CourseTopicDto, LearningOutcomeDto,
   MappingMatrixDto, MappingCellDto
@@ -12,7 +14,7 @@ type Tab = 'info' | 'topics' | 'outcomes' | 'mapping' | 'approval';
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [RouterLink, ReactiveFormsModule, UiBtn, UiCard],
   templateUrl: './course-detail.html',
   styleUrl: './course-detail.css',
 })

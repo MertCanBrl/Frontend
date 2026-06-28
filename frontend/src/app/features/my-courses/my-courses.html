@@ -58,7 +58,7 @@
   @else {
     <div class="course-grid">
       @for (course of filtered(); track course.id) {
-        <div class="course-card" [class.locked]="course.isLocked">
+        <app-ui-card variant="course" [class.locked]="course.isLocked">
 
           <!-- Top row: code + year badge -->
           <div class="card-top">
@@ -89,7 +89,7 @@
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </a>
-        </div>
+        </app-ui-card>
       }
     </div>
   }

@@ -1,0 +1,104 @@
+/* ============================================================
+   Paylaşılan buton stilleri (Faz 3 / Yol B)
+   Sınıflar yalnızca [uiBtn] directive'i tarafından emit edilir.
+   Tüm değerler Faz 1/2 token'larına referans verir — yeni hardcoded yok.
+   ============================================================ */
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+/* Kanonik disabled (K2/K4): tüm butonlar — not-allowed */
+.ui-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── variant: primary ───────────────────────────────── */
+.ui-btn--primary {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-surface);
+  font-weight: 600;
+}
+.ui-btn--primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+
+/* ── variant: ghost ─────────────────────────────────── */
+.ui-btn--ghost {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+.ui-btn--ghost:hover:not(:disabled) {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
+/* ── variant: secondary ─────────────────────────────── */
+.ui-btn--secondary {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+.ui-btn--secondary:hover:not(:disabled) {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
+/* ── size: sm (kompakt) ─────────────────────────────── */
+.ui-btn--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--fs-xs);
+}
+
+/* ── size: block (tam genişlik CTA — login) ─────────── */
+.ui-btn--block {
+  width: 100%;
+  padding: var(--space-3);
+  font-size: var(--fs-base);
+  margin-top: var(--space-2);
+}
+/* K10: login'in mevcut disabled görünümü korunur (saydamlık değil, gri dolu) */
+.ui-btn--block:disabled {
+  background: var(--c-slate);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* ── variant: icon (30×30) ──────────────────────────── */
+.ui-btn--icon {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  white-space: nowrap; /* K3: nowrap base'den çıkarıldı; sabit kutu ikon butonunda tutuldu */
+}
+/* K7/K8: hover'da border rengi DEĞİŞMEZ (sakin hover) */
+.ui-btn--icon:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+/* K9: tone variant'ları — yalnızca icon'da */
+.ui-btn--icon.ui-btn--danger:hover:not(:disabled) {
+  background: var(--color-danger-bg);
+  color: var(--c-danger);
+  border-color: var(--c-danger);
+}
+.ui-btn--icon.ui-btn--accent:hover:not(:disabled) {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border-color: var(--color-info);
+}

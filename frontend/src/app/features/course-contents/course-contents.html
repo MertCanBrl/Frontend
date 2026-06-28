@@ -55,7 +55,7 @@
   } @else {
     <div class="course-grid">
       @for (course of filtered(); track course.id) {
-        <div class="course-card">
+        <app-ui-card variant="course">
           <div class="card-top">
             <span class="course-code">{{ course.code }}</span>
             <span class="year-badge">{{ course.classYear }}. Sınıf</span>
@@ -74,7 +74,7 @@
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </a>
-        </div>
+        </app-ui-card>
       }
     </div>
   }

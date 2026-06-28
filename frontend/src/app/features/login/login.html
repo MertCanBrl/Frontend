@@ -65,7 +65,7 @@
         <div class="server-error">{{ errorMessage }}</div>
       }
 
-      <button type="submit" [disabled]="isLoading" class="submit-btn">
+      <button type="submit" [disabled]="isLoading" uiBtn variant="primary" size="block">
         @if (isLoading) {
           <span class="spinner"></span>
           Giriş yapılıyor...

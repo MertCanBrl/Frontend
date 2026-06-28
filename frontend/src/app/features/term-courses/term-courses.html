@@ -46,7 +46,7 @@
     </div>
     <div class="course-grid">
       @for (course of courses(); track course.id) {
-        <div class="course-card" [class.card-inactive]="!isApproved(course)">
+        <app-ui-card variant="course" [class.card-inactive]="!isApproved(course)">
           <div class="card-top">
             <span class="course-code">{{ course.code }}</span>
             <span class="year-badge">{{ course.classYear }}. Sınıf</span>
@@ -82,7 +82,7 @@
               }
             </span>
           }
-        </div>
+        </app-ui-card>
       }
     </div>
   }

@@ -3,6 +3,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
 import { InstructorService } from '../../core/services/instructor.service';
+import { UiBtn } from '../../shared/ui/ui-button.directive';
+import { UiCard } from '../../shared/ui/ui-card';
 import {
   CourseDetailDto, CourseTopicDto, LearningOutcomeDto,
   MappingMatrixDto, MappingCellDto,
@@ -15,7 +17,7 @@ type Tab = 'info' | 'topics' | 'outcomes' | 'mapping' | 'survey';
 @Component({
   selector: 'app-course-content-detail',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, SlicePipe],
+  imports: [RouterLink, ReactiveFormsModule, SlicePipe, UiBtn, UiCard],
   templateUrl: './course-content-detail.html',
   styleUrl: './course-content-detail.css',
 })

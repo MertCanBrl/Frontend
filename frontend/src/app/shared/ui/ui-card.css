@@ -1,0 +1,39 @@
+/* ============================================================
+   Paylaşılan kart stilleri (Faz 3 / Yol B) — encapsulated.
+   Yalnızca kutu stili; çocuk içerik stilleri feature CSS'inde kalır.
+   Tüm değerler Faz 1/2 token'larına referans verir.
+   ============================================================ */
+
+:host {
+  display: block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+/* info (varsayılan): K11 — content-detail'in flex-col farkı base'e katıldı */
+:host(.ui-card--info) {
+  display: flex;
+  flex-direction: column;
+}
+
+/* form: K13 — gold kenarlık, diğer her şey base ile aynı */
+:host(.ui-card--form) {
+  border-color: var(--c-gold);
+}
+
+/* course: xl radius, alt-padding, flex-col, hover-lift */
+:host(.ui-card--course) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3); /* K12: çoğunluk (2/3) */
+  border-radius: var(--radius-xl);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
+}
+:host(.ui-card--course:hover) {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border);
+  transform: translateY(-2px);
+}

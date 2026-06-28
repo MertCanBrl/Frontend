@@ -42,7 +42,7 @@
     @if (activeTab() === 'info') {
       <div class="tab-panel">
         <div class="info-grid">
-          <div class="info-card">
+          <app-ui-card>
             <h3 class="info-card-title">Ders Bilgileri</h3>
             <div class="info-rows">
               <div class="info-row"><span class="info-label">Ders Kodu</span><span class="info-val mono">{{ course()!.code }}</span></div>
@@ -50,8 +50,8 @@
               <div class="info-row"><span class="info-label">Bölüm</span><span class="info-val">{{ course()!.department || '—' }}</span></div>
               <div class="info-row"><span class="info-label">Sınıf</span><span class="info-val">{{ course()!.classYear }}. Sınıf</span></div>
             </div>
-          </div>
-          <div class="info-card">
+          </app-ui-card>
+          <app-ui-card>
             <h3 class="info-card-title">Dönem Bilgileri</h3>
             <div class="info-rows">
               <div class="info-row"><span class="info-label">Dönem</span><span class="info-val">{{ course()!.semester }}</span></div>
@@ -65,15 +65,15 @@
                 </span>
               </div>
             </div>
-          </div>
-          <div class="info-card">
+          </app-ui-card>
+          <app-ui-card>
             <h3 class="info-card-title">Kredi & AKTS</h3>
             <div class="info-rows">
               <div class="info-row"><span class="info-label">Kredi</span><span class="info-val">{{ course()!.credit }}</span></div>
               <div class="info-row"><span class="info-label">AKTS</span><span class="info-val">{{ course()!.akts || '—' }}</span></div>
               <div class="info-row"><span class="info-label">Haftalık Saat</span><span class="info-val">{{ course()!.weeklyHours || '—' }}</span></div>
             </div>
-          </div>
+          </app-ui-card>
         </div>
       </div>
     }
@@ -83,7 +83,7 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Öğrenciler</h2>
-          <button class="btn-secondary" (click)="loadStudents()">Yenile</button>
+          <button uiBtn variant="secondary" (click)="loadStudents()">Yenile</button>
         </div>
 
         @if (studentsLoading()) {
@@ -182,13 +182,13 @@
           <div class="section-toolbar">
             <h2 class="section-title">Sınavlar</h2>
             <div class="toolbar-actions">
-              <button class="btn-secondary" (click)="onPlaceholderAction('Optimal Soru Seti Oluştur')" disabled title="Yakında eklenecek">
+              <button uiBtn variant="secondary" (click)="onPlaceholderAction('Optimal Soru Seti Oluştur')" disabled title="Yakında eklenecek">
                 Optimal Soru Seti Oluştur
               </button>
-              <button class="btn-secondary" (click)="onPlaceholderAction('Geçmiş Sınavlardan Soru Aktar')" disabled title="Yakında eklenecek">
+              <button uiBtn variant="secondary" (click)="onPlaceholderAction('Geçmiş Sınavlardan Soru Aktar')" disabled title="Yakında eklenecek">
                 Geçmiş Sınavlardan Soru Aktar
               </button>
-              <button class="btn-primary" (click)="openExamForm()">+ Yeni Sınav</button>
+              <button uiBtn (click)="openExamForm()">+ Yeni Sınav</button>
             </div>
           </div>
         }
@@ -205,7 +205,7 @@
                 <span class="diff-chip diff-orta">ORTA: {{ difficultyCounts.orta }}</span>
                 <span class="diff-chip diff-zor">ZOR: {{ difficultyCounts.zor }}</span>
               </div>
-              <button class="btn-ghost" (click)="cancelExamForm()">✕ Kapat</button>
+              <button uiBtn variant="ghost" (click)="cancelExamForm()">✕ Kapat</button>
             </div>
 
             <!-- Backend hata mesajı (okunabilir string) -->
@@ -304,7 +304,7 @@
                       @else if (totalScore > 100) { ⚠ 100'ü aşıyor }
                       @else { (eksik: {{ 100 - totalScore }}) }
                     </span>
-                    <button type="button" class="btn-sm btn-ghost" (click)="addQuestionRow()">+ Soru Ekle</button>
+                    <button type="button" uiBtn variant="ghost" size="sm" (click)="addQuestionRow()">+ Soru Ekle</button>
                   </div>
 
                   @if (learningOutcomes().length === 0 && learningOutcomesLoaded()) {
@@ -407,7 +407,7 @@
                               }
                             </td>
                             <td class="q-col-actions">
-                              <button type="button" class="icon-btn danger" title="Soruyu Sil" (click)="removeQuestionRow(i)">
+                              <button type="button" uiBtn variant="icon" tone="danger" title="Soruyu Sil" (click)="removeQuestionRow(i)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                               </button>
                             </td>
@@ -426,8 +426,8 @@
               }
 
               <div class="form-actions">
-                <button type="button" class="btn-ghost" (click)="cancelExamForm()">İptal</button>
-                <button type="submit" class="btn-primary" [disabled]="examSaving()">
+                <button type="button" uiBtn variant="ghost" (click)="cancelExamForm()">İptal</button>
+                <button type="submit" uiBtn [disabled]="examSaving()">
                   {{ examSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
                 </button>
               </div>
@@ -482,13 +482,13 @@
                       </td>
                       <td>
                         <div class="list-actions">
-                          <button class="icon-btn" title="Düzenle" (click)="openExamForm(exam)">
+                          <button uiBtn variant="icon" title="Düzenle" (click)="openExamForm(exam)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           </button>
-                          <button class="icon-btn accent" title="Not Girişi" (click)="openGradeEntry(exam)">
+                          <button uiBtn variant="icon" tone="accent" title="Not Girişi" (click)="openGradeEntry(exam)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                           </button>
-                          <button class="icon-btn danger" title="Sil" (click)="deleteExam(exam.id)">
+                          <button uiBtn variant="icon" tone="danger" title="Sil" (click)="deleteExam(exam.id)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                           </button>
                         </div>
@@ -527,7 +527,7 @@
                       <td>{{ gradeGroupLabel(c.gradeGroup) }}</td>
                       <td class="num-col">{{ c.maxScore }}</td>
                       <td>
-                        <button class="icon-btn accent" title="Not Girişi" (click)="openCompGradeEntryFromExams(c)">
+                        <button uiBtn variant="icon" tone="accent" title="Not Girişi" (click)="openCompGradeEntryFromExams(c)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                           Not Girişi
                         </button>
@@ -550,7 +550,7 @@
                   — {{ gradeEntryData()!.examType }} / {{ gradeEntryData()!.examMethod }}
                 }
               </h3>
-              <button class="btn-secondary" (click)="closeGradeEntry()">← Geri Dön</button>
+              <button uiBtn variant="secondary" (click)="closeGradeEntry()">← Geri Dön</button>
             </div>
 
             @if (gradeEntryError()) {
@@ -623,8 +623,8 @@
                 </div>
 
                 <div class="form-actions">
-                  <button class="btn-secondary" (click)="closeGradeEntry()">İptal</button>
-                  <button class="btn-primary" [disabled]="gradeEntrySaving()" (click)="saveGradeEntry()">
+                  <button uiBtn variant="secondary" (click)="closeGradeEntry()">İptal</button>
+                  <button uiBtn [disabled]="gradeEntrySaving()" (click)="saveGradeEntry()">
                     {{ gradeEntrySaving() ? 'Kaydediliyor…' : 'Notları Kaydet' }}
                   </button>
                 </div>
@@ -640,7 +640,7 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Diğer Ölçme Bileşenleri</h2>
-          <button class="btn-primary" (click)="openComponentForm()">+ Bileşen Ekle</button>
+          <button uiBtn (click)="openComponentForm()">+ Bileşen Ekle</button>
         </div>
 
         @if (totalWeight > 100) {
@@ -648,7 +648,7 @@
         }
 
         @if (componentFormVisible()) {
-          <div class="form-card">
+          <app-ui-card variant="form">
             <h3 class="form-title">{{ editingComponentId() ? 'Bileşeni Düzenle' : 'Yeni Bileşen Ekle' }}</h3>
             <form [formGroup]="componentForm" (ngSubmit)="saveComponentForm()" class="form-body">
               <div class="field-row">
@@ -741,7 +741,7 @@
                                 (input)="updateCompLoWeight(wi, +$any($event.target).value)" />
                             </td>
                             <td>
-                              <button type="button" class="icon-btn danger" title="Kaldır" (click)="removeCompLoWeight(wi)">
+                              <button type="button" uiBtn variant="icon" tone="danger" title="Kaldır" (click)="removeCompLoWeight(wi)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
                             </td>
@@ -775,13 +775,13 @@
               </div>
 
               <div class="form-actions">
-                <button type="button" class="btn-ghost" (click)="cancelComponentForm()">İptal</button>
-                <button type="submit" class="btn-primary" [disabled]="componentSaving()">
+                <button type="button" uiBtn variant="ghost" (click)="cancelComponentForm()">İptal</button>
+                <button type="submit" uiBtn [disabled]="componentSaving()">
                   {{ componentSaving() ? 'Kaydediliyor…' : 'Kaydet' }}
                 </button>
               </div>
             </form>
-          </div>
+          </app-ui-card>
         }
 
         @if (components().length === 0 && !componentFormVisible() && !compGradeVisible()) {
@@ -838,13 +838,13 @@
                     <td>{{ c.date ? (c.date | slice:0:10) : '—' }}</td>
                     <td>
                       <div class="list-actions">
-                        <button class="icon-btn" title="Düzenle" (click)="openComponentForm(c)">
+                        <button uiBtn variant="icon" title="Düzenle" (click)="openComponentForm(c)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="icon-btn accent" title="Not Girişi" (click)="openCompGradeEntry(c)">
+                        <button uiBtn variant="icon" tone="accent" title="Not Girişi" (click)="openCompGradeEntry(c)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         </button>
-                        <button class="icon-btn danger" title="Sil" (click)="deleteComponent(c.id)">
+                        <button uiBtn variant="icon" tone="danger" title="Sil" (click)="deleteComponent(c.id)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                         </button>
                       </div>
@@ -864,7 +864,7 @@
                 Not Girişi
                 @if (compGradeData()) { — {{ compGradeData()!.name }} ({{ compGradeData()!.type }}) }
               </h3>
-              <button class="btn-secondary" (click)="closeCompGradeEntry()">← Geri Dön</button>
+              <button uiBtn variant="secondary" (click)="closeCompGradeEntry()">← Geri Dön</button>
             </div>
 
             @if (compGradeError()) {
@@ -908,8 +908,8 @@
                   </table>
                 </div>
                 <div class="form-actions">
-                  <button class="btn-secondary" (click)="closeCompGradeEntry()">İptal</button>
-                  <button class="btn-primary" [disabled]="compGradeSaving()" (click)="saveCompGradeEntry()">
+                  <button uiBtn variant="secondary" (click)="closeCompGradeEntry()">İptal</button>
+                  <button uiBtn [disabled]="compGradeSaving()" (click)="saveCompGradeEntry()">
                     {{ compGradeSaving() ? 'Kaydediliyor…' : 'Notları Kaydet' }}
                   </button>
                 </div>
@@ -925,7 +925,7 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Devam Takibi</h2>
-          <button class="btn-secondary" (click)="loadAttendance()">Yenile</button>
+          <button uiBtn variant="secondary" (click)="loadAttendance()">Yenile</button>
         </div>
 
         @if (attendanceError()) {
@@ -957,7 +957,7 @@
                      [value]="attendanceLimitPercent()"
                      (input)="setAttendanceLimitPercent($any($event.target).value)" />
             </div>
-            <button class="btn-secondary" [disabled]="attendanceSettingsSaving()" (click)="saveAttendanceSettings()">
+            <button uiBtn variant="secondary" [disabled]="attendanceSettingsSaving()" (click)="saveAttendanceSettings()">
               {{ attendanceSettingsSaving() ? 'Kaydediliyor…' : 'Ayarları Kaydet' }}
             </button>
           </div>
@@ -1026,7 +1026,7 @@
             </div>
 
             <div class="form-actions">
-              <button class="btn-primary" [disabled]="attendanceSaving()" (click)="saveAttendance()">
+              <button uiBtn [disabled]="attendanceSaving()" (click)="saveAttendance()">
                 {{ attendanceSaving() ? 'Kaydediliyor…' : 'Devamsızlığı Kaydet' }}
               </button>
             </div>
@@ -1042,8 +1042,8 @@
         <div class="section-toolbar">
           <h2 class="section-title">ÖÇ Durum Tablosu</h2>
           <div class="toolbar-actions">
-            <button class="btn-secondary" (click)="downloadLoStatusCsv()" [disabled]="loStatus().length === 0">CSV İndir</button>
-            <button class="btn-secondary" (click)="loadLoStatus()">Yenile</button>
+            <button uiBtn variant="secondary" (click)="downloadLoStatusCsv()" [disabled]="loStatus().length === 0">CSV İndir</button>
+            <button uiBtn variant="secondary" (click)="loadLoStatus()">Yenile</button>
           </div>
         </div>
 
@@ -1133,7 +1133,7 @@
       <div class="tab-panel">
         <div class="section-toolbar">
           <h2 class="section-title">Dönem Sonu Raporları</h2>
-          <button class="btn-secondary" (click)="loadStatistics()">Yenile</button>
+          <button uiBtn variant="secondary" (click)="loadStatistics()">Yenile</button>
         </div>
 
         @if (statsLoading()) {

@@ -75,7 +75,7 @@
           <p class="page-desc">Öğretim üyesi ve yönetici hesaplarını tanımlayın ve yetkilendirin</p>
         </div>
         @if (!userFormVisible()) {
-          <button class="btn-primary" (click)="openUserForm()">
+          <button uiBtn (click)="openUserForm()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Personel Ekle
           </button>
@@ -96,7 +96,7 @@
         <div class="form-card">
           <div class="form-card-header">
             <h2>{{ editingUserId() ? 'Personeli Düzenle' : 'Yeni Personel Tanımla' }}</h2>
-            <button class="btn-ghost" (click)="cancelUserForm()">İptal</button>
+            <button uiBtn variant="ghost" (click)="cancelUserForm()">İptal</button>
           </div>
 
           @if (userFormError()) {
@@ -152,7 +152,7 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn-primary" [disabled]="userFormLoading()">
+              <button type="submit" uiBtn [disabled]="userFormLoading()">
                 @if (userFormLoading()) { <span class="spinner"></span> Kaydediliyor... }
                 @else { {{ editingUserId() ? 'Değişiklikleri Kaydet' : 'Tanımla ve E-posta Gönder' }} }
               </button>
@@ -220,7 +220,7 @@
           <p class="page-desc">Dersleri tanımlayın ve öğretim üyelerine atayın</p>
         </div>
         @if (!courseFormVisible()) {
-          <button class="btn-primary" (click)="openCourseForm()">
+          <button uiBtn (click)="openCourseForm()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Ders Ekle
           </button>
@@ -241,7 +241,7 @@
         <div class="form-card">
           <div class="form-card-header">
             <h2>{{ editingCourseId() ? 'Dersi Düzenle' : 'Yeni Ders Tanımla' }}</h2>
-            <button class="btn-ghost" (click)="cancelCourseForm()">İptal</button>
+            <button uiBtn variant="ghost" (click)="cancelCourseForm()">İptal</button>
           </div>
 
           @if (courseFormError()) {
@@ -313,7 +313,7 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn-primary" [disabled]="courseFormLoading()">
+              <button type="submit" uiBtn [disabled]="courseFormLoading()">
                 @if (courseFormLoading()) { <span class="spinner"></span> Kaydediliyor... }
                 @else { {{ editingCourseId() ? 'Değişiklikleri Kaydet' : 'Dersi Tanımla' }} }
               </button>
@@ -385,7 +385,7 @@
           <p class="page-desc">Bölüm program çıktılarını (PÇ) tanımlayın ve yönetin</p>
         </div>
         @if (!outcomeFormVisible()) {
-          <button class="btn-primary" (click)="openOutcomeForm()">
+          <button uiBtn (click)="openOutcomeForm()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             PÇ Ekle
           </button>
@@ -403,7 +403,7 @@
         <div class="form-card">
           <div class="form-card-header">
             <h2>{{ editingOutcomeId() ? 'Program Çıktısını Düzenle' : 'Yeni Program Çıktısı' }}</h2>
-            <button class="btn-ghost" (click)="cancelOutcomeForm()">İptal</button>
+            <button uiBtn variant="ghost" (click)="cancelOutcomeForm()">İptal</button>
           </div>
 
           @if (outcomeFormError()) {
@@ -433,7 +433,7 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn-primary" [disabled]="outcomeFormLoading()">
+              <button type="submit" uiBtn [disabled]="outcomeFormLoading()">
                 @if (outcomeFormLoading()) { <span class="spinner"></span> Kaydediliyor... }
                 @else { {{ editingOutcomeId() ? 'Değişiklikleri Kaydet' : 'Program Çıktısı Ekle' }} }
               </button>
@@ -488,7 +488,7 @@
           <h1 class="page-title">Onay Yönetimi</h1>
           <p class="page-desc">Öğretim üyelerinin onaya gönderdiği ders içeriklerini inceleyin</p>
         </div>
-        <button class="btn-ghost" (click)="loadApprovals()">
+        <button uiBtn variant="ghost" (click)="loadApprovals()">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           Yenile
         </button>
@@ -578,7 +578,7 @@
           <p class="page-desc">Tüm derslerde ortak olarak görünecek sistem anket sorularını yönetin.</p>
         </div>
         @if (!generalSurveyFormVisible()) {
-          <button class="btn-primary" (click)="openGeneralSurveyForm()">
+          <button uiBtn (click)="openGeneralSurveyForm()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Yeni Soru Ekle
           </button>
@@ -610,8 +610,8 @@
               }
             </div>
             <div class="form-actions">
-              <button type="button" class="btn-ghost" (click)="cancelGeneralSurveyForm()">İptal</button>
-              <button type="submit" class="btn-primary" [disabled]="generalSurveySaving()">
+              <button type="button" uiBtn variant="ghost" (click)="cancelGeneralSurveyForm()">İptal</button>
+              <button type="submit" uiBtn [disabled]="generalSurveySaving()">
                 @if (generalSurveySaving()) { <span class="spinner"></span> }
                 {{ generalSurveySaving() ? 'Kaydediliyor…' : (editingGeneralSurveyId() ? 'Güncelle' : 'Kaydet') }}
               </button>
@@ -626,7 +626,7 @@
         <div class="gsq-empty">
           <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           <p>Henüz genel anket sorusu eklenmemiş.</p>
-          <button class="btn-primary" (click)="openGeneralSurveyForm()">İlk soruyu ekle</button>
+          <button uiBtn (click)="openGeneralSurveyForm()">İlk soruyu ekle</button>
         </div>
       } @else if (!generalSurveyFormVisible()) {
         <div class="gsq-list">
@@ -868,8 +868,8 @@
           }
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" (click)="closeRevisionModal()">İptal</button>
-          <button type="submit" class="btn-primary" [disabled]="revisionLoading()">
+          <button type="button" uiBtn variant="ghost" (click)="closeRevisionModal()">İptal</button>
+          <button type="submit" uiBtn [disabled]="revisionLoading()">
             @if (revisionLoading()) { <span class="spinner"></span> Gönderiliyor... }
             @else { Revizyon İste }
           </button>
@@ -921,7 +921,7 @@
       }
 
       <div class="modal-actions">
-        <button type="button" class="btn-ghost" (click)="closeCoursesModal()">Kapat</button>
+        <button type="button" uiBtn variant="ghost" (click)="closeCoursesModal()">Kapat</button>
       </div>
     </div>
   </div>

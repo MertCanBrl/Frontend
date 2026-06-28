@@ -3,6 +3,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DecimalPipe, SlicePipe } from '@angular/common';
 import { InstructorService } from '../../core/services/instructor.service';
+import { UiBtn } from '../../shared/ui/ui-button.directive';
+import { UiCard } from '../../shared/ui/ui-card';
 import {
   CourseDetailDto, StudentCourseResultDto, StudentComponentScoreDto, LearningOutcomeDto,
   ExamDto, ExamDetailDto, ExamQuestionDto, SaveExamRequest, SaveExamQuestionRequest,
@@ -39,7 +41,7 @@ interface QuestionRow {
 @Component({
   selector: 'app-term-course-detail',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, DecimalPipe, SlicePipe],
+  imports: [RouterLink, ReactiveFormsModule, DecimalPipe, SlicePipe, UiBtn, UiCard],
   templateUrl: './term-course-detail.html',
   styleUrl: './term-course-detail.css',
 })
