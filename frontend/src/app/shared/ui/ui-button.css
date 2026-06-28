@@ -23,6 +23,12 @@
   cursor: not-allowed;
 }
 
+/* Faz 4-C: klavye-erişilebilir focus ring (tüm variant'lar) */
+.ui-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 /* ── variant: primary ───────────────────────────────── */
 .ui-btn--primary {
   padding: var(--space-2) var(--space-4);

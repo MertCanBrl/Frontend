@@ -90,6 +90,13 @@
   --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.22);  /* dropdown/popover */
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.25);  /* modal */
   --focus-ring: 0 0 0 3px rgba(22, 33, 62, 0.1);
+  --focus-ring-on-dark: rgba(212, 168, 67, 0.55); /* gold — navy zemin focus outline rengi */
+
+  /* ---- Line-height ölçeği (Faz 4-D) ---- */
+  --lh-tight: 1;      /* badge/stat-value — tek satır */
+  --lh-snug: 1.4;     /* kart başlığı (course-name) */
+  --lh-base: 1.5;     /* gövde metni */
+  --lh-relaxed: 1.6;  /* açıklama/page-desc */
 }
 
 /* ---- Global reset ---- */

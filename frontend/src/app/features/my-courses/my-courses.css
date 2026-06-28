@@ -129,7 +129,7 @@
   font-weight: 500;
   color: var(--c-ink);
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--lh-snug);
 }
 
 /* ── Badge row ───────────────────────────────────── */
@@ -145,7 +145,7 @@
   font-weight: 600;
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-pill);
-  line-height: 1;
+  line-height: var(--lh-tight);
 }
 
 /* Credit — green */

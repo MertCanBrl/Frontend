@@ -80,6 +80,7 @@
   background: rgba(212, 168, 67, 0.18);
   color: var(--c-gold);
 }
+.nav-item:focus-visible { outline: 3px solid var(--focus-ring-on-dark); outline-offset: -2px; }
 
 .sidebar-footer {
   padding: var(--space-4) var(--space-5);
@@ -148,6 +149,7 @@
   background: rgba(255, 255, 255, 0.08);
   color: var(--color-surface);
 }
+.logout-btn:focus-visible { outline: 3px solid var(--focus-ring-on-dark); outline-offset: -2px; }
 
 /* ── Main ─────────────────────────────────────────────── */
 .main {
@@ -439,7 +441,7 @@
 .nav-badge {
   margin-left: auto; padding: var(--space-0-5) var(--space-2); border-radius: var(--radius-pill);
   background: var(--c-gold); color: var(--c-navy);
-  font-size: var(--fs-2xs); font-weight: 700; line-height: 1.4;
+  font-size: var(--fs-2xs); font-weight: 700; line-height: var(--lh-snug);
 }
 
 /* ── Onay durumu rozeti ───────────────────────────────────────────────────── */
@@ -514,7 +516,7 @@
 
 .gsq-text {
   flex: 1; margin: 0; font-size: var(--fs-sm); color: var(--c-ink);
-  font-weight: 450; line-height: 1.45;
+  font-weight: 450; line-height: var(--lh-base);
 }
 
 .gsq-actions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
@@ -658,6 +660,7 @@
 }
 .preview-tab-btn:hover { color: var(--c-ink); }
 .preview-tab-btn.active { color: var(--c-navy); border-bottom-color: var(--c-gold); font-weight: 600; }
+.preview-tab-btn:focus-visible { box-shadow: var(--focus-ring); }
 
 .preview-tab-count {
   display: inline-flex; align-items: center; justify-content: center;
@@ -706,7 +709,7 @@
   color: var(--c-ink); margin: 0 0 var(--space-2);
 }
 .preview-text-content {
-  margin: 0; font-size: var(--fs-sm); color: var(--c-ink); line-height: 1.6;
+  margin: 0; font-size: var(--fs-sm); color: var(--c-ink); line-height: var(--lh-relaxed);
   white-space: pre-wrap;
 }
 
@@ -772,3 +775,33 @@
 .level-3 { background: var(--color-warn-bg); color: var(--color-warn); }
 .level-4 { background: var(--color-warn-border); color: var(--color-warn-strong); }
 .level-5 { background: var(--color-accent); color: #3d1e00; }
+
+/* ── Responsive: shell collapse (≤1024px) ──────────── */
+/* Sidebar üst-banta iner, .main altta kendi scroll'unda kalır */
+@media (max-width: 1024px) {
+  .dashboard { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5);
+  }
+  .sidebar-brand { border-bottom: none; padding: 0; }
+  .sidebar-nav {
+    flex: 1 1 auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0;
+  }
+  .nav-item { width: auto; }
+  .sidebar-footer {
+    border-top: none;
+    flex-direction: row;
+    align-items: center;
+    padding: 0;
+    gap: var(--space-4);
+  }
+  .logout-btn { width: auto; }
+}

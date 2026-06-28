@@ -31,7 +31,7 @@
   font-size: var(--fs-sm);
   color: var(--c-slate);
   margin: 0;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   max-width: 680px;
 }
 
@@ -128,7 +128,7 @@
   font-weight: 500;
   color: var(--c-ink);
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--lh-snug);
 }
 
 .badge-row {
@@ -142,7 +142,7 @@
   font-weight: 600;
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-pill);
-  line-height: 1;
+  line-height: var(--lh-tight);
 }
 .badge-credit { background: var(--color-success-bg); color: var(--color-success); }
 .badge-semester { background: var(--color-info-bg); color: var(--color-info); }
@@ -170,4 +170,8 @@
   .page-title { font-size: var(--fs-xl); }
   .search-input { width: 100%; }
   .course-grid { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .course-grid { grid-template-columns: repeat(2, 1fr); }
 }
