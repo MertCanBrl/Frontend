@@ -100,7 +100,7 @@
 }
 .lo-chip-label input[type="checkbox"] { display: none; }
 .lo-chip-label:hover { background: var(--color-info-bg); color: var(--c-navy); }
-.lo-chip-selected { background: var(--color-info-bg) !important; color: var(--c-navy) !important; font-weight: 600; border-color: var(--color-info-border) !important; }
+.lo-chip-label.lo-chip-selected { background: var(--color-info-bg); color: var(--c-navy); font-weight: 600; border-color: var(--color-info-border); }
 
 /* ── Not Durumu Badge ──────────────────────────────────────────────────────── */
 .not-durumu-badge {
@@ -151,7 +151,7 @@
   transition: border-color 0.15s;
 }
 .grade-input:focus-visible { outline: none; border-color: var(--color-purple); box-shadow: 0 0 0 3px rgba(99,102,241,0.10); }
-.grade-input-over { border-color: var(--color-danger) !important; background: var(--color-danger-bg); }
+.grade-input.grade-input-over { border-color: var(--color-danger); background: var(--color-danger-bg); }
 
 /* status chips */
 .status-chip { display: inline-block; padding: var(--space-0-5) var(--space-2); border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: 600; }
@@ -190,10 +190,11 @@
 
 /* Matris: ilk iki sütun yapışkan, hafta sütunları dar */
 .attendance-table th, .attendance-table td { text-align: center; }
-.att-sticky-col { position: sticky; left: 0; background: var(--color-surface); text-align: left !important; z-index: 1; }
+.att-sticky-col { position: sticky; left: 0; background: var(--color-surface); z-index: 1; }
+.attendance-table .att-sticky-col { text-align: left; }
 .attendance-table thead .att-sticky-col { background: var(--color-surface-alt); }
 .att-name-col { left: 90px; min-width: 150px; }
-.att-week-col { width: 36px; padding-left: var(--space-1) !important; padding-right: var(--space-1) !important; }
+.data-table .att-week-col { width: 36px; padding-left: var(--space-1); padding-right: var(--space-1); }
 
 .att-cell {
   width: 28px; height: 28px; border: 1px solid var(--c-line); border-radius: var(--radius-md);

@@ -224,7 +224,7 @@
 .missing-hint {
   font-size: var(--fs-2xs); color: var(--color-warn-strong); margin-top: var(--space-0-5); white-space: nowrap;
 }
-.row-missing { background: var(--color-warn-bg) !important; }
+.row-missing { background: var(--color-warn-bg); }
 .comp-col { font-size: var(--fs-xs); max-width: 120px; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 
@@ -236,7 +236,7 @@
 .lwt-col-code { width: 60px; }
 .lwt-col-weight { width: 90px; }
 .lwt-col-action { width: 36px; }
-.lwt-weight-input { width: 70px !important; }
+.q-input.lwt-weight-input { width: 70px; }
 .lwt-desc { max-width: 220px; font-size: var(--fs-xs); color: var(--c-slate); }
 .lo-weight-table tfoot td { border-top: 1px solid var(--color-border); border-bottom: none; padding-top: var(--space-2); }
 .lwt-total-label { text-align: right; font-size: var(--fs-xs); color: var(--c-slate); }

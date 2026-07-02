@@ -22,8 +22,8 @@
 .level-5 { background: var(--color-accent); color: #3d1e00; }
 
 /* ── Matris kilitleme ────────────────────────────────────────────────────── */
-.matrix-cell-locked { cursor: default !important; }
-.matrix-cell-locked:hover { filter: none !important; }
+.matrix-cell.matrix-cell-locked { cursor: default; }
+.matrix-cell.matrix-cell-locked:hover { filter: none; }
 .mapping-locked-note { color: var(--color-warn); font-weight: 500; font-size: var(--fs-xs); }
 
 /* ── PÇ kolon başlığı tooltip ────────────────────────────────────────────── */
