@@ -154,107 +154,6 @@
 /* Toolbar multiple actions */
 .toolbar-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 
-/* Exam form card (wider) */
-.exam-form-card { background: var(--color-surface); border: 1px solid var(--c-gold); border-radius: var(--radius-xl); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
-.exam-form-header { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
-.exam-form-header .form-title { margin: 0; flex: 1; }
-
-/* Difficulty summary chips */
-.diff-summary { display: flex; gap: var(--space-2); }
-.diff-chip {
-  font-size: var(--fs-2xs); font-weight: 700; padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-pill); white-space: nowrap;
-}
-.diff-kolay { background: var(--color-success-bg); color: var(--color-success); }
-.diff-orta  { background: var(--color-warn-bg); color: var(--color-warn); }
-.diff-zor   { background: var(--color-danger-bg); color: var(--color-danger); }
-
-/* Error banner */
-.error-banner { padding: var(--space-3) var(--space-4); background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); border-radius: var(--radius-md); font-size: var(--fs-sm); }
-
-/* Frontend validation error list */
-.validation-errors {
-  padding: var(--space-3) var(--space-4); background: var(--color-warn-bg); color: var(--color-warn);
-  border: 1px solid var(--color-warn-border); border-radius: var(--radius-md); font-size: var(--fs-sm);
-}
-.validation-errors ul { margin: 0; padding-left: var(--space-5); }
-.validation-errors li { margin-bottom: var(--space-1); }
-.validation-errors li:last-child { margin-bottom: 0; }
-
-
-/* LO info section (above the table) */
-.lo-info-section {
-  background: var(--color-info-bg); border: 1px solid var(--color-info-border); border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4); display: flex; flex-direction: column; gap: var(--space-2);
-}
-.lo-info-title { font-size: var(--fs-xs); font-weight: 700; color: var(--color-info); }
-.lo-loading { font-size: var(--fs-xs); color: var(--c-slate); }
-.lo-info-list { display: flex; flex-direction: column; gap: var(--space-1); }
-.lo-info-item { display: flex; gap: var(--space-2); font-size: var(--fs-xs); }
-.lo-info-code { font-weight: 700; color: var(--c-navy); min-width: 42px; }
-.lo-info-desc { color: var(--c-ink); }
-
-/* Question section */
-.question-section { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-2); }
-.question-section-header {
-  display: flex; align-items: center; gap: var(--space-4); padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--c-line);
-}
-.question-section-title { font-weight: 600; font-size: var(--fs-sm); color: var(--c-ink); }
-.score-total { font-size: var(--fs-sm); font-weight: 600; }
-.score-ok   { color: var(--color-success); }
-.score-over { color: var(--color-danger); }
-.score-under { color: var(--color-warn); }
-.lo-empty-note { font-size: var(--fs-xs); color: var(--c-slate); margin: 0; line-height: var(--lh-base); }
-
-/* Question table */
-.question-table-wrapper { overflow-x: auto; border: 1px solid var(--c-line); border-radius: var(--radius-lg); }
-.question-table { border-collapse: collapse; width: 100%; font-size: var(--fs-xs); }
-.question-table th {
-  padding: var(--space-2) var(--space-2); background: var(--color-surface-alt); color: var(--c-slate);
-  font-weight: 600; text-align: center; border-bottom: 1px solid var(--c-line);
-  white-space: nowrap;
-}
-.question-table td { padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--color-surface-alt); vertical-align: top; }
-.question-table tr:last-child td { border-bottom: none; }
-.question-row:nth-child(even) { background: var(--color-surface-alt); }
-
-/* Column widths */
-.q-col-num     { width: 36px; text-align: center; }
-.q-col-desc    { min-width: 180px; }
-.q-col-book    { width: 52px; text-align: center; }
-.q-col-score   { width: 64px; text-align: center; }
-.q-col-diff    { width: 90px; }
-.q-col-lo-cell { min-width: 130px; }
-.q-col-actions { width: 36px; text-align: center; }
-.q-num-cell    { font-weight: 700; color: var(--c-navy); text-align: center; font-size: var(--fs-xs); padding-top: var(--space-2); }
-.lo-none       { color: var(--c-slate); font-size: var(--fs-xs); }
-
-/* Inline inputs */
-.q-input {
-  width: 100%; padding: var(--space-1) var(--space-2); border: 1px solid var(--c-line); border-radius: var(--radius-sm);
-  font-family: inherit; font-size: var(--fs-xs); color: var(--c-ink); background: var(--color-surface);
-}
-.q-input:focus-visible { outline: none; border-color: var(--c-navy); box-shadow: var(--focus-ring); }
-.q-input-wide { min-width: 160px; }
-.q-input-num  { text-align: center; width: 100%; }
-.q-select     { width: 100%; cursor: pointer; }
-
-/* LO chip-list inside each cell */
-.lo-chip-list {
-  display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-1) 0;
-}
-.lo-chip-label {
-  display: inline-flex; align-items: center; gap: var(--space-1);
-  font-size: var(--fs-xs); padding: var(--space-0-5) var(--space-2); border-radius: var(--radius-pill);
-  background: var(--color-surface-alt); color: var(--c-slate); cursor: pointer;
-  user-select: none; transition: background 0.12s, color 0.12s;
-  border: 1px solid transparent;
-}
-.lo-chip-label input[type="checkbox"] { display: none; }
-.lo-chip-label:hover { background: var(--color-info-bg); color: var(--c-navy); }
-.lo-chip-selected { background: var(--color-info-bg) !important; color: var(--c-navy) !important; font-weight: 600; border-color: var(--color-info-border) !important; }
-
 /* Dönem Sonu Raporları */
 .report-section { margin-bottom: var(--space-8); }
 .report-section-title { font-size: var(--fs-base); font-weight: 600; margin-bottom: var(--space-4); }
@@ -287,62 +186,6 @@
 }
 .bar-count { color: var(--color-surface); font-size: var(--fs-xs); font-weight: 600; padding-top: 4px; }
 .bar-label { margin-top: var(--space-2); font-size: var(--fs-xs); color: var(--color-text-muted); }
-
-/* ── Not Durumu Badge ──────────────────────────────────────────────────────── */
-.not-durumu-badge {
-  display: inline-block; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill);
-  font-size: var(--fs-xs); font-weight: 600;
-}
-.badge-graded { background: var(--color-success-bg); color: var(--color-success-strong); }
-.badge-not-graded { background: var(--color-surface-alt); color: var(--color-text-muted); }
-
-/* ── Grade Entry Panel ─────────────────────────────────────────────────────── */
-.grade-entry-panel {
-  display: flex; flex-direction: column; gap: var(--space-5);
-}
-.grade-entry-header {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3);
-}
-
-/* ── Grade Table ───────────────────────────────────────────────────────────── */
-.grade-table-wrapper {
-  overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg);
-}
-.grade-table {
-  width: 100%; border-collapse: collapse; font-size: var(--fs-sm);
-}
-.grade-table th, .grade-table td {
-  padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); text-align: center; white-space: nowrap;
-}
-.grade-table thead th { background: var(--color-surface-alt); font-weight: 600; color: var(--color-text); }
-.grade-table tbody tr:last-child td { border-bottom: none; }
-.grade-table tbody tr:hover { background: var(--color-surface-alt); }
-
-.grade-th-sticky, .grade-td-sticky {
-  position: sticky; background: var(--color-surface-alt); z-index: 1; text-align: left;
-}
-.grade-th-sticky:nth-child(1), .grade-td-sticky:nth-child(1) { left: 0; min-width: 110px; }
-.grade-th-sticky:nth-child(2), .grade-td-sticky:nth-child(2) { left: 110px; min-width: 160px; }
-.grade-td-sticky { background: var(--color-surface); }
-.grade-td-sticky:nth-child(1) { font-weight: 500; }
-
-.grade-th-question { min-width: 72px; }
-.grade-th-question small { font-weight: 400; color: var(--color-text-muted); }
-.grade-th-total, .grade-td-total { min-width: 72px; font-weight: 600; }
-
-/* grade score inputs */
-.grade-input {
-  width: 58px; padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md);
-  text-align: center; font-size: var(--fs-sm); background: var(--color-surface);
-  transition: border-color 0.15s;
-}
-.grade-input:focus-visible { outline: none; border-color: var(--color-purple); box-shadow: 0 0 0 3px rgba(99,102,241,0.10); }
-.grade-input-over { border-color: var(--color-danger) !important; background: var(--color-danger-bg); }
-
-/* status chips */
-.status-chip { display: inline-block; padding: var(--space-0-5) var(--space-2); border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: 600; }
-.status-complete { background: var(--color-success-bg); color: var(--color-success-strong); }
-.status-partial  { background: var(--color-warn-bg); color: var(--color-warn); }
 
 /* ── New: field-hint ──────────────────────────────────────────────────────── */
 .field-hint { font-size: var(--fs-xs); color: var(--color-text-muted); margin-top: var(--space-1); }
@@ -384,23 +227,6 @@
 .row-missing { background: var(--color-warn-bg) !important; }
 .comp-col { font-size: var(--fs-xs); max-width: 120px; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
-
-/* ── LO Weight Mini (question table cell) ────────────────────────────────── */
-.lo-weight-mini { display: flex; flex-direction: column; gap: var(--space-1); }
-.lo-weight-mini-row { display: flex; align-items: center; gap: var(--space-1); }
-.lo-code-mini { font-weight: 700; color: var(--c-navy); min-width: 32px; font-size: var(--fs-2xs); }
-.lo-weight-input { width: 42px; padding: var(--space-0-5) var(--space-1); border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm); text-align: center; font-size: var(--fs-2xs); }
-.lo-pct-unit { color: var(--c-slate); font-size: var(--fs-2xs); }
-.lo-remove-btn { background: none; border: none; cursor: pointer; color: var(--color-danger-strong);
-  font-size: var(--fs-sm); padding: 0 var(--space-0-5); line-height: var(--lh-tight); }
-.lo-weight-total-mini { font-size: var(--fs-2xs); font-weight: 700; }
-.total-ok { color: var(--color-success-strong); }
-.total-err { color: var(--color-danger-strong); }
-.lo-add-select { margin-top: var(--space-1); font-size: var(--fs-2xs); padding: var(--space-0-5) var(--space-1);
-  border: 1px dashed var(--color-border); border-radius: var(--radius-sm); width: 100%; cursor: pointer;
-  background: var(--color-surface); color: var(--c-ink); }
-.lo-add-select:disabled { opacity: 0.5; cursor: default; }
 
 /* ── LO Weight Table (component form) ────────────────────────────────────── */
 .lo-weight-table { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); margin-bottom: var(--space-1); }
@@ -451,42 +277,3 @@
   font-size: var(--fs-sm); line-height: var(--lh-base);
 }
 .missing-grades-banner svg { flex-shrink: 0; margin-top: 1px; color: var(--color-warn-strong); }
-
-/* ── Devam (Devamsızlık) ──────────────────────────────────────────────────── */
-.stat-risk .stat-value { color: var(--color-warn); }
-.att-summary { margin-bottom: var(--space-5); }
-
-.attendance-settings {
-  display: flex; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap;
-  padding: var(--space-4) var(--space-5); margin-bottom: var(--space-5);
-  border: 1px solid var(--c-line); border-radius: var(--radius-xl); background: var(--color-surface-alt);
-}
-.att-setting-field { display: flex; flex-direction: column; gap: var(--space-1); }
-.att-setting-field label { font-size: var(--fs-xs); font-weight: 600; color: var(--c-slate); }
-.att-setting-input { width: 120px; }
-
-/* Matris: ilk iki sütun yapışkan, hafta sütunları dar */
-.attendance-table th, .attendance-table td { text-align: center; }
-.att-sticky-col { position: sticky; left: 0; background: var(--color-surface); text-align: left !important; z-index: 1; }
-.attendance-table thead .att-sticky-col { background: var(--color-surface-alt); }
-.att-name-col { left: 90px; min-width: 150px; }
-.att-week-col { width: 36px; padding-left: var(--space-1) !important; padding-right: var(--space-1) !important; }
-
-.att-cell {
-  width: 28px; height: 28px; border: 1px solid var(--c-line); border-radius: var(--radius-md);
-  background: var(--color-success-bg); color: var(--color-success); font-weight: 700; cursor: pointer;
-  line-height: var(--lh-tight); padding: 0; transition: background 0.12s, color 0.12s;
-}
-.att-cell:hover { filter: brightness(0.96); }
-.att-cell-absent { background: var(--color-danger-bg); color: var(--color-danger); }
-
-/* Kalan satır kırmızı, risk satırı sarı vurgulu */
-.att-row-failed > td { background: var(--color-danger-bg) !important; }
-.att-row-risk > td { background: var(--color-warn-bg) !important; }
-.att-row-failed .att-sticky-col { background: var(--color-danger-bg) !important; }
-.att-row-risk .att-sticky-col { background: var(--color-warn-bg) !important; }
-
-.att-badge { padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
-.att-failed { background: var(--color-danger-bg); color: var(--color-danger); }
-.att-risk { background: var(--color-warn-bg); color: var(--color-warn); }
-.att-safe { background: var(--color-success-bg); color: var(--color-success); }

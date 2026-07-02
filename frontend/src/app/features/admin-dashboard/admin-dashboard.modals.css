@@ -1,0 +1,222 @@
+/* ═══ Modal kümeleri (Revizyon + Ders İçeriği Önizleme) — admin-dashboard.css'ten styleUrls partial'ına taşındı (Faz 5-A).
+   İç sıra orijinal dosyadaki sırayla birebir aynıdır (cascade korunumu). ═══ */
+
+/* ── Revizyon Modalı ─────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45);
+  z-index: 200; display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+}
+
+.modal-card {
+  background: var(--color-surface); border-radius: var(--radius-xl); padding: var(--space-8);
+  width: 500px; max-width: 100%; max-height: 90vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column; gap: var(--space-5);
+}
+
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+}
+
+.modal-title {
+  font-family: 'Fraunces', serif; font-size: var(--fs-lg); font-weight: 500;
+  color: var(--c-ink); margin: 0;
+}
+
+.modal-close {
+  width: 30px; height: 30px; border-radius: var(--radius-md);
+  border: 1px solid var(--c-line); background: transparent;
+  color: var(--c-slate); font-size: var(--fs-sm); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s;
+}
+.modal-close:hover { background: var(--color-surface-alt); color: var(--c-ink); }
+
+.modal-course-name {
+  margin: 0; padding: var(--space-2) var(--space-4); background: var(--color-surface-alt);
+  border-radius: var(--radius-md); font-size: var(--fs-sm); font-weight: 600; color: var(--c-navy);
+}
+
+.modal-form { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.field textarea {
+  width: 100%; box-sizing: border-box;
+  padding: var(--space-3) var(--space-3); font-size: var(--fs-sm); font-family: inherit;
+  border: 1px solid var(--c-line); border-radius: var(--radius-md); background: var(--color-surface);
+  color: var(--c-ink); resize: vertical; min-height: 100px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.field textarea:focus-visible {
+  outline: none; border-color: var(--c-navy);
+  box-shadow: var(--focus-ring);
+}
+.field textarea.ng-invalid.ng-touched { border-color: var(--c-danger); }
+
+.modal-actions {
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2);
+  padding-top: var(--space-1);
+}
+
+.required-mark { color: var(--c-danger); }
+
+/* ── Ders İçeriği Önizleme Modalı ───────────────────────────────────────── */
+.preview-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+  padding: var(--space-6);
+}
+
+.preview-modal {
+  background: var(--color-surface); border-radius: var(--radius-xl);
+  width: min(1100px, 100%); height: min(90vh, 100%);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.preview-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-4); padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--c-line); flex-shrink: 0;
+}
+
+.preview-header-left { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+
+.preview-course-name {
+  font-family: 'Fraunces', serif; font-size: var(--fs-lg); font-weight: 500;
+  color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.preview-loading {
+  padding: var(--space-16); text-align: center; color: var(--c-slate); font-size: var(--fs-sm);
+}
+
+.preview-tabs {
+  display: flex; border-bottom: 2px solid var(--c-line);
+  padding: 0 var(--space-6); overflow-x: auto; flex-shrink: 0;
+}
+
+.preview-tab-btn {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-4); border: none; background: transparent;
+  font-family: inherit; font-size: var(--fs-sm); font-weight: 500; color: var(--c-slate);
+  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+}
+.preview-tab-btn:hover { color: var(--c-ink); }
+.preview-tab-btn.active { color: var(--c-navy); border-bottom-color: var(--c-gold); font-weight: 600; }
+.preview-tab-btn:focus-visible { box-shadow: var(--focus-ring); }
+
+.preview-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  background: var(--color-info-bg); color: var(--c-navy); border-radius: var(--radius-pill);
+  font-size: var(--fs-2xs); font-weight: 700;
+}
+
+.preview-body {
+  flex: 1; overflow-y: auto; padding: var(--space-6);
+  display: flex; flex-direction: column; gap: var(--space-4);
+}
+
+/* Info Grid */
+.preview-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+
+.preview-info-card {
+  background: var(--c-paper); border: 1px solid var(--c-line);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+}
+
+.preview-info-title {
+  font-family: 'Fraunces', serif; font-size: var(--fs-sm); font-weight: 600;
+  color: var(--c-ink); margin: 0 0 var(--space-3);
+}
+
+.preview-info-rows { display: flex; flex-direction: column; }
+
+.preview-info-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-2) 0; border-bottom: 1px solid var(--c-line); font-size: var(--fs-sm);
+}
+.preview-info-row:last-child { border-bottom: none; }
+
+.preview-info-label { color: var(--c-slate); }
+.preview-info-val { color: var(--c-ink); font-weight: 500; }
+.preview-info-val.mono { font-family: monospace; }
+
+/* Text Blocks */
+.preview-text-block {
+  background: var(--c-paper); border: 1px solid var(--c-line);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+}
+.preview-text-label {
+  font-family: 'Fraunces', serif; font-size: var(--fs-sm); font-weight: 600;
+  color: var(--c-ink); margin: 0 0 var(--space-2);
+}
+.preview-text-content {
+  margin: 0; font-size: var(--fs-sm); color: var(--c-ink); line-height: var(--lh-relaxed);
+  white-space: pre-wrap;
+}
+
+/* Empty */
+.preview-empty {
+  padding: var(--space-12); text-align: center; color: var(--c-slate);
+  background: var(--c-paper); border: 1px solid var(--c-line); border-radius: var(--radius-lg);
+}
+
+/* List (Konular / Anket Soruları) */
+.preview-list {
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.preview-list-item {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  background: var(--c-paper); border: 1px solid var(--c-line);
+  border-radius: var(--radius-md); padding: var(--space-3) var(--space-4);
+}
+.preview-list-num {
+  flex-shrink: 0; width: 24px; height: 24px; border-radius: var(--radius-full);
+  background: var(--color-info-bg); color: var(--c-navy); font-size: var(--fs-xs); font-weight: 700;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.preview-list-texts { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.preview-list-title { font-size: var(--fs-sm); font-weight: 500; color: var(--c-ink); }
+.preview-list-desc { font-size: var(--fs-xs); color: var(--c-slate); }
+
+/* Survey Tags */
+.preview-survey-tags { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; margin-top: var(--space-0-5); }
+.preview-survey-tag {
+  display: inline-block; padding: var(--space-0-5) var(--space-2); border-radius: var(--radius-pill);
+  font-size: var(--fs-2xs); font-weight: 600;
+}
+.preview-survey-tag.lo-tag { background: var(--color-info-bg); color: var(--c-navy); }
+.preview-survey-tag.active-tag { background: var(--color-success-bg); color: var(--c-success); }
+.preview-survey-tag.inactive-tag { background: var(--color-surface-alt); color: var(--c-slate); }
+
+/* Outcomes Table */
+.preview-table-wrapper { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--c-line); }
+.preview-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.preview-table thead tr { background: var(--color-surface-alt); border-bottom: 1px solid var(--c-line); }
+.preview-table th { padding: var(--space-3) var(--space-4); text-align: left; font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-slate); white-space: nowrap; }
+.preview-table tbody tr { border-bottom: 1px solid var(--c-line); }
+.preview-table tbody tr:last-child { border-bottom: none; }
+.preview-table td { padding: var(--space-3) var(--space-4); vertical-align: top; color: var(--c-ink); }
+.preview-outcome-desc { max-width: 400px; }
+
+/* Matrix */
+.preview-matrix-info {
+  font-size: var(--fs-xs); color: var(--c-slate); padding: var(--space-2) 0;
+}
+.preview-matrix-wrapper { overflow-x: auto; }
+.preview-matrix-table { border-collapse: collapse; font-size: var(--fs-xs); }
+.pm-corner { background: var(--color-surface-alt); border: 1px solid var(--c-line); padding: var(--space-2) var(--space-3); min-width: 80px; font-weight: 600; color: var(--c-slate); font-size: var(--fs-xs); }
+.pm-po-head { background: var(--color-surface-alt); border: 1px solid var(--c-line); padding: var(--space-2) var(--space-1); min-width: 44px; max-width: 52px; text-align: center; font-size: var(--fs-xs); font-weight: 600; color: var(--c-navy); cursor: default; }
+.pm-lo-head { border: 1px solid var(--c-line); padding: var(--space-2) var(--space-3); font-size: var(--fs-xs); font-weight: 600; color: var(--c-navy); white-space: nowrap; background: var(--color-surface-alt); cursor: default; }
+.pm-cell { border: 1px solid var(--c-line); width: 44px; height: 34px; text-align: center; vertical-align: middle; font-weight: 700; font-size: var(--fs-sm); }
+
+/* Contribution level colors (matrix) */
+.level-0 { background: var(--color-surface-alt); color: transparent; }
+.level-1 { background: var(--color-success-bg); color: var(--color-success); }
+.level-2 { background: var(--color-success-bg); color: var(--color-success-strong); }
+.level-3 { background: var(--color-warn-bg); color: var(--color-warn); }
+.level-4 { background: var(--color-warn-border); color: var(--color-warn-strong); }
+.level-5 { background: var(--color-accent); color: #3d1e00; }

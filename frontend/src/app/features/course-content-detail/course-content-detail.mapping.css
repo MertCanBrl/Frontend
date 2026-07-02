@@ -1,0 +1,120 @@
+/* ═══ ÖÇ-PÇ eşleştirme (mapping) kümesi — course-content-detail.css'ten styleUrls partial'ına taşındı (Faz 5-A).
+   İç sıra orijinal dosyadaki sırayla birebir aynıdır (cascade korunumu). ═══ */
+
+/* Mapping */
+.mapping-info { font-size: var(--fs-xs); color: var(--c-slate); background: var(--color-surface-alt); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
+.mapping-legend { display: flex; flex-wrap: wrap; gap: var(--space-2); font-size: var(--fs-xs); color: var(--c-slate); }
+.legend-item { padding: var(--space-0-5) var(--space-2); border-radius: var(--radius-sm); font-weight: 600; font-size: var(--fs-xs); }
+.matrix-wrapper { overflow-x: auto; background: var(--color-surface); border: 1px solid var(--c-line); border-radius: var(--radius-lg); }
+.matrix-table { border-collapse: collapse; font-size: var(--fs-xs); min-width: 100%; }
+.matrix-table th, .matrix-table td { border: 1px solid var(--c-line); }
+.matrix-corner { padding: var(--space-2) var(--space-3); background: var(--color-surface-alt); font-weight: 700; color: var(--c-slate); white-space: nowrap; }
+.matrix-po-header { padding: var(--space-2) var(--space-2); background: var(--c-navy); color: var(--c-gold); font-weight: 700; text-align: center; font-size: var(--fs-xs); white-space: nowrap; }
+.matrix-lo-cell { padding: var(--space-2) var(--space-3); background: var(--color-surface-alt); font-family: monospace; font-weight: 700; color: var(--c-navy); font-size: var(--fs-xs); }
+.lo-cell-text { display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.matrix-cell { width: 44px; height: 36px; text-align: center; vertical-align: middle; font-weight: 700; font-size: var(--fs-sm); cursor: pointer; user-select: none; transition: filter 0.1s; }
+.matrix-cell:hover { filter: brightness(0.9); }
+.level-0 { background: var(--color-surface-alt); color: transparent; }
+.level-1 { background: var(--color-success-bg); color: var(--color-success); }
+.level-2 { background: var(--color-success-bg); color: var(--color-success-strong); }
+.level-3 { background: var(--color-warn-bg); color: var(--color-warn); }
+.level-4 { background: var(--color-warn-border); color: var(--color-warn-strong); }
+.level-5 { background: var(--color-accent); color: #3d1e00; }
+
+/* ── Matris kilitleme ────────────────────────────────────────────────────── */
+.matrix-cell-locked { cursor: default !important; }
+.matrix-cell-locked:hover { filter: none !important; }
+.mapping-locked-note { color: var(--color-warn); font-weight: 500; font-size: var(--fs-xs); }
+
+/* ── PÇ kolon başlığı tooltip ────────────────────────────────────────────── */
+.po-tip-host {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+.po-tip-body {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  background: var(--c-ink);
+  color: var(--color-surface);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  line-height: var(--lh-base);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  white-space: normal;
+  text-align: left;
+  z-index: 200;
+  pointer-events: none;
+  box-shadow: var(--shadow-pop);
+}
+.po-tip-body::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--c-ink);
+}
+.po-tip-host:hover .po-tip-body { display: block; }
+
+/* ── PÇ / ÖÇ açıklama legend'leri ──────────────────────────────────────────── */
+.legends-row {
+  display: flex;
+  gap: var(--space-3);
+}
+.legends-row .outcome-legend-panel { flex: 1; min-width: 0; }
+.outcome-legend-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.outcome-legend-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-alt);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--c-ink);
+  text-align: left;
+  transition: background 0.12s;
+}
+.outcome-legend-toggle:hover { background: var(--color-surface-alt); }
+.outcome-legend-chevron { color: var(--c-slate); font-size: var(--fs-2xs); margin-left: var(--space-2); }
+.outcome-legend-body {
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.outcome-legend-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-base);
+}
+.outcome-legend-code {
+  flex-shrink: 0;
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--c-navy);
+  background: var(--color-info-bg);
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+}
+.outcome-legend-desc { color: var(--c-ink); }

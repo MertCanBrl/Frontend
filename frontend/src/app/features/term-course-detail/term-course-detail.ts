@@ -43,7 +43,7 @@ interface QuestionRow {
   standalone: true,
   imports: [RouterLink, ReactiveFormsModule, DecimalPipe, SlicePipe, UiBtn, UiCard],
   templateUrl: './term-course-detail.html',
-  styleUrl: './term-course-detail.css',
+  styleUrls: ['./term-course-detail.css', './term-course-detail.tabs.css'],
 })
 export class TermCourseDetail implements OnInit {
   private route = inject(ActivatedRoute);

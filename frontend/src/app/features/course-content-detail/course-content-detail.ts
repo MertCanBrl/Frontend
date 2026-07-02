@@ -19,7 +19,7 @@ type Tab = 'info' | 'topics' | 'outcomes' | 'mapping' | 'survey';
   standalone: true,
   imports: [RouterLink, ReactiveFormsModule, SlicePipe, UiBtn, UiCard],
   templateUrl: './course-content-detail.html',
-  styleUrl: './course-content-detail.css',
+  styleUrls: ['./course-content-detail.css', './course-content-detail.mapping.css'],
 })
 export class CourseContentDetail implements OnInit {
   private route = inject(ActivatedRoute);

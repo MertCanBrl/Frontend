@@ -13,7 +13,7 @@ import { UiBtn } from '../../shared/ui/ui-button.directive';
   standalone: true,
   imports: [ReactiveFormsModule, UiBtn],
   templateUrl: './admin-dashboard.html',
-  styleUrl: './admin-dashboard.css',
+  styleUrls: ['./admin-dashboard.css', './admin-dashboard.modals.css'],
 })
 export class AdminDashboard implements OnInit {
   private authService = inject(AuthService);
